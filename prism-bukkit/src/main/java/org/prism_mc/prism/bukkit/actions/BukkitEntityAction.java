@@ -192,19 +192,18 @@ public class BukkitEntityAction extends BukkitAction implements EntityAction {
         } else {
             UUID uuid = readWriteNbt.getUUID("UUID");
             if (uuid != null) {
-                for (var entity : world.getEntities()) {
-                    if (entity.getUniqueId().equals(uuid)) {
-                        if (type().resultType().equals(ActionResultType.CREATES)) {
-                            entity.remove();
+                Entity entity = world.getEntity(uuid);
+                if (entity != null) {
+                    if (type().resultType().equals(ActionResultType.CREATES)) {
+                        entity.remove();
 
-                            return ModificationResult.builder().activity(activityContext).applied().build();
-                        } else if (type().resultType().equals(ActionResultType.REPLACES)) {
-                            NBT.modify(entity, nbt -> {
-                                nbt.mergeCompound(readWriteNbt);
-                            });
+                        return ModificationResult.builder().activity(activityContext).applied().build();
+                    } else if (type().resultType().equals(ActionResultType.REPLACES)) {
+                        NBT.modify(entity, nbt -> {
+                            nbt.mergeCompound(readWriteNbt);
+                        });
 
-                            return ModificationResult.builder().activity(activityContext).applied().build();
-                        }
+                        return ModificationResult.builder().activity(activityContext).applied().build();
                     }
                 }
             }
