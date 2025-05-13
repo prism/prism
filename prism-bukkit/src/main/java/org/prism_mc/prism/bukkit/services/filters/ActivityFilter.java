@@ -23,6 +23,7 @@ package org.prism_mc.prism.bukkit.services.filters;
 import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.NotNull;
@@ -30,6 +31,7 @@ import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.services.filters.FilterBehavior;
 import org.prism_mc.prism.bukkit.actions.BukkitEntityAction;
 import org.prism_mc.prism.bukkit.actions.BukkitMaterialAction;
+import org.prism_mc.prism.bukkit.api.activities.BukkitActivity;
 import org.prism_mc.prism.bukkit.utils.CustomTag;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 
@@ -61,6 +63,11 @@ public class ActivityFilter {
     private final CustomTag<EntityType> entityTypeTag;
 
     /**
+     * The player's game mode(s).
+     */
+    private final List<GameMode> gameModes;
+
+    /**
      * The material tags (materials, block-tags, item-tags).
      */
     private final CustomTag<Material> materialTag;
@@ -78,10 +85,12 @@ public class ActivityFilter {
     /**
      * Construct a new activity filter.
      *
+     * @param name The filter name
      * @param behavior The behavior
      * @param actions The actions
      * @param causes The causes
      * @param entityTypeTag The entity type tag
+     * @param gameModes The game modes
      * @param materialTag The material tag
      * @param permissions The permissions
      * @param worldNames The world names
@@ -92,6 +101,7 @@ public class ActivityFilter {
         @NotNull List<String> actions,
         @NotNull List<String> causes,
         @NotNull CustomTag<EntityType> entityTypeTag,
+        @NotNull List<GameMode> gameModes,
         @NotNull CustomTag<Material> materialTag,
         @NotNull List<String> permissions,
         @NotNull List<String> worldNames
@@ -101,8 +111,9 @@ public class ActivityFilter {
         this.behavior = behavior;
         this.causes = causes;
         this.entityTypeTag = entityTypeTag;
-        this.permissions = permissions;
+        this.gameModes = gameModes;
         this.materialTag = materialTag;
+        this.permissions = permissions;
         this.worldNames = worldNames;
     }
 
@@ -138,6 +149,12 @@ public class ActivityFilter {
         results.add(entityTypeResult);
         if (debug) {
             loggingService.debug("Entity type result: {0}", entityTypeResult);
+        }
+
+        var gameModeResult = gameModesMatched(activity);
+        results.add(gameModeResult);
+        if (debug) {
+            loggingService.debug("Game mode result: {0}", gameModeResult);
         }
 
         var materialsResult = materialsMatched(activity);
@@ -300,6 +317,30 @@ public class ActivityFilter {
 
         if (activity.action() instanceof BukkitEntityAction entityAction) {
             if (entityTypeTag.isTagged(entityAction.entityType())) {
+                return ConditionResult.MATCHED;
+            }
+
+            return ConditionResult.NOT_MATCHED;
+        } else {
+            return ConditionResult.NOT_APPLICABLE;
+        }
+    }
+
+    /**
+     * Check if any game modes match the activity action.
+     *
+     * <p>If none listed, the filter will match all. Ignores non-player actions.</p>
+     *
+     * @param activity The activity
+     * @return ConditionResult
+     */
+    private ConditionResult gameModesMatched(Activity activity) {
+        if (gameModes.isEmpty()) {
+            return ConditionResult.NOT_APPLICABLE;
+        }
+
+        if (activity instanceof BukkitActivity bukkitActivity && bukkitActivity.bukkitPlayer() != null) {
+            if (gameModes.contains(bukkitActivity.bukkitPlayer().getGameMode())) {
                 return ConditionResult.MATCHED;
             }
 

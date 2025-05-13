@@ -24,10 +24,12 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.scheduler.BukkitTask;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.services.recording.RecordingService;
 import org.prism_mc.prism.bukkit.PrismBukkit;
+import org.prism_mc.prism.bukkit.api.activities.BukkitActivity;
 import org.prism_mc.prism.bukkit.services.filters.BukkitFilterService;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 
@@ -96,6 +98,16 @@ public class BukkitRecordingService implements RecordingService {
     @Override
     public boolean addToQueue(final Activity activity) {
         if (activity == null) {
+            return false;
+        }
+
+        // Ignore players in creative if disabled globally
+        if (
+            configurationService.prismConfig().activities().ignoreCreative() &&
+            activity instanceof BukkitActivity bukkitActivity &&
+            bukkitActivity.bukkitPlayer() != null &&
+            bukkitActivity.bukkitPlayer().getGameMode().equals(GameMode.CREATIVE)
+        ) {
             return false;
         }
 

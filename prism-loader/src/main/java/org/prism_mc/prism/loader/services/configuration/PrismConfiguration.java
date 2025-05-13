@@ -45,6 +45,9 @@ public class PrismConfiguration {
     )
     private ActionsConfiguration actions = new ActionsConfiguration();
 
+    @Comment("Activities represent an action, location, cause, timestamp, etc.")
+    private ActivitiesConfiguration activities = new ActivitiesConfiguration();
+
     private AlertsConfiguration alerts = new AlertsConfiguration();
 
     @Comment(

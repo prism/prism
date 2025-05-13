@@ -139,8 +139,7 @@ public class ActionsConfiguration {
     @Comment(
         """
         inventory-open is when a player opens an inventory (chest, furnace, etc).
-        Item inserts or removes are tracked separately.
-        """
+        Item inserts or removes are tracked separately."""
     )
     private boolean inventoryOpen = false;
 

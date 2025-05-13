@@ -26,55 +26,10 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 
 @ConfigSerializable
 @Getter
-public class FilterConditionsConfiguration {
+public class FilterPlayerConditionsConfiguration {
 
     /**
-     * Actions.
+     * Game modes.
      */
-    private List<String> actions;
-
-    /**
-     * Block tags.
-     */
-    private List<String> blockTags;
-
-    /**
-     * Causes.
-     */
-    private List<String> causes;
-
-    /**
-     * Entity Types.
-     */
-    private List<String> entityTypes;
-
-    /**
-     * Entity Type Tags.
-     */
-    private List<String> entityTypesTags;
-
-    /**
-     * Item tags.
-     */
-    private List<String> itemTags;
-
-    /**
-     * Materials.
-     */
-    private List<String> materials;
-
-    /**
-     * Permissions.
-     */
-    private List<String> permissions;
-
-    /**
-     * Player conditions.
-     */
-    private FilterPlayerConditionsConfiguration player;
-
-    /**
-     * Worlds.
-     */
-    private List<String> worlds;
+    private List<String> gameModes;
 }

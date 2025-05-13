@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.EntityType;
@@ -208,6 +209,18 @@ public class BukkitFilterService implements FilterService {
             }
         }
 
+        // Game modes
+        List<GameMode> gameModes = new ArrayList<>();
+        for (var gameModeString : config.player().gameModes()) {
+            try {
+                gameModes.add(GameMode.valueOf(gameModeString.toUpperCase(Locale.ENGLISH)));
+
+                conditionExists = true;
+            } catch (IllegalArgumentException e) {
+                loggingService.warn("Filter error in {0}: Invalid game mode {1}", filterName, gameModeString);
+            }
+        }
+
         if (conditionExists) {
             var filter = new ActivityFilter(
                 filterName,
@@ -215,6 +228,7 @@ public class BukkitFilterService implements FilterService {
                 ListUtils.isNullOrEmpty(config.actions()) ? new ArrayList<>() : config.actions(),
                 ListUtils.isNullOrEmpty(config.causes()) ? new ArrayList<>() : config.causes(),
                 entityTypeTags,
+                gameModes,
                 materialTags,
                 ListUtils.isNullOrEmpty(config.permissions()) ? new ArrayList<>() : config.permissions(),
                 ListUtils.isNullOrEmpty(worldNames) ? new ArrayList<>() : worldNames
@@ -225,6 +239,8 @@ public class BukkitFilterService implements FilterService {
             } else {
                 ignoreFilters.add(filter);
             }
+
+            loggingService.info("Loaded filters. Allow: {0}, Ignore: {1}", allowFilters.size(), ignoreFilters.size());
         } else {
             loggingService.warn("Filter error in {0}: Not enough conditions", filterName);
         }

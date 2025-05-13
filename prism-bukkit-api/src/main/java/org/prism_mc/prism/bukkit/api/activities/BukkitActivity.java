@@ -20,14 +20,21 @@
 
 package org.prism_mc.prism.bukkit.api.activities;
 
+import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.prism_mc.prism.api.activities.Activity;
 
+@Getter
 @SuperBuilder
 public class BukkitActivity extends Activity {
+
+    /**
+     * The bukkit player.
+     */
+    private Player bukkitPlayer;
 
     /**
      * Get the location.
@@ -62,6 +69,7 @@ public class BukkitActivity extends Activity {
          */
         public B player(Player player) {
             this.player(player.getUniqueId(), player.getName());
+            this.bukkitPlayer(player);
             return self();
         }
     }
