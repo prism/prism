@@ -92,7 +92,7 @@ public abstract class ActionType {
      * @return The key
      */
     public String pastTenseTranslationKey() {
-        return "text.past-tense." + key;
+        return "prism.past-tense." + key;
     }
 
     /**

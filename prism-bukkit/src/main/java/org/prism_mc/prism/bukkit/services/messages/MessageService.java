@@ -161,11 +161,17 @@ public interface MessageService {
     @Message("prism.activity-row-grouped-no-descriptor")
     void listActivityRowGroupedNoDescriptor(CommandSender receiver, @Placeholder AbstractActivity activity);
 
-    @Message("prism.activity-row-single")
-    void listActivityRowSingle(CommandSender receiver, @Placeholder AbstractActivity activity);
+    @Message("prism.activity-row-grouped-no-quantity")
+    void listActivityRowGroupedNoQuantity(CommandSender receiver, @Placeholder AbstractActivity activity);
 
-    @Message("prism.activity-row-single-no-descriptor")
-    void listActivityRowSingleNoDescriptor(CommandSender receiver, @Placeholder AbstractActivity activity);
+    @Message("prism.activity-row-grouped-no-descriptor-no-quantity")
+    void listActivityRowGroupedNoDescriptorNoQuantity(CommandSender receiver, @Placeholder AbstractActivity activity);
+
+    @Message("prism.activity-row-ungrouped")
+    void listActivityRowUngrouped(CommandSender receiver, @Placeholder AbstractActivity activity);
+
+    @Message("prism.activity-row-ungrouped-no-descriptor")
+    void listActivityRowUngroupedNoDescriptor(CommandSender receiver, @Placeholder AbstractActivity activity);
 
     @Message("prism.modifications-applied")
     void modificationsApplied(CommandSender receiver, @Placeholder Integer count);

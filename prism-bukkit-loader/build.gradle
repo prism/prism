@@ -10,32 +10,7 @@ dependencies {
     compileOnly project.property('deps.paper-api')
 
     implementation(project.property('deps.triumph-gui')) {
-        exclude(group: "net.kyori")
-    }
-
-    // The gui lib needs adventure-platform-bukkit but it's not available in paper
-    implementation(project.property('deps.adventure-platform-bukkit')) {
-        transitive = false
-    }
-
-    // For adventure-platform-bukkit
-    implementation(project.property('deps.adventure-nbt')) {
-        transitive = false
-    }
-
-    // For adventure-platform-bukkit
-    implementation(project.property('deps.adventure-platform-facet')) {
-        transitive = false
-    }
-
-    // For adventure-platform-bukkit
-    implementation(project.property('deps.adventure-text-serializer-gson-legacy-impl')) {
-        transitive = false
-    }
-
-    // For adventure-platform-bukkit
-    implementation(project.property('deps.adventure-text-serializer-json-legacy-impl')) {
-        transitive = false
+        exclude(module: "adventure-api")
     }
 
     implementation project(':prism-loader')

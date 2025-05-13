@@ -31,12 +31,12 @@ import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.command.CommandSender;
 import org.prism_mc.prism.api.PaginatedResults;
 import org.prism_mc.prism.api.activities.AbstractActivity;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
+import org.prism_mc.prism.api.activities.GroupedActivity;
 import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.bukkit.providers.TaskChainProvider;
 import org.prism_mc.prism.bukkit.services.messages.MessageService;
@@ -226,17 +226,21 @@ public class LookupService {
             messageService.noResults(sender);
         } else {
             for (var activity : results.results()) {
-                if (query.grouped()) {
-                    if (activity.action().descriptor() != null) {
+                if (activity instanceof GroupedActivity groupedActivity) {
+                    if (activity.action().descriptor() != null && groupedActivity.count() > 1) {
                         messageService.listActivityRowGrouped(sender, activity);
+                    } else if (activity.action().descriptor() != null && groupedActivity.count() == 1) {
+                        messageService.listActivityRowGroupedNoQuantity(sender, activity);
+                    } else if (activity.action().descriptor() == null && groupedActivity.count() == 1) {
+                        messageService.listActivityRowGroupedNoDescriptorNoQuantity(sender, activity);
                     } else {
                         messageService.listActivityRowGroupedNoDescriptor(sender, activity);
                     }
                 } else {
                     if (activity.action().descriptor() != null) {
-                        messageService.listActivityRowSingle(sender, activity);
+                        messageService.listActivityRowUngrouped(sender, activity);
                     } else {
-                        messageService.listActivityRowSingleNoDescriptor(sender, activity);
+                        messageService.listActivityRowUngroupedNoDescriptor(sender, activity);
                     }
                 }
             }
