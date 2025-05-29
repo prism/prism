@@ -66,7 +66,8 @@ public class H2StorageAdapter extends AbstractSqlStorageAdapter {
             schemaUpdater,
             null,
             cacheService,
-            serializerVersion
+            serializerVersion,
+            dataPath
         );
         try {
             var configuredPath = configurationService.storageConfig().h2().path();
@@ -84,7 +85,7 @@ public class H2StorageAdapter extends AbstractSqlStorageAdapter {
                     SQLDialect.H2
                 )
             ) {
-                this.queryBuilder = queryBuilderFactory.create(create);
+                this.queryBuilder = queryBuilderFactory.create(dslContext);
 
                 prepareSchema();
 
@@ -97,7 +98,7 @@ public class H2StorageAdapter extends AbstractSqlStorageAdapter {
 
     @Override
     protected void prepareSchema() throws Exception {
-        create.createSchemaIfNotExists(configurationService.storageConfig().h2().database()).execute();
+        dslContext.createSchemaIfNotExists(configurationService.storageConfig().h2().database()).execute();
 
         super.prepareSchema();
     }

@@ -28,9 +28,12 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.Driver;
@@ -41,6 +44,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
+import java.util.Properties;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -134,6 +138,16 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
     public static PrismWorlds PRISM_WORLDS;
 
     /**
+     * The hikari config.
+     */
+    protected HikariConfig hikariConfig;
+
+    /**
+     * The hikari properties file.
+     */
+    protected File hikariPropertiesFile;
+
+    /**
      * The serializer version.
      */
     protected final short serializerVersion;
@@ -181,7 +195,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
     /**
      * The dsl context.
      */
-    protected DSLContext create;
+    protected DSLContext dslContext;
 
     /**
      * The aliased replaced blocks table.
@@ -208,6 +222,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
      * @param cacheService The cache service
      * @param queryBuilderFactory The query builder
      * @param serializerVersion The serializer version
+     * @param dataPath The data path
      */
     @Inject
     public AbstractSqlStorageAdapter(
@@ -217,7 +232,8 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
         SqlSchemaUpdater schemaUpdater,
         SqlActivityQueryBuilderFactory queryBuilderFactory,
         CacheService cacheService,
-        @Named("serializerVersion") short serializerVersion
+        @Named("serializerVersion") short serializerVersion,
+        Path dataPath
     ) {
         this.loggingService = loggingService;
         this.configurationService = configurationService;
@@ -226,6 +242,8 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
         this.cacheService = cacheService;
         this.queryBuilderFactory = queryBuilderFactory;
         this.serializerVersion = serializerVersion;
+
+        this.hikariPropertiesFile = new File(dataPath.toFile(), "hikari.properties");
 
         this.prefix = configurationService.storageConfig().primaryDataSource().prefix();
         loggingService.info(
@@ -280,19 +298,16 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
      * @param hikariConfig The hikari config
      */
     protected boolean connect(HikariConfig hikariConfig, SQLDialect sqlDialect) {
-        String url = hikariConfig.getDataSourceProperties().getProperty("url");
-        if (url == null) {
-            url = hikariConfig.getJdbcUrl();
-        }
+        this.hikariConfig = hikariConfig;
 
-        loggingService.info("Connecting to {0}", url);
+        loggingService.info("Connecting to {0}", hikariConfig.getJdbcUrl());
 
         try {
             dataSource = new HikariDataSource(hikariConfig);
+            dslContext = DSL.using(dataSource, sqlDialect);
 
-            create = DSL.using(dataSource, sqlDialect);
             if (queryBuilderFactory != null) {
-                this.queryBuilder = queryBuilderFactory.create(create);
+                this.queryBuilder = queryBuilderFactory.create(dslContext);
             }
 
             return true;
@@ -326,9 +341,11 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
     /**
      * Detect version and other information regarding the database.
      *
+     * @param hikariConfig The hikari config
+     * @param usingHikariProperties Whether using hikari properties
      * @throws SQLException The database exception
      */
-    protected void describeDatabase(boolean usingHikariProperties) throws SQLException {
+    protected void describeDatabase(HikariConfig hikariConfig, boolean usingHikariProperties) throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
 
@@ -346,7 +363,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
      */
     protected void prepareSchema() throws Exception {
         // Create the metadata table
-        create
+        dslContext
             .createTableIfNotExists(PRISM_META)
             .column(PRISM_META.META_ID)
             .column(PRISM_META.K)
@@ -356,7 +373,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .execute();
 
         // Query for an existing schema version
-        String schemaVersion = create
+        String schemaVersion = dslContext
             .select(PRISM_META.V)
             .from(PRISM_META)
             .where(PRISM_META.K.eq("schema_ver"))
@@ -368,11 +385,11 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             updateSchemas(schemaVersion);
         } else {
             // Insert the schema version
-            create.insertInto(PRISM_META, PRISM_META.K, PRISM_META.V).values("schema_ver", "400").execute();
+            dslContext.insertInto(PRISM_META, PRISM_META.K, PRISM_META.V).values("schema_ver", "400").execute();
         }
 
         // Create the players table
-        create
+        dslContext
             .createTableIfNotExists(PRISM_PLAYERS)
             .column(PRISM_PLAYERS.PLAYER_ID)
             .column(PRISM_PLAYERS.PLAYER)
@@ -382,7 +399,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .execute();
 
         // Create the blocks table
-        create
+        dslContext
             .createTableIfNotExists(PRISM_BLOCKS)
             .column(PRISM_BLOCKS.BLOCK_ID)
             .column(PRISM_BLOCKS.NS)
@@ -394,7 +411,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .execute();
 
         // Create the causes table
-        create
+        dslContext
             .createTableIfNotExists(PRISM_CAUSES)
             .column(PRISM_CAUSES.CAUSE_ID)
             .column(PRISM_CAUSES.CAUSE)
@@ -410,7 +427,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .execute();
 
         // Create the entity types table
-        create
+        dslContext
             .createTableIfNotExists(PRISM_ENTITY_TYPES)
             .column(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
             .column(PRISM_ENTITY_TYPES.ENTITY_TYPE)
@@ -419,7 +436,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .execute();
 
         // Create actions table
-        create
+        dslContext
             .createTableIfNotExists(PRISM_ACTIONS)
             .column(PRISM_ACTIONS.ACTION_ID)
             .column(PRISM_ACTIONS.ACTION)
@@ -428,7 +445,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .execute();
 
         // Create the item table
-        create
+        dslContext
             .createTableIfNotExists(PRISM_ITEMS)
             .column(PRISM_ITEMS.ITEM_ID)
             .column(PRISM_ITEMS.MATERIAL)
@@ -437,7 +454,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .execute();
 
         // Create the worlds table
-        create
+        dslContext
             .createTableIfNotExists(PRISM_WORLDS)
             .column(PRISM_WORLDS.WORLD_ID)
             .column(PRISM_WORLDS.WORLD)
@@ -447,7 +464,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .execute();
 
         // Create the activities table. This one's the fatso.
-        create
+        dslContext
             .createTableIfNotExists(PRISM_ACTIVITIES)
             .column(PRISM_ACTIVITIES.ACTIVITY_ID)
             .column(PRISM_ACTIVITIES.TIMESTAMP)
@@ -501,7 +518,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .execute();
 
         // Sqlite doesn't support creating indexes inline with create table and IF NOT EXISTS isn't a thing for indexes
-        var indexNames = create
+        var indexNames = dslContext
             .meta()
             .getIndexes()
             .stream()
@@ -509,21 +526,21 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .collect(Collectors.toCollection(ArrayList::new));
 
         if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_ACTIONID.getName())) {
-            create
+            dslContext
                 .createIndex(Indexes.PRISM_ACTIVITIES_ACTIONID)
                 .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.ACTION_ID)
                 .execute();
         }
 
         if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_CAUSEID.getName())) {
-            create
+            dslContext
                 .createIndex(Indexes.PRISM_ACTIVITIES_CAUSEID)
                 .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.CAUSE_ID)
                 .execute();
         }
 
         if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_COORDINATE.getName())) {
-            create
+            dslContext
                 .createIndex(Indexes.PRISM_ACTIVITIES_COORDINATE)
                 .on(
                     PRISM_ACTIVITIES,
@@ -536,35 +553,35 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
         }
 
         if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_ENTITYTYPEID.getName())) {
-            create
+            dslContext
                 .createIndex(Indexes.PRISM_ACTIVITIES_ENTITYTYPEID)
                 .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.ENTITY_TYPE_ID)
                 .execute();
         }
 
         if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_ITEMID.getName())) {
-            create
+            dslContext
                 .createIndex(Indexes.PRISM_ACTIVITIES_ITEMID)
                 .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.ITEM_ID)
                 .execute();
         }
 
         if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_BLOCKID.getName())) {
-            create
+            dslContext
                 .createIndex(Indexes.PRISM_ACTIVITIES_BLOCKID)
                 .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.BLOCK_ID)
                 .execute();
         }
 
         if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_REPLACEDBLOCKID.getName())) {
-            create
+            dslContext
                 .createIndex(Indexes.PRISM_ACTIVITIES_REPLACEDBLOCKID)
                 .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.BLOCK_ID)
                 .execute();
         }
 
         if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_WORLDID.getName())) {
-            create
+            dslContext
                 .createIndex(Indexes.PRISM_ACTIVITIES_WORLDID)
                 .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.WORLD_ID)
                 .execute();
@@ -578,7 +595,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
      */
     protected void prepareCache() {
         // Actions
-        List<PrismActionsRecord> actions = create
+        List<PrismActionsRecord> actions = dslContext
             .select(PRISM_ACTIONS.ACTION, PRISM_ACTIONS.ACTION_ID)
             .from(PRISM_ACTIONS)
             .fetchInto(PrismActionsRecord.class);
@@ -589,7 +606,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
         }
 
         // Entity Types
-        List<PrismEntityTypesRecord> entityTypes = create
+        List<PrismEntityTypesRecord> entityTypes = dslContext
             .select(PRISM_ENTITY_TYPES.ENTITY_TYPE, PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
             .from(PRISM_ENTITY_TYPES)
             .fetchInto(PrismEntityTypesRecord.class);
@@ -600,7 +617,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
         }
 
         // World
-        List<PrismWorldsRecord> worlds = create
+        List<PrismWorldsRecord> worlds = dslContext
             .select(PRISM_WORLDS.WORLD_UUID, PRISM_WORLDS.WORLD_ID)
             .from(PRISM_WORLDS)
             .fetchInto(PrismWorldsRecord.class);
@@ -869,7 +886,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
 
     @Override
     public ActivityBatch createActivityBatch() {
-        return new SqlActivityBatch(loggingService, create, serializerVersion, cacheService);
+        return new SqlActivityBatch(loggingService, dslContext, serializerVersion, cacheService);
     }
 
     @Override
@@ -888,7 +905,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             return;
         }
 
-        create
+        dslContext
             .update(PRISM_ACTIVITIES)
             .set(PRISM_ACTIVITIES.REVERSED, reversed)
             .where(PRISM_ACTIVITIES.ACTIVITY_ID.in(activityIds))
@@ -905,6 +922,46 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
     @Override
     public boolean ready() {
         return ready;
+    }
+
+    @Override
+    public void writeHikariPropertiesFile() throws IOException {
+        Properties props = new Properties();
+
+        if (hikariConfig.getDataSourceClassName() != null) {
+            props.setProperty("dataSourceClassName", hikariConfig.getDataSourceClassName());
+        }
+
+        if (hikariConfig.getDriverClassName() != null) {
+            props.setProperty("driverClassName", hikariConfig.getDriverClassName());
+        }
+
+        if (hikariConfig.getJdbcUrl() != null) {
+            props.setProperty("jdbcUrl", hikariConfig.getJdbcUrl());
+        }
+
+        if (hikariConfig.getUsername() != null) {
+            props.setProperty("username", hikariConfig.getUsername());
+        }
+
+        if (hikariConfig.getPassword() != null) {
+            props.setProperty("password", hikariConfig.getPassword());
+        }
+
+        if (hikariConfig.getTransactionIsolation() != null) {
+            props.setProperty("transactionIsolation", hikariConfig.getTransactionIsolation());
+        }
+
+        props.setProperty("maximumPoolSize", String.valueOf(hikariConfig.getMaximumPoolSize()));
+        props.setProperty("poolName", hikariConfig.getPoolName());
+
+        for (var entry : hikariConfig.getDataSourceProperties().entrySet()) {
+            props.setProperty("dataSource." + entry.getKey().toString(), entry.getValue().toString());
+        }
+
+        try (FileOutputStream output = new FileOutputStream(hikariPropertiesFile)) {
+            props.store(output, "HikariCP Database Configuration");
+        }
     }
 
     /**

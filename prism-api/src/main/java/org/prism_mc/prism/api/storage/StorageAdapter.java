@@ -20,6 +20,7 @@
 
 package org.prism_mc.prism.api.storage;
 
+import java.io.IOException;
 import java.util.List;
 import org.prism_mc.prism.api.PaginatedResults;
 import org.prism_mc.prism.api.activities.AbstractActivity;
@@ -90,4 +91,11 @@ public interface StorageAdapter {
      * @return True if successfully initialized.
      */
     boolean ready();
+
+    /**
+     * Write the Hikari properties prism uses by default to file.
+     *
+     * @throws IOException File write exception
+     */
+    void writeHikariPropertiesFile() throws IOException;
 }

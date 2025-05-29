@@ -155,6 +155,9 @@ public interface MessageService {
     @Message("prism.error.world-edit-missing-selection")
     void errorWorldEditMissingSelection(CommandSender receiver);
 
+    @Message("prism.error.write-hikari")
+    void errorWriteHikari(CommandSender receiver);
+
     @Message("prism.activity-row-grouped")
     void listActivityRowGrouped(CommandSender receiver, @Placeholder AbstractActivity activity);
 
@@ -172,6 +175,9 @@ public interface MessageService {
 
     @Message("prism.activity-row-ungrouped-no-descriptor")
     void listActivityRowUngroupedNoDescriptor(CommandSender receiver, @Placeholder AbstractActivity activity);
+
+    @Message("prism.hikari-file-written")
+    void hikariFileWritten(CommandSender receiver);
 
     @Message("prism.modifications-applied")
     void modificationsApplied(CommandSender receiver, @Placeholder Integer count);

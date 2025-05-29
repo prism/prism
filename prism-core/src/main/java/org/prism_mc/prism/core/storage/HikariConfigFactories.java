@@ -22,6 +22,9 @@ package org.prism_mc.prism.core.storage;
 
 import com.zaxxer.hikari.HikariConfig;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Properties;
 import lombok.experimental.UtilityClass;
 import org.prism_mc.prism.loader.services.configuration.storage.SqlDataSourceConfiguration;
 import org.prism_mc.prism.loader.services.configuration.storage.StorageConfiguration;
@@ -39,23 +42,14 @@ public class HikariConfigFactories {
     public static HikariConfig h2(StorageConfiguration storageConfiguration, File h2File) {
         HikariConfig hikariConfig = createSharedConfig(storageConfiguration);
 
-        String jdbcUrl =
+        hikariConfig.setJdbcUrl(
             "jdbc:" +
             (storageConfiguration.spy() ? "p6spy:" : "") +
             "h2:file:" +
             h2File.getAbsolutePath() +
             ";MODE=mysql;" +
-            "DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;";
-
-        if (storageConfiguration.spy()) {
-            hikariConfig.setDriverClassName("com.p6spy.engine.spy.P6SpyDriver");
-            hikariConfig.setJdbcUrl(jdbcUrl);
-        } else {
-            tryDataSourceClassNames(hikariConfig, "org.h2.jdbcx.JdbcDataSource");
-            tryDriverClassNames("org.h2.Driver");
-        }
-
-        hikariConfig.addDataSourceProperty("url", jdbcUrl);
+            "DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;"
+        );
 
         return hikariConfig;
     }
@@ -93,17 +87,9 @@ public class HikariConfigFactories {
 
         loadDriver(StorageType.MARIADB);
 
-        String jdbcUrl = "jdbc:" + (useSpy ? "p6spy:" : "") + String.format("mariadb://%s:%s/%s", host, port, database);
-
-        if (storageConfiguration.spy()) {
-            hikariConfig.setDriverClassName("com.p6spy.engine.spy.P6SpyDriver");
-            hikariConfig.setJdbcUrl(jdbcUrl);
-        } else {
-            tryDataSourceClassNames(hikariConfig, "org.mariadb.jdbc.MariaDbDataSource");
-        }
-
-        hikariConfig.addDataSourceProperty("url", jdbcUrl);
-
+        hikariConfig.setJdbcUrl(
+            "jdbc:" + (useSpy ? "p6spy:" : "") + String.format("mariadb://%s:%s/%s", host, port, database)
+        );
         hikariConfig.setTransactionIsolation("TRANSACTION_READ_COMMITTED");
 
         return hikariConfig;
@@ -123,16 +109,9 @@ public class HikariConfigFactories {
         String database = storageConfiguration.mysql().database();
         boolean useSpy = storageConfiguration.spy();
 
-        String jdbcUrl = "jdbc:" + (useSpy ? "p6spy:" : "") + String.format("mysql://%s:%s/%s", host, port, database);
-
-        if (storageConfiguration.spy()) {
-            hikariConfig.setDriverClassName("com.p6spy.engine.spy.P6SpyDriver");
-            hikariConfig.setJdbcUrl(jdbcUrl);
-        } else {
-            tryDataSourceClassNames(hikariConfig, "com.mysql.cj.jdbc.MysqlDataSource");
-        }
-
-        hikariConfig.addDataSourceProperty("url", jdbcUrl);
+        hikariConfig.setJdbcUrl(
+            "jdbc:" + (useSpy ? "p6spy:" : "") + String.format("mysql://%s:%s/%s", host, port, database)
+        );
 
         if (storageConfiguration.mysql().useHikariOptimizations()) {
             hikariConfig.addDataSourceProperty("cachePrepStmts", true);
@@ -166,17 +145,9 @@ public class HikariConfigFactories {
         String database = storageConfiguration.postgres().database();
         boolean useSpy = storageConfiguration.spy();
 
-        String jdbcUrl =
-            "jdbc:" + (useSpy ? "p6spy:" : "") + String.format("postgresql://%s:%s/%s", host, port, database);
-
-        if (storageConfiguration.spy()) {
-            hikariConfig.setDriverClassName("com.p6spy.engine.spy.P6SpyDriver");
-            hikariConfig.setJdbcUrl(jdbcUrl);
-        } else {
-            tryDataSourceClassNames(hikariConfig, "org.postgresql.ds.PGSimpleDataSource");
-        }
-
-        hikariConfig.addDataSourceProperty("url", jdbcUrl);
+        hikariConfig.setJdbcUrl(
+            "jdbc:" + (useSpy ? "p6spy:" : "") + String.format("postgresql://%s:%s/%s", host, port, database)
+        );
 
         return hikariConfig;
     }
@@ -189,19 +160,9 @@ public class HikariConfigFactories {
      */
     public static HikariConfig sqlite(StorageConfiguration storageConfiguration, File sqliteFile) {
         HikariConfig hikariConfig = createSharedConfig(storageConfiguration);
-
-        String jdbcUrl =
-            "jdbc:" + (storageConfiguration.spy() ? "p6spy:" : "") + "sqlite:file:" + sqliteFile.getAbsolutePath();
-
-        if (storageConfiguration.spy()) {
-            hikariConfig.setDriverClassName("com.p6spy.engine.spy.P6SpyDriver");
-            hikariConfig.setJdbcUrl(jdbcUrl);
-        } else {
-            tryDataSourceClassNames(hikariConfig, "org.sqlite.SQLiteDataSource");
-            tryDriverClassNames("org.sqlite.JDBC");
-        }
-
-        hikariConfig.addDataSourceProperty("url", jdbcUrl);
+        hikariConfig.setJdbcUrl(
+            "jdbc:" + (storageConfiguration.spy() ? "p6spy:" : "") + "sqlite:file:" + sqliteFile.getAbsolutePath()
+        );
 
         return hikariConfig;
     }
@@ -218,71 +179,33 @@ public class HikariConfigFactories {
 
         if (storageConfiguration.primaryDataSource() instanceof SqlDataSourceConfiguration sqlConfig) {
             if (sqlConfig.username() != null) {
-                hikariConfig.addDataSourceProperty("user", sqlConfig.username());
+                hikariConfig.setUsername(sqlConfig.username());
             }
 
             if (sqlConfig.password() != null) {
-                hikariConfig.addDataSourceProperty("password", sqlConfig.password());
+                hikariConfig.setPassword(sqlConfig.password());
             }
         }
 
-        hikariConfig.setConnectionTestQuery("SELECT 1");
-        hikariConfig.setMinimumIdle(3);
-        hikariConfig.setMaximumPoolSize(5);
+        if (storageConfiguration.spy()) {
+            hikariConfig.setDriverClassName("com.p6spy.engine.spy.P6SpyDriver");
+        }
 
         return hikariConfig;
     }
 
     /**
-     * Try to find an available data source class name.
-     *
-     * @param hikariConfig The hikari config
-     * @param dataSourceClassNames The class names to try
-     */
-    private static void tryDataSourceClassNames(HikariConfig hikariConfig, String... dataSourceClassNames) {
-        for (String dataSourceClassName : dataSourceClassNames) {
-            try {
-                Class.forName(dataSourceClassName);
-
-                hikariConfig.setDataSourceClassName(dataSourceClassName);
-
-                break;
-            } catch (ClassNotFoundException e) {
-                // ignored
-            }
-        }
-    }
-
-    /**
-     * Try to find an available driver class name.
-     *
-     * @param hikariConfig The hikari config
-     * @param driverClassNames The class names to try
-     */
-    private static void tryDriverClassNames(HikariConfig hikariConfig, String... driverClassNames) {
-        String driverClassName = tryDriverClassNames(driverClassNames);
-        if (driverClassName != null) {
-            hikariConfig.setDriverClassName(driverClassName);
-        }
-    }
-
-    /**
      * Try to find an available driver class name.
      *
      * @param driverClassNames The class names to try
-     * @return A found classname
      */
-    private static String tryDriverClassNames(String... driverClassNames) {
+    private static void tryDriverClassNames(String... driverClassNames) {
         for (String driverClassName : driverClassNames) {
             try {
                 Class.forName(driverClassName).getDeclaredConstructor().newInstance();
-
-                return driverClassName;
             } catch (Exception e) {
                 // ignore
             }
         }
-
-        return null;
     }
 }

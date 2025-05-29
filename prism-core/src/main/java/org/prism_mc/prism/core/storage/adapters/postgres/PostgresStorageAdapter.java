@@ -24,7 +24,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.zaxxer.hikari.HikariConfig;
-import java.io.File;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -80,35 +79,31 @@ public class PostgresStorageAdapter extends AbstractSqlStorageAdapter {
             schemaUpdater,
             queryBuilderFactory,
             cacheService,
-            serializerVersion
+            serializerVersion,
+            dataPath
         );
         try {
             prefix = configurationService.storageConfig().postgres().prefix();
 
-            // First, try to use any hikari.properties
-            File hikariPropertiesFile = new File(dataPath.toFile(), "hikari.properties");
+            var hikariConfig = HikariConfigFactories.postgres(configurationService.storageConfig());
+            var usingHikariProperties = false;
+
             if (hikariPropertiesFile.exists()) {
-                loggingService.info("Using hikari.properties over storage.conf");
+                loggingService.info("Using hikari.properties");
 
-                if (connect(new HikariConfig(hikariPropertiesFile.getPath()), SQLDialect.POSTGRES)) {
-                    describeDatabase(true);
-                    prepareSchema();
+                hikariConfig = new HikariConfig(hikariPropertiesFile.getPath());
+                usingHikariProperties = true;
+            }
+
+            if (connect(hikariConfig, SQLDialect.POSTGRES)) {
+                describeDatabase(hikariConfig, usingHikariProperties);
+                prepareSchema();
+
+                if (!configurationService.storageConfig().postgres().useStoredProcedures()) {
                     prepareCache();
-
-                    ready = true;
                 }
-            } else {
-                loggingService.info("Reading storage.conf. There is no hikari.properties file.");
 
-                if (
-                    connect(HikariConfigFactories.postgres(configurationService.storageConfig()), SQLDialect.POSTGRES)
-                ) {
-                    describeDatabase(false);
-                    prepareSchema();
-                    prepareCache();
-
-                    ready = true;
-                }
+                ready = true;
             }
         } catch (Exception e) {
             loggingService.handleException(e);
@@ -116,7 +111,7 @@ public class PostgresStorageAdapter extends AbstractSqlStorageAdapter {
     }
 
     @Override
-    protected void describeDatabase(boolean usingHikariProperties) throws SQLException {
+    protected void describeDatabase(HikariConfig hikariConfig, boolean usingHikariProperties) throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
 
@@ -124,13 +119,18 @@ public class PostgresStorageAdapter extends AbstractSqlStorageAdapter {
             String databaseVersion = databaseMetaData.getDatabaseProductVersion();
 
             loggingService.info("Database: {0} {1}", databaseProduct, databaseVersion);
+            loggingService.info(
+                "JDBC Version: {0}.{1}",
+                databaseMetaData.getJDBCMajorVersion(),
+                databaseMetaData.getJDBCMinorVersion()
+            );
 
             var usingStoredProcedures = false;
             if (configurationService.storageConfig().postgres().useStoredProcedures()) {
                 boolean supportsProcedures = databaseMetaData.supportsStoredProcedures();
                 loggingService.info("supports procedures: {0}", supportsProcedures);
 
-                var canCreateFunctions = create
+                var canCreateFunctions = dslContext
                     .fetchSingle("SELECT bool_or(has_schema_privilege(oid, 'CREATE')) FROM pg_catalog.pg_namespace;")
                     .into(Boolean.class);
                 loggingService.info("can create functions: {0}", canCreateFunctions);
@@ -151,7 +151,7 @@ public class PostgresStorageAdapter extends AbstractSqlStorageAdapter {
 
     @Override
     protected void prepareSchema() throws Exception {
-        create.setSchema(configurationService.storageConfig().postgres().schema()).execute();
+        dslContext.setSchema(configurationService.storageConfig().postgres().schema()).execute();
 
         super.prepareSchema();
 

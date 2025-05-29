@@ -66,7 +66,8 @@ public class SqliteStorageAdapter extends AbstractSqlStorageAdapter {
             schemaUpdater,
             null,
             cacheService,
-            serializerVersion
+            serializerVersion,
+            dataPath
         );
         try {
             var configuredPath = configurationService.storageConfig().sqlite().path();
@@ -84,7 +85,7 @@ public class SqliteStorageAdapter extends AbstractSqlStorageAdapter {
                     SQLDialect.SQLITE
                 )
             ) {
-                this.queryBuilder = queryBuilderFactory.create(create);
+                this.queryBuilder = queryBuilderFactory.create(dslContext);
 
                 prepareSchema();
 

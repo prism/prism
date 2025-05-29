@@ -47,7 +47,7 @@ public class ReportCommand {
     private final ModificationQueueService modificationQueueService;
 
     /**
-     * Construct the about command.
+     * Construct the command.
      *
      * @param messageService The message service
      * @param modificationQueueService The modification queue service

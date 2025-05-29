@@ -24,7 +24,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.zaxxer.hikari.HikariConfig;
-import java.io.File;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -128,39 +127,31 @@ public class MysqlStorageAdapter extends AbstractSqlStorageAdapter {
             schemaUpdater,
             queryBuilderFactory,
             cacheService,
-            serializerVersion
+            serializerVersion,
+            dataPath
         );
         this.dataSourceConfiguration = dataSourceConfiguration;
 
+        var hikariConfig = factory.create(configurationService.storageConfig());
+        var usingHikariProperties = false;
+
         try {
-            // First, try to use any hikari.properties
-            File hikariPropertiesFile = new File(dataPath.toFile(), "hikari.properties");
             if (hikariPropertiesFile.exists()) {
-                loggingService.info("Using hikari.properties over storage.conf");
+                loggingService.info("Using hikari.properties");
 
-                if (connect(new HikariConfig(hikariPropertiesFile.getPath()), dialect)) {
-                    describeDatabase(true);
-                    prepareSchema();
+                hikariConfig = new HikariConfig(hikariPropertiesFile.getPath());
+                usingHikariProperties = true;
+            }
 
-                    if (!dataSourceConfiguration.useStoredProcedures()) {
-                        prepareCache();
-                    }
+            if (connect(hikariConfig, dialect)) {
+                describeDatabase(hikariConfig, usingHikariProperties);
+                prepareSchema();
 
-                    ready = true;
+                if (!dataSourceConfiguration.useStoredProcedures()) {
+                    prepareCache();
                 }
-            } else {
-                loggingService.info("Reading storage.conf. There is no hikari.properties file.");
 
-                if (connect(factory.create(configurationService.storageConfig()), dialect)) {
-                    describeDatabase(false);
-                    prepareSchema();
-
-                    if (!dataSourceConfiguration.useStoredProcedures()) {
-                        prepareCache();
-                    }
-
-                    ready = true;
-                }
+                ready = true;
             }
         } catch (Exception e) {
             loggingService.handleException(e);
@@ -168,7 +159,7 @@ public class MysqlStorageAdapter extends AbstractSqlStorageAdapter {
     }
 
     @Override
-    protected void describeDatabase(boolean usingHikariProperties) throws SQLException {
+    protected void describeDatabase(HikariConfig hikariConfig, boolean usingHikariProperties) throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
 
@@ -176,6 +167,11 @@ public class MysqlStorageAdapter extends AbstractSqlStorageAdapter {
             String databaseVersion = databaseMetaData.getDatabaseProductVersion();
 
             loggingService.info("Database: {0} {1}", databaseProduct, databaseVersion);
+            loggingService.info(
+                "JDBC Version: {0}.{1}",
+                databaseMetaData.getJDBCMajorVersion(),
+                databaseMetaData.getJDBCMinorVersion()
+            );
 
             versionCheck(databaseMetaData);
 
@@ -184,7 +180,7 @@ public class MysqlStorageAdapter extends AbstractSqlStorageAdapter {
                 boolean supportsProcedures = databaseMetaData.supportsStoredProcedures();
                 loggingService.info("supports procedures: {0}", supportsProcedures);
 
-                List<String> grants = create.fetch("SHOW GRANTS FOR CURRENT_USER();").into(String.class);
+                List<String> grants = dslContext.fetch("SHOW GRANTS FOR CURRENT_USER();").into(String.class);
                 boolean canCreateRoutines = false;
 
                 for (var grant : grants) {
@@ -210,18 +206,33 @@ public class MysqlStorageAdapter extends AbstractSqlStorageAdapter {
 
             loggingService.info("using stored procedures: {0}", usingStoredProcedures);
 
-            Map<String, String> dbVars = create
+            Map<String, String> dbVars = dslContext
                 .fetch("SHOW VARIABLES")
                 .intoMap(r -> r.get(0, String.class), r -> r.get(1, String.class));
 
             long innodbSizeMb = Long.parseLong(dbVars.get("innodb_buffer_pool_size")) / 1024 / 1024;
             loggingService.info("innodb_buffer_pool_size: {0}MB", innodbSizeMb);
             if (innodbSizeMb < 1024) {
-                loggingService.info("We recommend setting a higher innodb_buffer_pool_size.");
+                loggingService.info(
+                    "If you encounter row lock issues for very large databases, you should consider increasing innodb_buffer_pool_size."
+                );
                 loggingService.info("See: https://docs.prism-mc.org/features/purges/#purges-and-databases");
             }
 
             loggingService.info("sql_mode: {0}", dbVars.get("sql_mode"));
+
+            var waitTimeout = Long.parseLong(dbVars.get("wait_timeout"));
+            if (hikariConfig.getMaxLifetime() / 1000 >= waitTimeout) {
+                loggingService.info(
+                    "Your database server timeout of {0} seconds is shorter than Prism connection timeouts of {1} milliseconds.",
+                    waitTimeout,
+                    hikariConfig.getMaxLifetime()
+                );
+                loggingService.info(
+                    "You MUST set the maxLifetime setting to a value at least several seconds less than {0} milliseconds.",
+                    hikariConfig.getMaxLifetime()
+                );
+            }
 
             if (!usingHikariProperties) {
                 boolean usrHikariOptimizations = dataSourceConfiguration.useHikariOptimizations();
