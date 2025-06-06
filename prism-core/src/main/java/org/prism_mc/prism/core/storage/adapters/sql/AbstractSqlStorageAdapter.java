@@ -290,7 +290,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
         try {
             dataSource = new HikariDataSource(hikariConfig);
 
-            create = DSL.using(dataSource.getConnection(), sqlDialect);
+            create = DSL.using(dataSource, sqlDialect);
             if (queryBuilderFactory != null) {
                 this.queryBuilder = queryBuilderFactory.create(create);
             }
