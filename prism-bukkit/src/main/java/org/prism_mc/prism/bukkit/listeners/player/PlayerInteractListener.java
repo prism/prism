@@ -50,6 +50,7 @@ import org.prism_mc.prism.bukkit.listeners.AbstractListener;
 import org.prism_mc.prism.bukkit.services.expectations.ExpectationService;
 import org.prism_mc.prism.bukkit.services.recording.BukkitRecordingService;
 import org.prism_mc.prism.bukkit.services.wands.WandService;
+import org.prism_mc.prism.bukkit.utils.ItemUtils;
 import org.prism_mc.prism.bukkit.utils.TagLib;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 
@@ -211,9 +212,8 @@ public class PlayerInteractListener extends AbstractListener implements Listener
      * @param player The player
      */
     private void recordJukeboxActivity(Jukebox jukebox, Location location, Player player) {
-        final Action action;
+        Action action = null;
         if (jukebox.isPlaying()) {
-            // Ignore if this event is disabled
             if (!configurationService.prismConfig().actions().itemRemove()) {
                 return;
             }
@@ -222,8 +222,7 @@ public class PlayerInteractListener extends AbstractListener implements Listener
                 BukkitActionTypeRegistry.ITEM_REMOVE,
                 new ItemStack(jukebox.getPlaying())
             );
-        } else {
-            // Ignore if this event is disabled
+        } else if (!ItemUtils.nullOrAir((player.getInventory().getItemInMainHand()))) {
             if (!configurationService.prismConfig().actions().itemInsert()) {
                 return;
             }
@@ -234,8 +233,8 @@ public class PlayerInteractListener extends AbstractListener implements Listener
             );
         }
 
-        var activity = BukkitActivity.builder().action(action).player(player).location(location).build();
-
-        recordingService.addToQueue(activity);
+        if (action != null) {
+            recordingService.addToQueue(BukkitActivity.builder().action(action).player(player).location(location).build());
+        }
     }
 }
