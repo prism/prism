@@ -234,7 +234,9 @@ public class PlayerInteractListener extends AbstractListener implements Listener
         }
 
         if (action != null) {
-            recordingService.addToQueue(BukkitActivity.builder().action(action).player(player).location(location).build());
+            recordingService.addToQueue(
+                BukkitActivity.builder().action(action).player(player).location(location).build()
+            );
         }
     }
 }
