@@ -30,6 +30,8 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.ChiseledBookshelf;
 import org.bukkit.block.Jukebox;
+import org.bukkit.block.Lectern;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
@@ -50,6 +52,7 @@ import org.prism_mc.prism.bukkit.listeners.AbstractListener;
 import org.prism_mc.prism.bukkit.services.expectations.ExpectationService;
 import org.prism_mc.prism.bukkit.services.recording.BukkitRecordingService;
 import org.prism_mc.prism.bukkit.services.wands.WandService;
+import org.prism_mc.prism.bukkit.utils.ItemUtils;
 import org.prism_mc.prism.bukkit.utils.TagLib;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 
@@ -170,6 +173,16 @@ public class PlayerInteractListener extends AbstractListener implements Listener
             }
         } else if (blockState instanceof Jukebox jukebox) {
             recordJukeboxActivity(jukebox, location, player);
+        } else if (blockState instanceof Lectern lectern) {
+            var lecternItem = lectern.getInventory().getItem(0);
+
+            if (!ItemUtils.nullOrAir(heldItem) && ItemUtils.nullOrAir(lecternItem)) {
+                var action = new BukkitItemStackAction(BukkitActionTypeRegistry.ITEM_INSERT, heldItem);
+
+                var activity = BukkitActivity.builder().action(action).player(player).location(location).build();
+
+                recordingService.addToQueue(activity);
+            }
         } else if (blockState instanceof InventoryHolder inventoryHolder) {
             // Ignore if this event is disabled
             if (!configurationService.prismConfig().actions().inventoryOpen()) {

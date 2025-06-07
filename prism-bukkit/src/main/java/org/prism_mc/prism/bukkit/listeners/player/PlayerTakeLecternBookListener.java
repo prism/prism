@@ -59,11 +59,16 @@ public class PlayerTakeLecternBookListener extends AbstractListener implements L
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerTakeLecternBook(final PlayerTakeLecternBookEvent event) {
         // Ignore if this event is disabled
-        if (!configurationService.prismConfig().actions().entityLeash()) {
+        if (!configurationService.prismConfig().actions().itemRemove()) {
             return;
         }
 
-        var action = new BukkitItemStackAction(BukkitActionTypeRegistry.ITEM_REMOVE, event.getBook());
+        if (event.getBook() == null) {
+            return;
+        }
+
+        // Clone the book because by the time it's recorded it'll be air
+        var action = new BukkitItemStackAction(BukkitActionTypeRegistry.ITEM_REMOVE, event.getBook().clone());
 
         var activity = BukkitActivity.builder()
             .action(action)
