@@ -20,9 +20,10 @@
 
 package org.prism_mc.prism.bukkit.listeners.sign;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.block.sign.Side;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -36,8 +37,19 @@ import org.prism_mc.prism.bukkit.listeners.AbstractListener;
 import org.prism_mc.prism.bukkit.services.expectations.ExpectationService;
 import org.prism_mc.prism.bukkit.services.recording.BukkitRecordingService;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
+import org.prism_mc.prism.loader.services.logging.LoggingService;
 
 public class SignChangeListener extends AbstractListener implements Listener {
+
+    /**
+     * The logging service.
+     */
+    private final LoggingService loggingService;
+
+    /**
+     * The object mapper
+     */
+    final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * Construct the listener.
@@ -45,14 +57,17 @@ public class SignChangeListener extends AbstractListener implements Listener {
      * @param configurationService The configuration service
      * @param expectationService The expectation service
      * @param recordingService The recording service
+     * @param loggingService The logging service
      */
     @Inject
     public SignChangeListener(
         ConfigurationService configurationService,
         ExpectationService expectationService,
-        BukkitRecordingService recordingService
+        BukkitRecordingService recordingService,
+        LoggingService loggingService
     ) {
         super(configurationService, expectationService, recordingService);
+        this.loggingService = loggingService;
     }
 
     /**
@@ -67,40 +82,29 @@ public class SignChangeListener extends AbstractListener implements Listener {
             return;
         }
 
-        final Player player = event.getPlayer();
+        try {
+            var lines = objectMapper.writeValueAsString(
+                event.lines().stream().map(line -> PlainTextComponentSerializer.plainText().serialize(line)).toArray()
+            );
 
-        var action = new BukkitBlockAction(BukkitActionTypeRegistry.SIGN_EDIT, event.getBlock().getState(), null);
+            final Player player = event.getPlayer();
 
-        // Because the block state doesn't have the new lines from a sign change event,
-        // we need to fake it by merging in the text so it gets recorded.
-        if (event.getSide().equals(Side.FRONT)) {
-            action.mergeCompound(String.format("{front_text:{messages:[%s]}}", linesToNbtMessages(event.getLines())));
-        } else {
-            action.mergeCompound(String.format("{back_text:{messages:[%s]}}", linesToNbtMessages(event.getLines())));
+            var action = new BukkitBlockAction(BukkitActionTypeRegistry.SIGN_EDIT, event.getBlock().getState(), null);
+            var side = event.getSide().equals(Side.FRONT) ? "front_text" : "back_text";
+
+            // Because the block state doesn't have the new lines from a sign change event,
+            // we need to fake it by merging in the text so it gets recorded.
+            action.mergeCompound(String.format("{%s:{messages:[%s]}}", side, lines));
+
+            var activity = BukkitActivity.builder()
+                .action(action)
+                .location(event.getBlock().getLocation())
+                .player(player)
+                .build();
+
+            recordingService.addToQueue(activity);
+        } catch (JsonProcessingException e) {
+            loggingService.handleException(e);
         }
-
-        var activity = BukkitActivity.builder()
-            .action(action)
-            .location(event.getBlock().getLocation())
-            .player(player)
-            .build();
-
-        recordingService.addToQueue(activity);
-    }
-
-    /**
-     * Convert the lines array to a nbt messages format.
-     *
-     * @param lines The lines
-     * @return Nbt messages string
-     */
-    protected String linesToNbtMessages(String[] lines) {
-        List<String> messages = new ArrayList<>();
-
-        for (String line : lines) {
-            messages.add(String.format("'\"%s\"'", line));
-        }
-
-        return String.join(",", messages);
     }
 }
