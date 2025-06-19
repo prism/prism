@@ -29,7 +29,6 @@ import dev.triumphteam.cmd.core.argument.keyed.Flag;
 import dev.triumphteam.cmd.core.argument.keyed.FlagKey;
 import dev.triumphteam.cmd.core.extension.CommandOptions;
 import dev.triumphteam.cmd.core.suggestion.SuggestionKey;
-import dev.triumphteam.cmd.core.suggestion.SuggestionResolver;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -48,7 +47,6 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.NotNull;
 import org.prism_mc.prism.api.Prism;
 import org.prism_mc.prism.api.actions.types.ActionTypeRegistry;
 import org.prism_mc.prism.api.services.recording.RecordingService;
@@ -131,6 +129,7 @@ import org.prism_mc.prism.bukkit.listeners.vehicle.VehicleEnterListener;
 import org.prism_mc.prism.bukkit.listeners.vehicle.VehicleExitListener;
 import org.prism_mc.prism.bukkit.providers.InjectorProvider;
 import org.prism_mc.prism.bukkit.services.messages.MessageService;
+import org.prism_mc.prism.bukkit.services.purge.PurgeService;
 import org.prism_mc.prism.bukkit.services.recording.BukkitRecordingService;
 import org.prism_mc.prism.bukkit.services.scheduling.SchedulingService;
 import org.prism_mc.prism.bukkit.utils.VersionUtils;
@@ -158,6 +157,11 @@ public class PrismBukkit implements Prism {
      */
     @Getter
     private InjectorProvider injectorProvider;
+
+    /**
+     * The purge service.
+     */
+    private PurgeService purgeService;
 
     /**
      * The recording service.
@@ -249,6 +253,7 @@ public class PrismBukkit implements Prism {
         if (loaderPlugin().isEnabled()) {
             // Initialize some classes
             recordingService = injectorProvider.injector().getInstance(BukkitRecordingService.class);
+            purgeService = injectorProvider.injector().getInstance(PurgeService.class);
             injectorProvider.injector().getInstance(SchedulingService.class);
 
             // Register event listeners
@@ -595,6 +600,10 @@ public class PrismBukkit implements Prism {
             }
 
             recordingService.stop();
+        }
+
+        if (purgeService != null && !purgeService.queueFree()) {
+            purgeService.stop();
         }
 
         if (storageAdapter != null) {

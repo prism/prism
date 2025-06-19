@@ -20,6 +20,7 @@
 
 package org.prism_mc.prism.bukkit.services.purge;
 
+import co.aikar.taskchain.TaskChain;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import java.util.Collections;
@@ -49,6 +50,11 @@ public class BukkitPurgeQueue implements PurgeQueue {
      * The logging service.
      */
     private final LoggingService loggingService;
+
+    /**
+     * The current task chain.
+     */
+    private TaskChain<?> taskChain;
 
     /**
      * The task chain provider.
@@ -122,7 +128,7 @@ public class BukkitPurgeQueue implements PurgeQueue {
     public void start() {
         running = true;
 
-        taskChainProvider
+        taskChain = taskChainProvider
             .newChain()
             .asyncFirst(() -> {
                 Pair<Integer, Integer> keys = storageAdapter.getActivitiesPkBounds(purgeQueue.getFirst());
@@ -131,8 +137,15 @@ public class BukkitPurgeQueue implements PurgeQueue {
 
                 return keys;
             })
-            .syncLast(keys -> executeNext(keys.key(), keys.value()))
-            .execute();
+            .syncLast(keys -> executeNext(keys.key(), keys.value()));
+
+        taskChain.execute();
+    }
+
+    @Override
+    public void stop() {
+        running = false;
+        taskChain = null;
     }
 
     /**
@@ -142,14 +155,18 @@ public class BukkitPurgeQueue implements PurgeQueue {
      * @param maxPrimaryKey The absolute upper bound primary key
      */
     protected void executeNext(int cycleMinPrimaryKey, int maxPrimaryKey) {
+        if (!running) {
+            return;
+        }
+
         if (purgeQueue.isEmpty()) {
-            if (running) {
-                running = false;
+            running = false;
 
-                loggingService.info("Purge queue now empty, finishing.");
+            loggingService.info("Purge queue now empty, finishing.");
 
-                onEnd.accept(PurgeResult.builder().deleted(deleted).build());
-            }
+            onEnd.accept(PurgeResult.builder().deleted(deleted).build());
+
+            taskChain = null;
 
             return;
         }

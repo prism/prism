@@ -78,43 +78,58 @@ public class PurgeCommand {
         this.purgeService = purgeService;
     }
 
-    /**
-     * Run the purge command.
-     *
-     * @param sender The command sender
-     * @param arguments The arguments
-     */
-    @CommandFlags(key = "query-flags")
-    @NamedArguments("query-parameters")
-    @Command(value = "purge")
+    @Command("purge")
     @Permission("prism.purge")
-    public void onPurge(final CommandSender sender, final Arguments arguments) {
-        if (!purgeService.queueFree()) {
-            messageService.errorPurgeQueryNotFree(sender);
-        }
+    public class PurgeSubCommand {
 
-        var builder = queryService.queryFromArguments(sender, arguments);
-        if (builder.isPresent()) {
-            final ActivityQuery query = builder
-                .get()
-                .limit(configurationService.prismConfig().purges().limit())
-                .build();
-
-            if (!query.defaultsUsed().isEmpty()) {
-                messageService.defaultsUsed(sender, String.join(" ", query.defaultsUsed()));
+        /**
+         * Run a purge.
+         *
+         * @param sender The command sender
+         * @param arguments The arguments
+         */
+        @CommandFlags(key = "query-flags")
+        @NamedArguments("query-parameters")
+        @Command("start")
+        public void onPurgeStart(final CommandSender sender, final Arguments arguments) {
+            if (!purgeService.queueFree()) {
+                messageService.errorPurgeQueryNotFree(sender);
             }
 
-            PurgeQueue purgeQueue = purgeService.newQueue(
-                result -> {
-                    messageService.purgeCycle(sender, result);
-                },
-                result -> messageService.purgeComplete(sender, result.deleted())
-            );
+            var builder = queryService.queryFromArguments(sender, arguments);
+            if (builder.isPresent()) {
+                final ActivityQuery query = builder
+                    .get()
+                    .limit(configurationService.prismConfig().purges().limit())
+                    .build();
 
-            purgeQueue.add(query);
-            purgeQueue.start();
+                if (!query.defaultsUsed().isEmpty()) {
+                    messageService.defaultsUsed(sender, String.join(" ", query.defaultsUsed()));
+                }
 
-            messageService.purgeStarting(sender);
+                PurgeQueue purgeQueue = purgeService.newQueue(
+                    result -> {
+                        messageService.purgeCycle(sender, result);
+                    },
+                    result -> messageService.purgeComplete(sender, result.deleted())
+                );
+
+                purgeQueue.add(query);
+                purgeQueue.start();
+
+                messageService.purgeStarting(sender);
+            }
+        }
+
+        @Command("stop")
+        public void onPurgeStop(final CommandSender sender) {
+            if (purgeService.queueFree()) {
+                messageService.errorPurgeNotRunning(sender);
+            }
+
+            purgeService.stop();
+
+            messageService.purgeStopped(sender);
         }
     }
 }

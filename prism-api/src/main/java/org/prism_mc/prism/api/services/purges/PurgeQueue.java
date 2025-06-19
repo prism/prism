@@ -41,4 +41,9 @@ public interface PurgeQueue {
      * Start the purge.
      */
     void start();
+
+    /**
+     * Stop the purge.
+     */
+    void stop();
 }

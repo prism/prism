@@ -79,6 +79,16 @@ public class PurgeService {
         return currentQueue == null;
     }
 
+    public void stop() {
+        if (currentQueue == null) {
+            throw new IllegalStateException("Cannot cancel, no queue.");
+        }
+
+        currentQueue.stop();
+
+        release();
+    }
+
     /**
      * Release the queue.
      */

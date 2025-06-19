@@ -122,6 +122,9 @@ public interface MessageService {
     @Message("prism.error.player-only")
     void errorPlayerOnly(CommandSender receiver);
 
+    @Message("prism.error.purge-not-running")
+    void errorPurgeNotRunning(CommandSender receiver);
+
     @Message("prism.error.purge-queue-not-free")
     void errorPurgeQueryNotFree(CommandSender receiver);
 
@@ -239,6 +242,9 @@ public interface MessageService {
 
     @Message("prism.purge-starting")
     void purgeStarting(CommandSender receiver);
+
+    @Message("prism.purge-stopped")
+    void purgeStopped(CommandSender receiver);
 
     @Message("prism.reloaded-config")
     void reloadedConfig(CommandSender receiver);
