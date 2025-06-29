@@ -49,7 +49,7 @@ shadowJar {
     relocate 'co.aikar.taskchain', 'org.prism_mc.prism.libs.taskchain'
     relocate 'com.cronutils', 'org.prism_mc.prism.libs.cronutils'
     relocate 'com.fasterxml.jackson', 'org.prism_mc.prism.libs.jackson'
-    relocate 'com.github.ben-manes.caffeine', 'org.prism_mc.prism.libs.caffeine'
+    relocate 'com.github.benmanes.caffeine', 'org.prism_mc.prism.libs.caffeine'
     relocate 'com.google.inject', 'org.prism_mc.prism.libs.inject'
     relocate 'com.h2database', 'org.prism_mc.prism.libs.h2'
     relocate 'com.mysql', 'org.prism_mc.prism.libs.mysql'

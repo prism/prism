@@ -54,14 +54,14 @@ public enum Dependency {
         "caffeine",
         "3.2.0",
         "7EEd/fDAPyUhhkjOiYYWMLcWgOWFippyeOusjlXKs9c=",
-        Relocation.of("caffeine", "com{}github{]ben-manes{}caffeine")
+        Relocation.of("caffeine", "com{}github{}benmanes{}caffeine")
     ),
     CONFIGURATE_CORE(
         "org.spongepowered",
         "configurate-core",
         "4.2.0",
         "BsHp93iaGJrwwBVuvp9GnafMZ0Iz9D6BM8gxMe3Z9+A=",
-        Relocation.of("configurate", "org{}spongepowered{]configurate"),
+        Relocation.of("configurate", "org{}spongepowered{}configurate"),
         Relocation.of("geantyref", "io{}leangen{}geantyref")
     ),
     CONFIGURATE_HOCON(
