@@ -42,10 +42,13 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.prism_mc.prism.api.actions.Action;
+import org.prism_mc.prism.api.actions.EntityAction;
 import org.prism_mc.prism.api.services.wands.Wand;
 import org.prism_mc.prism.api.util.Coordinate;
 import org.prism_mc.prism.bukkit.actions.BukkitBlockAction;
+import org.prism_mc.prism.bukkit.actions.BukkitEntityAction;
 import org.prism_mc.prism.bukkit.actions.BukkitItemStackAction;
+import org.prism_mc.prism.bukkit.actions.GenericBukkitAction;
 import org.prism_mc.prism.bukkit.actions.types.BukkitActionTypeRegistry;
 import org.prism_mc.prism.bukkit.api.activities.BukkitActivity;
 import org.prism_mc.prism.bukkit.listeners.AbstractListener;
@@ -213,6 +216,8 @@ public class PlayerInteractListener extends AbstractListener implements Listener
             var activity = BukkitActivity.builder().action(action).player(player).location(location).build();
 
             recordingService.addToQueue(activity);
+        } else if (TagLib.USABLE_ITEMS.isTagged(heldItem.getType())) {
+            recordItemUseActivity(location, player, heldItem);
         }
     }
 

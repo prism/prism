@@ -164,6 +164,9 @@ public class ActionsConfiguration {
     @Comment("item-throw is when a player throws an item.")
     private boolean itemThrow = true;
 
+    @Comment("item-use is when a player uses an item.")
+    private boolean itemUse = true;
+
     @Comment("player-command is when a player tries to use a command.")
     private boolean playerCommand = false;
 

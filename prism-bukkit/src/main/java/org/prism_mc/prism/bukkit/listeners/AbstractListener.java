@@ -393,6 +393,21 @@ public class AbstractListener {
     }
 
     /**
+     * Record an item use activity.
+     *
+     * @param location The location
+     * @param player The player
+     * @param itemStack The item stack
+     */
+    protected void recordItemUseActivity(Location location, Player player, ItemStack itemStack) {
+        if (!configurationService.prismConfig().actions().itemUse()) {
+            return;
+        }
+
+        recordItemActivity(BukkitActionTypeRegistry.ITEM_USE, location, player, null, itemStack, 1);
+    }
+
+    /**
      * Record AN item insert/remove activity.
      *
      * @param actionType The action type
