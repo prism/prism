@@ -21,6 +21,7 @@
 package org.prism_mc.prism.bukkit.listeners.projectile;
 
 import com.google.inject.Inject;
+import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.ThrowableProjectile;
@@ -65,6 +66,10 @@ public class ProjectileLaunchListener extends AbstractListener implements Listen
     public void onProjectileLaunch(final ProjectileLaunchEvent event) {
         // Ignore if this event is disabled
         if (!configurationService.prismConfig().actions().itemThrow()) {
+            return;
+        }
+
+        if (event.getEntity() instanceof Arrow) {
             return;
         }
 
