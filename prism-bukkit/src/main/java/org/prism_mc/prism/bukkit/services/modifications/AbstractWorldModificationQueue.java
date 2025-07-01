@@ -301,9 +301,9 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                                 if (activity.action().type().reversible()) {
                                     try {
                                         result = applyModification(activity);
-                                    } catch (Exception e) {
+                                    } catch (Throwable t) {
                                         result = ModificationResult.builder().activity(activity).errored().build();
-                                        loggingService.handleException(e);
+                                        loggingService.handleThrowable(t);
                                     }
                                 }
 

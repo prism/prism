@@ -90,6 +90,15 @@ public class LoggingService {
     }
 
     /**
+     * Handle thrown errors/exceptions.
+     *
+     * @param t The thrown error/exception
+     */
+    public void handleThrowable(Throwable t) {
+        logger.log(Level.SEVERE, "An error occurred", t);
+    }
+
+    /**
      * Handle exceptions.
      *
      * @param exception The exception
