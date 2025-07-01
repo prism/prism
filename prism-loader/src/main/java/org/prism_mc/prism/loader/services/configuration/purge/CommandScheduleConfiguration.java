@@ -32,7 +32,7 @@ public class CommandScheduleConfiguration {
         Commands will be executed by the console and will effectively have OP permissions.
         The default command will purge all records more than six weeks old."""
     )
-    private String command = "prism purge before:6w --nodefaults";
+    private String command = "prism purge start before:6w --nodefaults";
 
     @Comment(
         """
