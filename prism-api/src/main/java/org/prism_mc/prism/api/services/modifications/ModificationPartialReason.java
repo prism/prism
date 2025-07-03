@@ -20,10 +20,9 @@
 
 package org.prism_mc.prism.api.services.modifications;
 
-public enum ModificationResultStatus {
-    APPLIED,
-    ERRORED,
-    PARTIAL,
-    PLANNED,
-    SKIPPED,
+public enum ModificationPartialReason {
+    /**
+     * The modification includes blacklisted content.
+     */
+    BLACKLISTED,
 }

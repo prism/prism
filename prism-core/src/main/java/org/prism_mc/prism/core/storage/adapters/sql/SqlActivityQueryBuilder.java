@@ -165,18 +165,18 @@ public class SqlActivityQueryBuilder {
             PRISM_ITEMS.DATA,
             PRISM_BLOCKS.NS,
             PRISM_BLOCKS.NAME,
+            PRISM_BLOCKS.TRANSLATION_KEY,
             PRISM_ENTITY_TYPES.ENTITY_TYPE,
             PRISM_ACTIONS.ACTION,
             PRISM_CAUSES.CAUSE,
             PRISM_PLAYERS.PLAYER_UUID,
-            PRISM_PLAYERS.PLAYER
+            PRISM_PLAYERS.PLAYER,
+            PRISM_ACTIVITIES.DESCRIPTOR
         );
 
         // Add fields useful only for lookups
         if (query.lookup()) {
-            queryBuilder.addSelect(PRISM_ACTIVITIES.DESCRIPTOR);
             queryBuilder.addSelect(PRISM_ACTIVITIES.METADATA);
-            queryBuilder.addSelect(PRISM_BLOCKS.TRANSLATION_KEY);
             queryBuilder.addSelect(count().over().as("totalrows"));
         }
 
@@ -208,7 +208,8 @@ public class SqlActivityQueryBuilder {
                 coalesce(PRISM_ACTIVITIES.SERIALIZER_VERSION, 1).as("serializer_version"),
                 REPLACED_BLOCKS.NS,
                 REPLACED_BLOCKS.NAME,
-                REPLACED_BLOCKS.DATA
+                REPLACED_BLOCKS.DATA,
+                REPLACED_BLOCKS.TRANSLATION_KEY
             );
         }
 
@@ -244,10 +245,6 @@ public class SqlActivityQueryBuilder {
                 PRISM_ACTIVITIES.DESCRIPTOR,
                 PRISM_ACTIVITIES.METADATA
             );
-
-            if (query.lookup()) {
-                queryBuilder.addGroupBy(PRISM_BLOCKS.TRANSLATION_KEY);
-            }
         }
 
         // Order by

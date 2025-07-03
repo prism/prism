@@ -164,13 +164,21 @@ public class BukkitEntityAction extends BukkitAction implements EntityAction {
     ) {
         // Skip if entity is in the blacklist
         if (modificationRuleset.entityBlacklistContainsAny(entityType.toString())) {
-            return ModificationResult.builder().activity(activityContext).build();
+            return ModificationResult.builder()
+                .activity(activityContext)
+                .skipped()
+                .target(entityType.translationKey())
+                .build();
         }
 
         Coordinate coordinate = activityContext.coordinate();
         World world = Bukkit.getServer().getWorld(activityContext.worldUuid());
         if (world == null) {
-            return ModificationResult.builder().activity(activityContext).build();
+            return ModificationResult.builder()
+                .activity(activityContext)
+                .skipped()
+                .target(entityType.translationKey())
+                .build();
         }
 
         boolean shouldSpawn =
@@ -209,7 +217,11 @@ public class BukkitEntityAction extends BukkitAction implements EntityAction {
             }
         }
 
-        return ModificationResult.builder().activity(activityContext).build();
+        return ModificationResult.builder()
+            .activity(activityContext)
+            .skipped()
+            .target(entityType.translationKey())
+            .build();
     }
 
     @Override

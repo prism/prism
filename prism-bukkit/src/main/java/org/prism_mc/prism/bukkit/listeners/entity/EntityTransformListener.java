@@ -1,5 +1,5 @@
 /*
- * Prism (Refracted)
+ * prism
  *
  * Copyright (c) 2022 M Botsko (viveleroi)
  *                    Contributors

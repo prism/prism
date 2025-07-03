@@ -54,6 +54,12 @@ public final class ModificationQueueResult {
     private int movedEntities = 0;
 
     /**
+     * The count of activities partially applied.
+     */
+    @Builder.Default
+    private int partial = 0;
+
+    /**
      * The count of activities planned.
      */
     @Builder.Default

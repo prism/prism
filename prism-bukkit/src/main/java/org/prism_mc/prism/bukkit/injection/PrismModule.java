@@ -40,6 +40,7 @@ import org.prism_mc.prism.api.actions.types.ActionTypeRegistry;
 import org.prism_mc.prism.api.activities.AbstractActivity;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueService;
+import org.prism_mc.prism.api.services.modifications.ModificationResult;
 import org.prism_mc.prism.api.services.modifications.Restore;
 import org.prism_mc.prism.api.services.modifications.Rollback;
 import org.prism_mc.prism.api.services.purges.PurgeCycleResult;
@@ -68,6 +69,7 @@ import org.prism_mc.prism.bukkit.services.messages.resolvers.BlockBreakAlertData
 import org.prism_mc.prism.bukkit.services.messages.resolvers.IntegerPlaceholderResolver;
 import org.prism_mc.prism.bukkit.services.messages.resolvers.LongPlaceholderResolver;
 import org.prism_mc.prism.bukkit.services.messages.resolvers.ModificationQueueResultPlaceholderResolver;
+import org.prism_mc.prism.bukkit.services.messages.resolvers.ModificationResultPlaceholderResolver;
 import org.prism_mc.prism.bukkit.services.messages.resolvers.PaginatedResultsPlaceholderResolver;
 import org.prism_mc.prism.bukkit.services.messages.resolvers.PurgeCycleResultPlaceholderResolver;
 import org.prism_mc.prism.bukkit.services.messages.resolvers.StringPlaceholderResolver;
@@ -218,6 +220,7 @@ public class PrismModule extends AbstractModule {
                 .weightedPlaceholderResolver(new TypeToken<>() {}, new PaginatedResultsPlaceholderResolver(), 0)
                 .weightedPlaceholderResolver(BlockAlertData.class, new BlockAlertDataPlaceholderResolver(), 0)
                 .weightedPlaceholderResolver(BlockBreakAlertData.class, new BlockBreakAlertDataPlaceholderResolver(), 0)
+                .weightedPlaceholderResolver(ModificationResult.class, new ModificationResultPlaceholderResolver(), 0)
                 .create(this.getClass().getClassLoader());
         } catch (UnscannableMethodException e) {
             e.printStackTrace();

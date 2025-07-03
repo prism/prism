@@ -36,6 +36,12 @@ public final class ModificationResult {
     private final Activity activity;
 
     /**
+     * The reason for a partial modification. Unused if status != PARTIAL.
+     */
+    @Builder.Default
+    private final ModificationPartialReason partialReason = ModificationPartialReason.BLACKLISTED;
+
+    /**
      * The state changes.
      */
     private final StateChange<?> stateChange;
@@ -52,6 +58,11 @@ public final class ModificationResult {
      */
     @Builder.Default
     private final ModificationSkipReason skipReason = ModificationSkipReason.NOT_IMPLEMENTED;
+
+    /**
+     * The target of the result if result != applied.
+     */
+    private final String target;
 
     public static class ModificationResultBuilder {
 
@@ -72,6 +83,16 @@ public final class ModificationResult {
          */
         public ModificationResultBuilder errored() {
             status(ModificationResultStatus.ERRORED);
+            return this;
+        }
+
+        /**
+         * Set the status to PARTIAL.
+         *
+         * @return The builder
+         */
+        public ModificationResultBuilder partial() {
+            status(ModificationResultStatus.PARTIAL);
             return this;
         }
 

@@ -47,7 +47,7 @@ public class ModificationQueueResultPlaceholderResolver
     private final BukkitTranslationService translationService;
 
     /**
-     * Construct an activity placeholder resolver.
+     * Construct the resolver.
      *
      * @param translationService The translation service
      */
@@ -66,8 +66,37 @@ public class ModificationQueueResultPlaceholderResolver
         final @Nullable Object[] parameters
     ) {
         Component skipped = skipped(receiver, value.skipped());
+        Component partial = partial(receiver, value.partial());
 
-        return Map.of(placeholderName + "_skipped", Either.left(ConclusionValue.conclusionValue(skipped)));
+        return Map.of(
+            placeholderName + "_partial",
+            Either.left(ConclusionValue.conclusionValue(partial)),
+            placeholderName + "_skipped",
+            Either.left(ConclusionValue.conclusionValue(skipped))
+        );
+    }
+
+    /**
+     * Format the partial count.
+     *
+     * @param receiver The receiver
+     * @param partial The partial
+     * @return Component
+     */
+    protected Component partial(CommandSender receiver, int partial) {
+        var builder = Component.text().append(Component.text(partial));
+
+        if (receiver instanceof Player) {
+            builder
+                .hoverEvent(
+                    HoverEvent.showText(
+                        Component.text(translationService.messageOf(receiver, "prism.click-to-view-partial"))
+                    )
+                )
+                .clickEvent(ClickEvent.runCommand("/prism report partial"));
+        }
+
+        return builder.build();
     }
 
     /**

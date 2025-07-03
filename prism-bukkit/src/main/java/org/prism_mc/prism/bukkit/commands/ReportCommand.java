@@ -1,5 +1,5 @@
 /*
- * Prism (Refracted)
+ * prism
  *
  * Copyright (c) 2022 M Botsko (viveleroi)
  *                    Contributors
@@ -25,6 +25,7 @@ import dev.triumphteam.cmd.bukkit.annotation.Permission;
 import dev.triumphteam.cmd.core.annotations.Command;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
@@ -93,6 +94,39 @@ public class ReportCommand {
          *
          * @param sender The command sender
          */
+        @Command("partial")
+        public void onPartialReport(final CommandSender sender) {
+            Optional<ModificationQueueResult> resultOptional = modificationQueueService.queueResultForOwner(sender);
+            if (resultOptional.isEmpty()) {
+                messageService.errorQueueResultMissing(sender);
+
+                return;
+            }
+
+            ModificationQueueResult queueResult = resultOptional.get();
+
+            messageService.modificationsReportPartialHeader(sender);
+
+            var partialResults = queueResult
+                .results()
+                .stream()
+                .filter(result -> result.status().equals(ModificationResultStatus.PARTIAL))
+                .toList();
+
+            if (!partialResults.isEmpty()) {
+                for (ModificationResult result : partialResults) {
+                    messageService.modificationsReportPartialActivity(sender, result.activity(), result);
+                }
+            } else {
+                messageService.noResults(sender);
+            }
+        }
+
+        /**
+         * Run the modification skips report command.
+         *
+         * @param sender The command sender
+         */
         @Command("skips")
         public void onSkipsReport(final CommandSender sender) {
             Optional<ModificationQueueResult> resultOptional = modificationQueueService.queueResultForOwner(sender);
@@ -106,14 +140,18 @@ public class ReportCommand {
 
             messageService.modificationsReportSkippedHeader(sender);
 
-            for (ModificationResult result : queueResult.results()) {
-                if (result.status().equals(ModificationResultStatus.SKIPPED)) {
-                    messageService.modificationsReportSkippedActivity(
-                        sender,
-                        result.activity(),
-                        result.skipReason().toString().replaceAll("_", " ").toLowerCase(Locale.ROOT)
-                    );
+            var skippedResults = queueResult
+                .results()
+                .stream()
+                .filter(result -> result.status().equals(ModificationResultStatus.SKIPPED))
+                .toList();
+
+            if (!skippedResults.isEmpty()) {
+                for (ModificationResult result : skippedResults) {
+                    messageService.modificationsReportSkippedActivity(sender, result.activity(), result);
                 }
+            } else {
+                messageService.noResults(sender);
             }
         }
     }

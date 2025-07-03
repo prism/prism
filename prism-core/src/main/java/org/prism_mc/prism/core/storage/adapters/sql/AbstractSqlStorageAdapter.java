@@ -748,10 +748,8 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                 timestamp = r.getValue(PRISM_ACTIVITIES.TIMESTAMP).longValue();
             }
 
-            String translationkey = null;
-            if (query.lookup()) {
-                translationkey = r.getValue(PRISM_BLOCKS.TRANSLATION_KEY);
-            }
+            String translationKey = r.getValue(PRISM_BLOCKS.TRANSLATION_KEY);
+            String replacedBlockTranslationKey = r.getValue(REPLACED_BLOCKS.TRANSLATION_KEY);
 
             if (!query.grouped() && query.modification()) {
                 long activityId = r.getValue(PRISM_ACTIVITIES.ACTIVITY_ID).longValue();
@@ -779,7 +777,8 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                     descriptor,
                     metadata,
                     customDataVersion.shortValue(),
-                    translationkey
+                    translationKey,
+                    replacedBlockTranslationKey
                 );
 
                 // Build the activity
@@ -818,7 +817,8 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                     descriptor,
                     metadata,
                     (short) 0,
-                    translationkey
+                    translationKey,
+                    replacedBlockTranslationKey
                 );
 
                 // Build the activity
@@ -855,7 +855,8 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                     descriptor,
                     metadata,
                     (short) 0,
-                    translationkey
+                    translationKey,
+                    replacedBlockTranslationKey
                 );
 
                 // Count

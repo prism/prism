@@ -195,6 +195,8 @@ public class BukkitItemStackAction extends BukkitMaterialAction implements ItemA
         if (activityContext.player() == null) {
             return ModificationResult.builder()
                 .activity(activityContext)
+                .skipped()
+                .target(itemStack.translationKey())
                 .skipReason(ModificationSkipReason.NOT_APPLICABLE)
                 .build();
         }
@@ -232,7 +234,11 @@ public class BukkitItemStackAction extends BukkitMaterialAction implements ItemA
             }
         }
 
-        return ModificationResult.builder().activity(activityContext).build();
+        return ModificationResult.builder()
+            .skipped()
+            .target(itemStack.translationKey())
+            .activity(activityContext)
+            .build();
     }
 
     @Override
@@ -242,7 +248,11 @@ public class BukkitItemStackAction extends BukkitMaterialAction implements ItemA
         Activity activityContext,
         ModificationQueueMode mode
     ) {
-        return ModificationResult.builder().activity(activityContext).build();
+        return ModificationResult.builder()
+            .activity(activityContext)
+            .skipped()
+            .target(itemStack.translationKey())
+            .build();
     }
 
     @Override

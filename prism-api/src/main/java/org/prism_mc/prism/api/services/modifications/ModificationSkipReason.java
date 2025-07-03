@@ -1,5 +1,5 @@
 /*
- * Prism (Refracted)
+ * prism
  *
  * Copyright (c) 2022 M Botsko (viveleroi)
  *                    Contributors
@@ -25,11 +25,6 @@ public enum ModificationSkipReason {
      * The block already matches what the modification would do.
      */
     ALREADY_SET,
-
-    /**
-     * The modification includes blacklisted content.
-     */
-    BLACKLISTED,
 
     /**
      * The rollback is not applicable due to specifics.

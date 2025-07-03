@@ -80,7 +80,7 @@ public class BlockActionType extends ActionType {
             replacedBlockData,
             actionData.descriptor(),
             actionData.translationKey(),
-            null
+            actionData.replacedBlockTranslationKey()
         );
     }
 

@@ -98,6 +98,11 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
     protected int countApplied = 0;
 
     /**
+     * Count how many were partially applied.
+     */
+    protected int countPartial = 0;
+
+    /**
      * Count how many were planned.
      */
     protected int countPlanned = 0;
@@ -149,7 +154,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      * @return The modification result
      */
     protected ModificationResult applyModification(Activity activity) {
-        return ModificationResult.builder().status(ModificationResultStatus.SKIPPED).build();
+        return ModificationResult.builder().skipped().build();
     }
 
     /**
@@ -313,6 +318,8 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                                     countPlanned++;
                                 } else if (result.status().equals(ModificationResultStatus.APPLIED)) {
                                     countApplied++;
+                                } else if (result.status().equals(ModificationResultStatus.PARTIAL)) {
+                                    countPartial++;
                                 } else {
                                     countSkipped++;
                                 }
@@ -338,6 +345,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                                 .mode(mode)
                                 .results(results)
                                 .applied(countApplied)
+                                .partial(countPartial)
                                 .planned(countPlanned)
                                 .skipped(countSkipped)
                                 .build();

@@ -288,6 +288,7 @@ public class BukkitModificationQueueService implements ModificationQueueService 
             if (currentQueue.owner() instanceof CommandSender sender) {
                 messageService.modificationsAppliedSuccess(sender);
                 messageService.modificationsApplied(sender, result.applied());
+                messageService.modificationsPartial(sender, result);
                 messageService.modificationsSkipped(sender, result);
 
                 if (result.drainedLava() > 0) {

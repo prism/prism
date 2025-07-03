@@ -27,6 +27,7 @@ import org.bukkit.entity.Player;
 import org.prism_mc.prism.api.PaginatedResults;
 import org.prism_mc.prism.api.activities.AbstractActivity;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
+import org.prism_mc.prism.api.services.modifications.ModificationResult;
 import org.prism_mc.prism.api.services.purges.PurgeCycleResult;
 import org.prism_mc.prism.api.services.wands.WandMode;
 import org.prism_mc.prism.bukkit.services.alerts.BlockAlertData;
@@ -191,11 +192,24 @@ public interface MessageService {
     @Message("prism.modifications-moved-entities")
     void modificationsMovedEntities(CommandSender receiver, @Placeholder Integer count);
 
+    @Message("prism.modifications-partial")
+    void modificationsPartial(CommandSender receiver, @Placeholder ModificationQueueResult result);
+
     @Message("prism.modifications-removed-blocks")
     void modificationsRemovedBlocks(CommandSender receiver, @Placeholder Integer count);
 
     @Message("prism.modifications-removed-drops")
     void modificationsRemovedDrops(CommandSender receiver, @Placeholder Integer count);
+
+    @Message("prism.modifications-report-partial-header")
+    void modificationsReportPartialHeader(CommandSender receiver);
+
+    @Message("prism.modifications-report-partial-activity")
+    void modificationsReportPartialActivity(
+        CommandSender receiver,
+        @Placeholder AbstractActivity activity,
+        @Placeholder ModificationResult result
+    );
 
     @Message("prism.modifications-report-queue-header")
     void modificationsReportQueueHeader(CommandSender receiver);
@@ -210,7 +224,7 @@ public interface MessageService {
     void modificationsReportSkippedActivity(
         CommandSender receiver,
         @Placeholder AbstractActivity activity,
-        @Placeholder String skipreason
+        @Placeholder ModificationResult result
     );
 
     @Message("prism.modifications-skipped")

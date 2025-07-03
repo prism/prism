@@ -297,19 +297,19 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
         Activity activityContext,
         ModificationQueueMode mode
     ) {
+        var resultBuilder = ModificationResult.builder().activity(activityContext).statusFromMode(mode);
+
         // Skip if either material is in the blacklist
+        BlockData finalBlockData = blockData;
         if (modificationRuleset.blockBlacklistContainsAny(blockName)) {
-            return ModificationResult.builder()
-                .activity(activityContext)
-                .skipReason(ModificationSkipReason.BLACKLISTED)
-                .build();
+            finalBlockData = Bukkit.createBlockData(Material.AIR);
+            resultBuilder.partial().target(translationKey);
         }
 
+        BlockData finalReplacedBlockData = replacedBlockData;
         if (replacedBlockName != null && modificationRuleset.blockBlacklistContainsAny(replacedBlockName)) {
-            return ModificationResult.builder()
-                .activity(activityContext)
-                .skipReason(ModificationSkipReason.BLACKLISTED)
-                .build();
+            finalReplacedBlockData = Bukkit.createBlockData(Material.AIR);
+            resultBuilder.partial().target(replacedBlockTranslationKey);
         }
 
         var location = location(activityContext.worldUuid(), activityContext.coordinate());
@@ -317,7 +317,7 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
 
         StateChange<BlockState> stateChange = null;
         if (type().resultType().equals(ActionResultType.REMOVES)) {
-            var canSet = canSet(block, blockData, modificationRuleset, activityContext);
+            var canSet = canSet(block, finalBlockData, modificationRuleset, activityContext);
             if (canSet != null) {
                 return canSet;
             }
@@ -325,28 +325,24 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
             if (mode.equals(ModificationQueueMode.COMPLETING)) {
                 // If rolling back a removal, we need to place the top half of a bisected block
                 // This happens first otherwise the block will break again
-                if (blockData instanceof Bisected bisected) {
+                if (finalBlockData instanceof Bisected bisected) {
                     setBisectedTop(block, bisected, bisected.getMaterial());
                 }
             }
 
             // If the action type removes a block, rollback means we re-set it
-            stateChange = setBlock(block, location, blockData, replacedBlockData, readWriteNbt, owner, mode);
+            stateChange = setBlock(block, location, finalBlockData, finalReplacedBlockData, readWriteNbt, owner, mode);
         } else if (type().resultType().equals(ActionResultType.CREATES)) {
-            var canSet = canSet(block, replacedBlockData, modificationRuleset, activityContext);
+            var canSet = canSet(block, finalReplacedBlockData, modificationRuleset, activityContext);
             if (canSet != null) {
                 return canSet;
             }
 
             // If the action type creates a block, rollback means we remove it
-            stateChange = setBlock(block, location, replacedBlockData, blockData, null, owner, mode);
+            stateChange = setBlock(block, location, finalReplacedBlockData, finalBlockData, null, owner, mode);
         }
 
-        return ModificationResult.builder()
-            .activity(activityContext)
-            .statusFromMode(mode)
-            .stateChange(stateChange)
-            .build();
+        return resultBuilder.stateChange(stateChange).build();
     }
 
     @Override
@@ -356,19 +352,19 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
         Activity activityContext,
         ModificationQueueMode mode
     ) {
+        var resultBuilder = ModificationResult.builder().activity(activityContext).statusFromMode(mode);
+
         // Skip if either material is in the blacklist
+        BlockData finalBlockData = blockData;
         if (modificationRuleset.blockBlacklistContainsAny(blockName)) {
-            return ModificationResult.builder()
-                .activity(activityContext)
-                .skipReason(ModificationSkipReason.BLACKLISTED)
-                .build();
+            finalBlockData = Bukkit.createBlockData(Material.AIR);
+            resultBuilder.partial().target(translationKey);
         }
 
+        BlockData finalReplacedBlockData = replacedBlockData;
         if (replacedBlockName != null && modificationRuleset.blockBlacklistContainsAny(replacedBlockName)) {
-            return ModificationResult.builder()
-                .activity(activityContext)
-                .skipReason(ModificationSkipReason.BLACKLISTED)
-                .build();
+            finalReplacedBlockData = Bukkit.createBlockData(Material.AIR);
+            resultBuilder.partial().target(replacedBlockTranslationKey);
         }
 
         var location = location(activityContext.worldUuid(), activityContext.coordinate());
@@ -376,7 +372,7 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
 
         StateChange<BlockState> stateChange = null;
         if (type().resultType().equals(ActionResultType.CREATES)) {
-            var canSet = canSet(block, blockData, modificationRuleset, activityContext);
+            var canSet = canSet(block, finalBlockData, modificationRuleset, activityContext);
             if (canSet != null) {
                 return canSet;
             }
@@ -384,28 +380,24 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
             if (mode.equals(ModificationQueueMode.COMPLETING)) {
                 // If rolling back a removal, we need to place the top half of a bisected block
                 // This happens first otherwise the block will break again
-                if (blockData instanceof Bisected bisected) {
+                if (finalBlockData instanceof Bisected bisected) {
                     setBisectedTop(block, bisected, bisected.getMaterial());
                 }
             }
 
             // If the action type creates a block, restore means we re-set it
-            stateChange = setBlock(block, location, blockData, replacedBlockData, readWriteNbt, owner, mode);
+            stateChange = setBlock(block, location, finalBlockData, finalReplacedBlockData, readWriteNbt, owner, mode);
         } else if (type().resultType().equals(ActionResultType.REMOVES)) {
-            var canSet = canSet(block, replacedBlockData, modificationRuleset, activityContext);
+            var canSet = canSet(block, finalReplacedBlockData, modificationRuleset, activityContext);
             if (canSet != null) {
                 return canSet;
             }
 
             // If the action type removes a block, restore means we remove it again
-            stateChange = setBlock(block, location, replacedBlockData, blockData, null, owner, mode);
+            stateChange = setBlock(block, location, finalReplacedBlockData, finalBlockData, null, owner, mode);
         }
 
-        return ModificationResult.builder()
-            .activity(activityContext)
-            .statusFromMode(mode)
-            .stateChange(stateChange)
-            .build();
+        return resultBuilder.stateChange(stateChange).build();
     }
 
     /**
@@ -438,6 +430,8 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
         if (!modificationRuleset.overwrite() && block.getBlockData().matches(newBlockData)) {
             return ModificationResult.builder()
                 .activity(activityContext)
+                .skipped()
+                .target(block.translationKey())
                 .skipReason(ModificationSkipReason.ALREADY_SET)
                 .build();
         }
