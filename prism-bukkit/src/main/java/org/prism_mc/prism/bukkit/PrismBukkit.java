@@ -62,7 +62,6 @@ import org.prism_mc.prism.bukkit.commands.NearCommand;
 import org.prism_mc.prism.bukkit.commands.PageCommand;
 import org.prism_mc.prism.bukkit.commands.PreviewCommand;
 import org.prism_mc.prism.bukkit.commands.PurgeCommand;
-import org.prism_mc.prism.bukkit.commands.ReloadCommand;
 import org.prism_mc.prism.bukkit.commands.ReportCommand;
 import org.prism_mc.prism.bukkit.commands.RestoreCommand;
 import org.prism_mc.prism.bukkit.commands.RollbackCommand;
@@ -529,7 +528,6 @@ public class PrismBukkit implements Prism {
             commandManager.registerCommand(injectorProvider.injector().getInstance(VaultCommand.class));
             commandManager.registerCommand(injectorProvider.injector().getInstance(PreviewCommand.class));
             commandManager.registerCommand(injectorProvider.injector().getInstance(PurgeCommand.class));
-            commandManager.registerCommand(injectorProvider.injector().getInstance(ReloadCommand.class));
             commandManager.registerCommand(injectorProvider.injector().getInstance(ReportCommand.class));
             commandManager.registerCommand(injectorProvider.injector().getInstance(RestoreCommand.class));
             commandManager.registerCommand(injectorProvider.injector().getInstance(RollbackCommand.class));

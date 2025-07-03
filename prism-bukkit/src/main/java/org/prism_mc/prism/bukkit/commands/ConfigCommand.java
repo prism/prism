@@ -26,11 +26,20 @@ import dev.triumphteam.cmd.core.annotations.Command;
 import java.io.IOException;
 import org.bukkit.command.CommandSender;
 import org.prism_mc.prism.api.storage.StorageAdapter;
+import org.prism_mc.prism.bukkit.services.alerts.BukkitAlertService;
+import org.prism_mc.prism.bukkit.services.filters.BukkitFilterService;
 import org.prism_mc.prism.bukkit.services.messages.MessageService;
+import org.prism_mc.prism.bukkit.services.translation.BukkitTranslationService;
+import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 
 @Command(value = "prism", alias = { "pr" })
 public class ConfigCommand {
+
+    /**
+     * The alert service.
+     */
+    private final BukkitAlertService alertService;
 
     /**
      * The logging service.
@@ -48,6 +57,21 @@ public class ConfigCommand {
     private final StorageAdapter storageAdapter;
 
     /**
+     * The translation service.
+     */
+    private final BukkitTranslationService translationService;
+
+    /**
+     * The configuration service.
+     */
+    private final ConfigurationService configurationService;
+
+    /**
+     * The filter service.
+     */
+    private final BukkitFilterService filterService;
+
+    /**
      * Construct the command.
      *
      * @param loggingService The logging service
@@ -55,13 +79,69 @@ public class ConfigCommand {
      * @param storageAdapter The storage adapter
      */
     @Inject
-    public ConfigCommand(LoggingService loggingService, MessageService messageService, StorageAdapter storageAdapter) {
+    public ConfigCommand(
+        BukkitAlertService alertService,
+        LoggingService loggingService,
+        MessageService messageService,
+        StorageAdapter storageAdapter,
+        BukkitTranslationService translationService,
+        ConfigurationService configurationService,
+        BukkitFilterService filterService
+    ) {
+        this.alertService = alertService;
         this.loggingService = loggingService;
         this.messageService = messageService;
         this.storageAdapter = storageAdapter;
+        this.translationService = translationService;
+        this.configurationService = configurationService;
+        this.filterService = filterService;
     }
 
-    @Command("storageconfig")
+    @Command("config")
+    @Permission("prism.admin")
+    public class ConfigSubCommand {
+
+        /**
+         * Reload the config.
+         *
+         * @param sender The command sender
+         */
+        @Command("reload")
+        @Permission("prism.admin")
+        public void onReloadConfig(final CommandSender sender) {
+            configurationService.loadConfigurations();
+
+            filterService.loadFilters();
+            alertService.loadAlerts();
+
+            messageService.reloadedConfig(sender);
+        }
+    }
+
+    @Command("locales")
+    @Permission("prism.admin")
+    public class LocalesSubCommand {
+
+        /**
+         * Reload the locale files.
+         *
+         * @param sender The command sender
+         */
+        @Command("reload")
+        @Permission("prism.admin")
+        public void onReloadLocales(final CommandSender sender) {
+            try {
+                translationService.reloadTranslations();
+
+                messageService.reloadedLocales(sender);
+            } catch (IOException e) {
+                messageService.errorReloadLocale(sender);
+                loggingService.handleException(e);
+            }
+        }
+    }
+
+    @Command("storage-config")
     @Permission("prism.admin")
     public class StorageConfigSubCommand {
 
@@ -70,7 +150,7 @@ public class ConfigCommand {
          *
          * @param sender The command sender
          */
-        @Command("writehikari")
+        @Command("write-hikari")
         public void onHikariWrite(final CommandSender sender) {
             try {
                 storageAdapter.writeHikariPropertiesFile();
