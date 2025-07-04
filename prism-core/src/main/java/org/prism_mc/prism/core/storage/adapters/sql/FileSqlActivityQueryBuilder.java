@@ -64,20 +64,20 @@ public class FileSqlActivityQueryBuilder extends SqlActivityQueryBuilder {
      */
     @Override
     public int deleteActivities(ActivityQuery query, int cycleMinPrimaryKey, int cycleMaxPrimaryKey) {
-        DeleteQuery<PrismActivitiesRecord> queryBuilder = create.deleteQuery(PRISM_ACTIVITIES);
+        DeleteQuery<PrismActivitiesRecord> queryBuilder = dslContext.deleteQuery(PRISM_ACTIVITIES);
 
         // Action Types + Keys
         var actionTypeKeys = query.allActionTypeKeys();
         if (!actionTypeKeys.isEmpty()) {
             queryBuilder.addConditions(
-                DSL.exists(create.selectOne().from(PRISM_ACTIONS).where(PRISM_ACTIONS.ACTION.in(actionTypeKeys)))
+                DSL.exists(dslContext.selectOne().from(PRISM_ACTIONS).where(PRISM_ACTIONS.ACTION.in(actionTypeKeys)))
             );
         }
 
         // Cause
         if (query.cause() != null) {
             queryBuilder.addConditions(
-                DSL.exists(create.selectOne().from(PRISM_CAUSES).where(PRISM_CAUSES.CAUSE.equal(query.cause())))
+                DSL.exists(dslContext.selectOne().from(PRISM_CAUSES).where(PRISM_CAUSES.CAUSE.equal(query.cause())))
             );
         }
 
@@ -85,7 +85,7 @@ public class FileSqlActivityQueryBuilder extends SqlActivityQueryBuilder {
         if (!query.entityTypes().isEmpty()) {
             queryBuilder.addConditions(
                 DSL.exists(
-                    create
+                    dslContext
                         .selectOne()
                         .from(PRISM_ENTITY_TYPES)
                         .where(PRISM_ENTITY_TYPES.ENTITY_TYPE.in(query.entityTypes()))
@@ -111,7 +111,7 @@ public class FileSqlActivityQueryBuilder extends SqlActivityQueryBuilder {
         // Materials
         if (!query.materials().isEmpty()) {
             queryBuilder.addConditions(
-                DSL.exists(create.selectOne().from(PRISM_ITEMS).where(PRISM_ITEMS.MATERIAL.in(query.materials())))
+                DSL.exists(dslContext.selectOne().from(PRISM_ITEMS).where(PRISM_ITEMS.MATERIAL.in(query.materials())))
             );
         }
 
@@ -119,7 +119,7 @@ public class FileSqlActivityQueryBuilder extends SqlActivityQueryBuilder {
         if (!query.playerNames().isEmpty()) {
             queryBuilder.addConditions(
                 DSL.exists(
-                    create
+                    dslContext
                         .selectOne()
                         .from(PRISM_CAUSES)
                         .join(PRISM_PLAYERS)
@@ -132,7 +132,9 @@ public class FileSqlActivityQueryBuilder extends SqlActivityQueryBuilder {
         // Reversed
         if (query.reversed() != null) {
             queryBuilder.addConditions(
-                DSL.exists(create.selectOne().from(PRISM_ITEMS).where(PRISM_ACTIVITIES.REVERSED.eq(query.reversed())))
+                DSL.exists(
+                    dslContext.selectOne().from(PRISM_ITEMS).where(PRISM_ACTIVITIES.REVERSED.eq(query.reversed()))
+                )
             );
         }
 
@@ -151,7 +153,7 @@ public class FileSqlActivityQueryBuilder extends SqlActivityQueryBuilder {
         if (query.worldUuid() != null) {
             queryBuilder.addConditions(
                 DSL.exists(
-                    create
+                    dslContext
                         .selectOne()
                         .from(PRISM_WORLDS)
                         .where(PRISM_WORLDS.WORLD_UUID.equal(query.worldUuid().toString()))

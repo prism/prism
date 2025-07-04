@@ -43,7 +43,6 @@ import org.jooq.DSLContext;
 import org.jooq.DeleteQuery;
 import org.jooq.JoinType;
 import org.jooq.Record;
-import org.jooq.Record2;
 import org.jooq.Result;
 import org.jooq.SelectQuery;
 import org.jooq.impl.DSL;
@@ -70,7 +69,7 @@ public class SqlActivityQueryBuilder {
     /**
      * The dsl context.
      */
-    protected final DSLContext create;
+    protected final DSLContext dslContext;
 
     /**
      * The aliased replaced blocks table.
@@ -81,13 +80,13 @@ public class SqlActivityQueryBuilder {
      * Construct a new query builder.
      *
      * @param configurationService The configuration service
-     * @param create The DSL context
+     * @param dslContext The DSL context
      */
     @Inject
-    public SqlActivityQueryBuilder(ConfigurationService configurationService, @Assisted DSLContext create) {
+    public SqlActivityQueryBuilder(ConfigurationService configurationService, @Assisted DSLContext dslContext) {
         this.configurationService = configurationService;
         storageConfiguration = configurationService.storageConfig();
-        this.create = create;
+        this.dslContext = dslContext;
         this.REPLACED_BLOCKS = PRISM_BLOCKS.as("replaced_blocks");
     }
 
@@ -100,7 +99,7 @@ public class SqlActivityQueryBuilder {
      * @return The number of rows deleted
      */
     public int deleteActivities(ActivityQuery query, int cycleMinPrimaryKey, int cycleMaxPrimaryKey) {
-        DeleteQuery<PrismActivitiesRecord> queryBuilder = create.deleteQuery(PRISM_ACTIVITIES);
+        DeleteQuery<PrismActivitiesRecord> queryBuilder = dslContext.deleteQuery(PRISM_ACTIVITIES);
 
         if (!query.actionTypes().isEmpty() || !query.actionTypeKeys().isEmpty()) {
             queryBuilder.addUsing(PRISM_ACTIONS);
@@ -155,7 +154,7 @@ public class SqlActivityQueryBuilder {
      * @return A list of DbRow results
      */
     public Result<Record> queryActivities(ActivityQuery query) {
-        SelectQuery<Record> queryBuilder = create.selectQuery();
+        SelectQuery<Record> queryBuilder = dslContext.selectQuery();
 
         // Add fields useful for all query types
         queryBuilder.addSelect(
@@ -314,7 +313,7 @@ public class SqlActivityQueryBuilder {
      * @return The min/max primary key
      */
     public Pair<Integer, Integer> queryActivitiesPkBounds(ActivityQuery query) {
-        var queryBuilder = create.selectQuery();
+        var queryBuilder = dslContext.selectQuery();
 
         queryBuilder.addSelect(
             coalesce(min(PRISM_ACTIVITIES.ACTIVITY_ID), DSL.val(0)),

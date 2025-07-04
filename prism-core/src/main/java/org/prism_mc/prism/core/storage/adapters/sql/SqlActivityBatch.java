@@ -68,7 +68,7 @@ public class SqlActivityBatch implements ActivityBatch {
     /**
      * The dsl context.
      */
-    protected final DSLContext create;
+    protected final DSLContext dslContext;
 
     /**
      * An array of records to batch insert.
@@ -79,18 +79,18 @@ public class SqlActivityBatch implements ActivityBatch {
      * Construct a new batch handler.
      *
      * @param loggingService The logging service
-     * @param create The DSL context
+     * @param dslContext The DSL context
      * @param serializerVersion The serializer version
      * @param cacheService The cache service
      */
     public SqlActivityBatch(
         LoggingService loggingService,
-        DSLContext create,
+        DSLContext dslContext,
         short serializerVersion,
         CacheService cacheService
     ) {
         this.loggingService = loggingService;
-        this.create = create;
+        this.dslContext = dslContext;
         this.serializerVersion = serializerVersion;
         this.cacheService = cacheService;
     }
@@ -102,7 +102,7 @@ public class SqlActivityBatch implements ActivityBatch {
 
     @Override
     public void add(Activity activity) throws SQLException {
-        var record = create.newRecord(PRISM_ACTIVITIES);
+        var record = dslContext.newRecord(PRISM_ACTIVITIES);
 
         record.setTimestamp(UInteger.valueOf(activity.timestamp() / 1000));
         record.setX(activity.coordinate().intX());
@@ -202,7 +202,7 @@ public class SqlActivityBatch implements ActivityBatch {
         byte primaryKey;
 
         // Select any existing record
-        UByte bytePk = create
+        UByte bytePk = dslContext
             .select(PRISM_ACTIONS.ACTION_ID)
             .from(PRISM_ACTIONS)
             .where(PRISM_ACTIONS.ACTION.equal(actionKey))
@@ -212,7 +212,7 @@ public class SqlActivityBatch implements ActivityBatch {
             primaryKey = bytePk.byteValue();
         } else {
             // Create the record
-            bytePk = create
+            bytePk = dslContext
                 .insertInto(PRISM_ACTIONS, PRISM_ACTIONS.ACTION)
                 .values(actionKey)
                 .returningResult(PRISM_ACTIONS.ACTION_ID)
@@ -250,7 +250,7 @@ public class SqlActivityBatch implements ActivityBatch {
         int primaryKey;
 
         // Select the existing block
-        UInteger intPk = create
+        UInteger intPk = dslContext
             .select(PRISM_BLOCKS.BLOCK_ID)
             .from(PRISM_BLOCKS)
             .where(PRISM_BLOCKS.NS.equal(namespace), PRISM_BLOCKS.NAME.equal(name), PRISM_BLOCKS.DATA.equal(blockData))
@@ -260,7 +260,7 @@ public class SqlActivityBatch implements ActivityBatch {
             primaryKey = intPk.intValue();
         } else {
             // Create the record
-            intPk = create
+            intPk = dslContext
                 .insertInto(
                     PRISM_BLOCKS,
                     PRISM_BLOCKS.NS,
@@ -312,14 +312,14 @@ public class SqlActivityBatch implements ActivityBatch {
         UInteger intPk;
         if (playerId != null) {
             // Select the existing record on player
-            intPk = create
+            intPk = dslContext
                 .select(PRISM_CAUSES.CAUSE_ID)
                 .from(PRISM_CAUSES)
                 .where(PRISM_CAUSES.PLAYER_ID.equal(UInteger.valueOf(playerId)))
                 .fetchOne(PRISM_CAUSES.CAUSE_ID);
         } else {
             // Select the existing record on cause
-            intPk = create
+            intPk = dslContext
                 .select(PRISM_CAUSES.CAUSE_ID)
                 .from(PRISM_CAUSES)
                 .where(PRISM_CAUSES.CAUSE.equal(cause))
@@ -330,7 +330,7 @@ public class SqlActivityBatch implements ActivityBatch {
             primaryKey = intPk.longValue();
         } else {
             // Create the record
-            intPk = create
+            intPk = dslContext
                 .insertInto(PRISM_CAUSES)
                 .set(PRISM_CAUSES.CAUSE, cause)
                 .set(PRISM_CAUSES.PLAYER_ID, playerId == null ? null : UInteger.valueOf(playerId))
@@ -373,7 +373,7 @@ public class SqlActivityBatch implements ActivityBatch {
         int primaryKey;
 
         // Select the existing record
-        UShort shortPk = create
+        UShort shortPk = dslContext
             .select(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
             .from(PRISM_ENTITY_TYPES)
             .where(PRISM_ENTITY_TYPES.ENTITY_TYPE.equal(entityType))
@@ -383,7 +383,7 @@ public class SqlActivityBatch implements ActivityBatch {
             primaryKey = shortPk.intValue();
         } else {
             // Create the record
-            shortPk = create
+            shortPk = dslContext
                 .insertInto(PRISM_ENTITY_TYPES, PRISM_ENTITY_TYPES.ENTITY_TYPE)
                 .values(entityType)
                 .returningResult(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
@@ -420,7 +420,7 @@ public class SqlActivityBatch implements ActivityBatch {
         int primaryKey;
 
         // Select the existing item
-        UShort shortPk = create
+        UShort shortPk = dslContext
             .select(PRISM_ITEMS.ITEM_ID)
             .from(PRISM_ITEMS)
             .where(PRISM_ITEMS.MATERIAL.equal(material), PRISM_ITEMS.DATA.equal(data))
@@ -430,7 +430,7 @@ public class SqlActivityBatch implements ActivityBatch {
             primaryKey = shortPk.intValue();
         } else {
             // Create the record
-            shortPk = create
+            shortPk = dslContext
                 .insertInto(PRISM_ITEMS, PRISM_ITEMS.MATERIAL, PRISM_ITEMS.DATA)
                 .values(material, data)
                 .returningResult(PRISM_ITEMS.ITEM_ID)
@@ -467,7 +467,7 @@ public class SqlActivityBatch implements ActivityBatch {
         long primaryKey;
 
         // Create the player or update the name
-        create
+        dslContext
             .insertInto(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER_UUID, PRISM_PLAYERS.PLAYER)
             .values(playerUuid.toString(), playerName)
             .onConflict(PRISM_PLAYERS.PLAYER_UUID)
@@ -477,7 +477,7 @@ public class SqlActivityBatch implements ActivityBatch {
 
         // Get the primary key.
         // Every but postgres needs a second query to get the pk, so we just do this for everyone.
-        var result = create
+        var result = dslContext
             .select(PRISM_PLAYERS.PLAYER_ID)
             .from(PRISM_PLAYERS)
             .where(PRISM_PLAYERS.PLAYER_UUID.eq(playerUuid.toString()))
@@ -515,7 +515,7 @@ public class SqlActivityBatch implements ActivityBatch {
         // Select any existing record
         // Note: We check *then* insert instead of using on duplicate key because ODK would
         // generate a new auto-increment primary key and update it every time, leading to ballooning PKs
-        UByte bytePk = create
+        UByte bytePk = dslContext
             .select(PRISM_WORLDS.WORLD_ID)
             .from(PRISM_WORLDS)
             .where(PRISM_WORLDS.WORLD_UUID.equal(worldUuid.toString()))
@@ -525,7 +525,7 @@ public class SqlActivityBatch implements ActivityBatch {
             primaryKey = bytePk.byteValue();
         } else {
             // Create the record
-            bytePk = create
+            bytePk = dslContext
                 .insertInto(PRISM_WORLDS, PRISM_WORLDS.WORLD_UUID, PRISM_WORLDS.WORLD)
                 .values(worldUuid.toString(), worldName)
                 .returningResult(PRISM_WORLDS.WORLD_ID)
@@ -545,6 +545,6 @@ public class SqlActivityBatch implements ActivityBatch {
 
     @Override
     public void commitBatch() {
-        create.batchInsert(records).execute();
+        dslContext.batchInsert(records).execute();
     }
 }

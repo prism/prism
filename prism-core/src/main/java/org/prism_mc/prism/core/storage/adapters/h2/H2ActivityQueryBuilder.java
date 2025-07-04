@@ -67,7 +67,7 @@ public class H2ActivityQueryBuilder extends SqlActivityQueryBuilder {
      */
     @Override
     public int deleteActivities(ActivityQuery query, int cycleMinPrimaryKey, int cycleMaxPrimaryKey) {
-        SelectQuery<Record> selectQueryBuilder = create.selectQuery();
+        SelectQuery<Record> selectQueryBuilder = dslContext.selectQuery();
         selectQueryBuilder.addSelect(PRISM_ACTIVITIES.ACTIVITY_ID);
         selectQueryBuilder.addFrom(PRISM_ACTIVITIES);
 
@@ -111,7 +111,7 @@ public class H2ActivityQueryBuilder extends SqlActivityQueryBuilder {
         );
 
         // Build the delete query
-        DeleteQuery<PrismActivitiesRecord> deleteQueryBuilder = create.deleteQuery(PRISM_ACTIVITIES);
+        DeleteQuery<PrismActivitiesRecord> deleteQueryBuilder = dslContext.deleteQuery(PRISM_ACTIVITIES);
         deleteQueryBuilder.addConditions(PRISM_ACTIVITIES.ACTIVITY_ID.in(selectQueryBuilder.asField()));
 
         return deleteQueryBuilder.execute();
