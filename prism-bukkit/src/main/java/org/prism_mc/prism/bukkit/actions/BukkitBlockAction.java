@@ -126,9 +126,9 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
         this(
             type,
             blockState,
-            blockState.getBlock().translationKey(),
+            blockState.getType().getBlockTranslationKey(),
             replacedBlockState,
-            replacedBlockState != null ? replacedBlockState.getBlock().translationKey() : null
+            replacedBlockState != null ? replacedBlockState.getType().getBlockTranslationKey() : null
         );
     }
 
