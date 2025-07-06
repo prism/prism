@@ -507,4 +507,13 @@ public class TagLib {
      * All usable items (for tracking item-use).
      */
     public static final CustomTag<Material> USABLE_ITEMS = new CustomTag<>(Material.class).append(TagLib.SPAWN_EGGS);
+
+    /**
+     * All items lecterns can hold.
+     */
+    public static final CustomTag<Material> LECTERN_ITEMS = new CustomTag<>(
+        Material.class,
+        Material.WRITTEN_BOOK,
+        Material.WRITABLE_BOOK
+    );
 }

@@ -179,7 +179,7 @@ public class PlayerInteractListener extends AbstractListener implements Listener
         } else if (blockState instanceof Lectern lectern) {
             var lecternItem = lectern.getInventory().getItem(0);
 
-            if (!ItemUtils.nullOrAir(heldItem) && ItemUtils.nullOrAir(lecternItem)) {
+            if (TagLib.LECTERN_ITEMS.isTagged(heldItem.getType()) && ItemUtils.nullOrAir(lecternItem)) {
                 recordItemInsertActivity(location, player, heldItem);
             }
         } else if (blockState instanceof InventoryHolder inventoryHolder) {
