@@ -180,11 +180,7 @@ public class PlayerInteractListener extends AbstractListener implements Listener
             var lecternItem = lectern.getInventory().getItem(0);
 
             if (!ItemUtils.nullOrAir(heldItem) && ItemUtils.nullOrAir(lecternItem)) {
-                var action = new BukkitItemStackAction(BukkitActionTypeRegistry.ITEM_INSERT, heldItem);
-
-                var activity = BukkitActivity.builder().action(action).player(player).location(location).build();
-
-                recordingService.addToQueue(activity);
+                recordItemInsertActivity(location, player, heldItem);
             }
         } else if (blockState instanceof InventoryHolder inventoryHolder) {
             // Ignore if this event is disabled
@@ -229,31 +225,18 @@ public class PlayerInteractListener extends AbstractListener implements Listener
      * @param player The player
      */
     private void recordJukeboxActivity(Jukebox jukebox, Location location, Player player) {
-        Action action = null;
         if (jukebox.isPlaying()) {
             if (!configurationService.prismConfig().actions().itemRemove()) {
                 return;
             }
 
-            action = new BukkitItemStackAction(
-                BukkitActionTypeRegistry.ITEM_REMOVE,
-                new ItemStack(jukebox.getPlaying())
-            );
+            recordItemRemoveActivity(location, player, new ItemStack(jukebox.getPlaying()));
         } else if (!ItemUtils.nullOrAir((player.getInventory().getItemInMainHand()))) {
             if (!configurationService.prismConfig().actions().itemInsert()) {
                 return;
             }
 
-            action = new BukkitItemStackAction(
-                BukkitActionTypeRegistry.ITEM_INSERT,
-                player.getInventory().getItemInMainHand()
-            );
-        }
-
-        if (action != null) {
-            recordingService.addToQueue(
-                BukkitActivity.builder().action(action).player(player).location(location).build()
-            );
+            recordItemInsertActivity(location, player, player.getInventory().getItemInMainHand());
         }
     }
 }

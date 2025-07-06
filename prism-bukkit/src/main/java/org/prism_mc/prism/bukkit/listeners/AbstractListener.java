@@ -50,6 +50,7 @@ import org.prism_mc.prism.bukkit.api.activities.BukkitActivity;
 import org.prism_mc.prism.bukkit.services.expectations.ExpectationService;
 import org.prism_mc.prism.bukkit.services.recording.BukkitRecordingService;
 import org.prism_mc.prism.bukkit.utils.BlockUtils;
+import org.prism_mc.prism.bukkit.utils.ItemUtils;
 import org.prism_mc.prism.bukkit.utils.TagLib;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 
@@ -425,6 +426,10 @@ public class AbstractListener {
         ItemStack itemStack,
         Integer amount
     ) {
+        if (!ItemUtils.isValidItem(itemStack)) {
+            return;
+        }
+
         // Clone the item stack and set the quantity because
         // this is what we use to record the action
         ItemStack clonedStack = itemStack.clone();

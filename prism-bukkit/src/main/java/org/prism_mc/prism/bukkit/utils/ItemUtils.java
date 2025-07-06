@@ -106,6 +106,16 @@ public class ItemUtils {
     }
 
     /**
+     * Checks for valid items. Plugins have a way of giving us bad data.
+     *
+     * @param item The item
+     * @return True if null, air, or quantity <= 0
+     */
+    public static boolean isValidItem(ItemStack item) {
+        return !nullOrAir(item) && item.getAmount() > 0;
+    }
+
+    /**
      * Get the material "nice" name for an item stack.
      *
      * @param itemStack The item stack

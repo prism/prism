@@ -35,6 +35,7 @@ import org.prism_mc.prism.bukkit.api.activities.BukkitActivity;
 import org.prism_mc.prism.bukkit.listeners.AbstractListener;
 import org.prism_mc.prism.bukkit.services.expectations.ExpectationService;
 import org.prism_mc.prism.bukkit.services.recording.BukkitRecordingService;
+import org.prism_mc.prism.bukkit.utils.ItemUtils;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 
 public class PlayerBucketFillListener extends AbstractListener implements Listener {
@@ -63,7 +64,9 @@ public class PlayerBucketFillListener extends AbstractListener implements Listen
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerBucketFill(final PlayerBucketFillEvent event) {
         // Ignore if this event is disabled
-        if (event.getItemStack() == null || !configurationService.prismConfig().actions().bucketFill()) {
+        if (
+            !configurationService.prismConfig().actions().bucketFill() || !ItemUtils.isValidItem(event.getItemStack())
+        ) {
             return;
         }
 

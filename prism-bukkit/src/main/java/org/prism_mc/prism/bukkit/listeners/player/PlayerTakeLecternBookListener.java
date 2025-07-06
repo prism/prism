@@ -25,12 +25,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerTakeLecternBookEvent;
-import org.prism_mc.prism.bukkit.actions.BukkitItemStackAction;
-import org.prism_mc.prism.bukkit.actions.types.BukkitActionTypeRegistry;
-import org.prism_mc.prism.bukkit.api.activities.BukkitActivity;
 import org.prism_mc.prism.bukkit.listeners.AbstractListener;
 import org.prism_mc.prism.bukkit.services.expectations.ExpectationService;
 import org.prism_mc.prism.bukkit.services.recording.BukkitRecordingService;
+import org.prism_mc.prism.bukkit.utils.ItemUtils;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 
 public class PlayerTakeLecternBookListener extends AbstractListener implements Listener {
@@ -63,19 +61,10 @@ public class PlayerTakeLecternBookListener extends AbstractListener implements L
             return;
         }
 
-        if (event.getBook() == null) {
+        if (!ItemUtils.isValidItem(event.getBook())) {
             return;
         }
 
-        // Clone the book because by the time it's recorded it'll be air
-        var action = new BukkitItemStackAction(BukkitActionTypeRegistry.ITEM_REMOVE, event.getBook().clone());
-
-        var activity = BukkitActivity.builder()
-            .action(action)
-            .location(event.getLectern().getLocation())
-            .player(event.getPlayer())
-            .build();
-
-        recordingService.addToQueue(activity);
+        recordItemRemoveActivity(event.getLectern().getLocation(), event.getPlayer(), event.getBook().clone());
     }
 }

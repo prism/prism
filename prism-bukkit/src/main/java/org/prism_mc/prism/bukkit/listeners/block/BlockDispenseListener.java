@@ -31,6 +31,7 @@ import org.prism_mc.prism.bukkit.api.activities.BukkitActivity;
 import org.prism_mc.prism.bukkit.listeners.AbstractListener;
 import org.prism_mc.prism.bukkit.services.expectations.ExpectationService;
 import org.prism_mc.prism.bukkit.services.recording.BukkitRecordingService;
+import org.prism_mc.prism.bukkit.utils.ItemUtils;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 
 public class BlockDispenseListener extends AbstractListener implements Listener {
@@ -58,8 +59,7 @@ public class BlockDispenseListener extends AbstractListener implements Listener 
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockDispense(final BlockDispenseEvent event) {
-        // Ignore if this event is disabled
-        if (!configurationService.prismConfig().actions().itemDispense()) {
+        if (!configurationService.prismConfig().actions().itemDispense() || !ItemUtils.isValidItem(event.getItem())) {
             return;
         }
 

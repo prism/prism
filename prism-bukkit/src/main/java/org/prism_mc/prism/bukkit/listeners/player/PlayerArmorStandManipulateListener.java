@@ -67,6 +67,7 @@ public class PlayerArmorStandManipulateListener extends AbstractListener impleme
             // Ignore if this event is disabled or the player is not holding a valid item
             if (
                 !configurationService.prismConfig().actions().itemInsert() ||
+                !ItemUtils.isValidItem(event.getPlayerItem()) ||
                 !TagLib.ALL_ARMOR.isTagged(event.getPlayerItem().getType())
             ) {
                 return;
@@ -77,7 +78,8 @@ public class PlayerArmorStandManipulateListener extends AbstractListener impleme
             // Ignore if this event is disabled or the player is holding an item
             if (
                 !configurationService.prismConfig().actions().itemRemove() ||
-                !ItemUtils.nullOrAir(event.getPlayerItem())
+                !ItemUtils.nullOrAir(event.getPlayerItem()) ||
+                !ItemUtils.isValidItem(event.getArmorStandItem())
             ) {
                 return;
             }

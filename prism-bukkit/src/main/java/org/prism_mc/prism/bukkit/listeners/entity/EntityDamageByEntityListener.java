@@ -66,7 +66,7 @@ public class EntityDamageByEntityListener extends AbstractListener implements Li
             return;
         }
 
-        if (event.getEntity() instanceof ItemFrame itemFrame && !ItemUtils.nullOrAir(itemFrame.getItem())) {
+        if (event.getEntity() instanceof ItemFrame itemFrame && ItemUtils.isValidItem(itemFrame.getItem())) {
             var action = new BukkitItemStackAction(BukkitActionTypeRegistry.ITEM_REMOVE, itemFrame.getItem());
 
             var builder = BukkitActivity.builder().action(action).location(event.getEntity().getLocation());

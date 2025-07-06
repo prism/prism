@@ -64,24 +64,34 @@ public class ProjectileLaunchListener extends AbstractListener implements Listen
      */
     @EventHandler(priority = EventPriority.NORMAL)
     public void onProjectileLaunch(final ProjectileLaunchEvent event) {
-        // Ignore if this event is disabled
-        if (!configurationService.prismConfig().actions().itemThrow()) {
-            return;
-        }
-
         if (event.getEntity() instanceof Arrow) {
             return;
         }
 
         Action action = null;
         if (event.getEntity() instanceof ThrowableProjectile throwableProjectile) {
+            // Ignore if this event is disabled
+            if (!configurationService.prismConfig().actions().itemThrow()) {
+                return;
+            }
+
             action = new BukkitItemStackAction(BukkitActionTypeRegistry.ITEM_THROW, throwableProjectile.getItem());
         } else if (event.getEntity() instanceof Firework) {
+            // Ignore if this event is disabled
+            if (!configurationService.prismConfig().actions().fireworkLaunch()) {
+                return;
+            }
+
             action = new GenericBukkitAction(
                 BukkitActionTypeRegistry.FIREWORK_LAUNCH,
                 nameFromCause(event.getEntity())
             );
         } else {
+            // Ignore if this event is disabled
+            if (!configurationService.prismConfig().actions().itemThrow()) {
+                return;
+            }
+
             action = new GenericBukkitAction(BukkitActionTypeRegistry.ITEM_THROW, nameFromCause(event.getEntity()));
         }
 

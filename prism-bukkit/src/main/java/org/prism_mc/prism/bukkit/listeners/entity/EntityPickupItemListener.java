@@ -32,6 +32,7 @@ import org.prism_mc.prism.bukkit.api.activities.BukkitActivity;
 import org.prism_mc.prism.bukkit.listeners.AbstractListener;
 import org.prism_mc.prism.bukkit.services.expectations.ExpectationService;
 import org.prism_mc.prism.bukkit.services.recording.BukkitRecordingService;
+import org.prism_mc.prism.bukkit.utils.ItemUtils;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 
 public class EntityPickupItemListener extends AbstractListener implements Listener {
@@ -59,12 +60,14 @@ public class EntityPickupItemListener extends AbstractListener implements Listen
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityPickupItem(final EntityPickupItemEvent event) {
+        var itemStack = event.getItem().getItemStack();
+
         // Ignore if this event is disabled
-        if (!configurationService.prismConfig().actions().itemPickup()) {
+        if (!configurationService.prismConfig().actions().itemPickup() || !ItemUtils.isValidItem(itemStack)) {
             return;
         }
 
-        var action = new BukkitItemStackAction(BukkitActionTypeRegistry.ITEM_PICKUP, event.getItem().getItemStack());
+        var action = new BukkitItemStackAction(BukkitActionTypeRegistry.ITEM_PICKUP, itemStack);
 
         var builder = BukkitActivity.builder().action(action).location(event.getEntity().getLocation());
         if (event.getEntity() instanceof Player player) {
