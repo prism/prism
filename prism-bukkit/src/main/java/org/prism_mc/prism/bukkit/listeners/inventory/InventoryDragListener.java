@@ -32,6 +32,7 @@ import org.bukkit.inventory.ItemStack;
 import org.prism_mc.prism.bukkit.listeners.AbstractListener;
 import org.prism_mc.prism.bukkit.services.expectations.ExpectationService;
 import org.prism_mc.prism.bukkit.services.recording.BukkitRecordingService;
+import org.prism_mc.prism.bukkit.utils.ItemUtils;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 
 public class InventoryDragListener extends AbstractListener implements Listener {
@@ -77,16 +78,18 @@ public class InventoryDragListener extends AbstractListener implements Listener 
             return;
         }
 
-        final Map<Integer, ItemStack> newItems = event.getNewItems();
-        for (final Map.Entry<Integer, ItemStack> entry : newItems.entrySet()) {
+        for (final Map.Entry<Integer, ItemStack> entry : event.getNewItems().entrySet()) {
             int rawSlot = entry.getKey();
 
             if (rawSlot < event.getInventory().getSize()) {
-                ItemStack stack = event.getView().getItem(rawSlot);
-                int slotViewAmount = (stack == null) ? 0 : stack.getAmount();
+                ItemStack existingStack = event.getView().getItem(rawSlot);
+
+                int slotViewAmount = ItemUtils.nullOrAir(existingStack) ? 0 : existingStack.getAmount();
                 int amount = entry.getValue().getAmount() - slotViewAmount;
 
-                recordItemInsertActivity(location, player, entry.getValue(), amount);
+                if (amount > 0 && !ItemUtils.nullOrAir(entry.getValue())) {
+                    recordItemInsertActivity(location, player, entry.getValue(), amount);
+                }
             }
         }
     }
