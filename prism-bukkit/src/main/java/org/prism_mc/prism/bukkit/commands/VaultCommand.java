@@ -26,8 +26,8 @@ import dev.triumphteam.cmd.core.annotations.Command;
 import dev.triumphteam.cmd.core.annotations.CommandFlags;
 import dev.triumphteam.cmd.core.annotations.NamedArguments;
 import dev.triumphteam.cmd.core.argument.keyed.Arguments;
-import dev.triumphteam.gui.builder.item.ItemBuilder;
 import dev.triumphteam.gui.guis.Gui;
+import dev.triumphteam.gui.guis.GuiItem;
 import dev.triumphteam.gui.guis.PaginatedGui;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +37,7 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.bukkit.PrismBukkit;
 import org.prism_mc.prism.bukkit.actions.BukkitItemStackAction;
@@ -209,7 +210,7 @@ public class VaultCommand {
                             for (var activity : results) {
                                 if (activity.action() instanceof BukkitItemStackAction itemStackAction) {
                                     gui.addItem(
-                                        ItemBuilder.from(itemStackAction.itemStack()).asGuiItem(event -> {
+                                        new GuiItem(itemStackAction.itemStack(), event -> {
                                             reversedKeys.add((Long) activity.primaryKey());
                                             loggingService.info(
                                                 "{0} took {1} for activity #{2} from the vault inventory",
@@ -230,9 +231,9 @@ public class VaultCommand {
                                 gui.setItem(
                                     6,
                                     column,
-                                    ItemBuilder.from(Material.BLACK_STAINED_GLASS_PANE).asGuiItem(event ->
-                                        event.setCancelled(true)
-                                    )
+                                    new GuiItem(new ItemStack(Material.BLACK_STAINED_GLASS_PANE), event -> {
+                                        event.setCancelled(true);
+                                    })
                                 );
                             }
 
@@ -266,46 +267,56 @@ public class VaultCommand {
      */
     protected void updateGuiButtons(PaginatedGui gui, Component prev, Component next) {
         if (gui.getCurrentPageNum() > 1) {
+            var prevItem = new ItemStack(Material.PAPER);
+            var prevItemMeta = prevItem.getItemMeta();
+            prevItemMeta.displayName(next);
+            prevItem.setItemMeta(prevItemMeta);
+
             gui.setItem(
                 6,
                 3,
-                ItemBuilder.from(Material.PAPER)
-                    .name(prev)
-                    .asGuiItem(event -> {
-                        event.setCancelled(true);
+                new GuiItem(prevItem, event -> {
+                    event.setCancelled(true);
 
-                        gui.previous();
+                    gui.previous();
 
-                        updateGuiButtons(gui, prev, next);
-                    })
+                    updateGuiButtons(gui, prev, next);
+                })
             );
         } else {
             gui.setItem(
                 6,
                 3,
-                ItemBuilder.from(Material.BLACK_STAINED_GLASS_PANE).asGuiItem(event -> event.setCancelled(true))
+                new GuiItem(new ItemStack(Material.BLACK_STAINED_GLASS_PANE), event -> {
+                    event.setCancelled(true);
+                })
             );
         }
 
         if (gui.getCurrentPageNum() < gui.getPagesNum()) {
+            var nextItem = new ItemStack(Material.PAPER);
+            var nextItemMeta = nextItem.getItemMeta();
+            nextItemMeta.displayName(next);
+            nextItem.setItemMeta(nextItemMeta);
+
             gui.setItem(
                 6,
                 7,
-                ItemBuilder.from(Material.PAPER)
-                    .name(next)
-                    .asGuiItem(event -> {
-                        event.setCancelled(true);
+                new GuiItem(nextItem, event -> {
+                    event.setCancelled(true);
 
-                        gui.next();
+                    gui.next();
 
-                        updateGuiButtons(gui, prev, next);
-                    })
+                    updateGuiButtons(gui, prev, next);
+                })
             );
         } else {
             gui.setItem(
                 6,
                 7,
-                ItemBuilder.from(Material.BLACK_STAINED_GLASS_PANE).asGuiItem(event -> event.setCancelled(true))
+                new GuiItem(new ItemStack(Material.BLACK_STAINED_GLASS_PANE), event -> {
+                    event.setCancelled(true);
+                })
             );
         }
 

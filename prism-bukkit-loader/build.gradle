@@ -10,7 +10,7 @@ dependencies {
     compileOnly project.property('deps.paper-api')
 
     implementation(project.property('deps.triumph-gui')) {
-        exclude(module: "adventure-api")
+        exclude(group: "net.kyori")
     }
 
     implementation project(':prism-loader')
@@ -26,10 +26,12 @@ shadowJar {
     relocate 'com.typesafe', 'org.prism_mc.prism.libs.typesafe'
     relocate 'com.fasterxml.jackson', 'org.prism_mc.prism.libs.jackson'
     relocate 'dev.triumphteam', 'org.prism_mc.prism.libs.triumphteam'
-    relocate 'net.kyori.moonshine', 'org.prism_mc.prism.libs.kyori.moonshine'
-    relocate 'org.objectweb.asm', 'org.prism_mc.prism.asm'
-    relocate 'org.spongepowered.configurate', 'org.prism_mc.prism.libs.configurate'
+    relocate 'org.objectweb.asm', 'org.prism_mc.prism.libs.asm'
+
+    // Relocate configurate and all transitive deps
+    relocate 'net.kyori.option', 'org.prism_mc.prism.libs.kyori.option'
     relocate 'io.leangen.geantyref', 'org.prism_mc.prism.libs.geantyref'
+    relocate 'org.spongepowered.configurate', 'org.prism_mc.prism.libs.configurate'
 }
 
 artifacts {
