@@ -238,6 +238,7 @@ public class SqlActivityQueryBuilder {
                 PRISM_ITEMS.DATA,
                 PRISM_BLOCKS.NS,
                 PRISM_BLOCKS.NAME,
+                PRISM_BLOCKS.TRANSLATION_KEY,
                 PRISM_ENTITY_TYPES.ENTITY_TYPE,
                 PRISM_CAUSES.CAUSE,
                 PRISM_PLAYERS.PLAYER,
