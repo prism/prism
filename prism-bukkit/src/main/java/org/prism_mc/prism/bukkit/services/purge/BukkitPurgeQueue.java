@@ -194,8 +194,15 @@ public class BukkitPurgeQueue implements PurgeQueue {
             .asyncFirst(() -> {
                 loggingService.info("Executing next purge for query {0}...", query);
 
-                // Calculate the cycle upper bound
-                int cycleMaxPrimaryKey = cycleMinPrimaryKey + configurationService.prismConfig().purges().limit();
+                /*
+                 * Calculate the cycle upper bound.
+                 * If it exceeds the max primary key, use that instead so we're not including keys incorrectly.
+                 * Otherwise, subtract one so each cycle's max key can be each subsequent cycle's min key.
+                 */
+                int cycleMaxPrimaryKey = Math.min(
+                    cycleMinPrimaryKey + configurationService.prismConfig().purges().limit() - 1,
+                    maxPrimaryKey
+                );
                 loggingService.debug(
                     "Limiting cycle to primary keys {0} - {1}",
                     cycleMinPrimaryKey,
