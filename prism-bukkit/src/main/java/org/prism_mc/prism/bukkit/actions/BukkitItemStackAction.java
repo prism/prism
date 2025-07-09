@@ -42,6 +42,7 @@ import org.prism_mc.prism.api.actions.ItemAction;
 import org.prism_mc.prism.api.actions.types.ActionResultType;
 import org.prism_mc.prism.api.actions.types.ActionType;
 import org.prism_mc.prism.api.activities.Activity;
+import org.prism_mc.prism.api.containers.PlayerContainer;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueMode;
 import org.prism_mc.prism.api.services.modifications.ModificationResult;
 import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
@@ -194,7 +195,10 @@ public class BukkitItemStackAction extends BukkitMaterialAction implements ItemA
     ) {
         // Ignore non-player item rollbacks because they should always be serialized as contents
         // of a broken inventory holder, killed entity, etc.
-        if (activityContext.player() == null) {
+        if (
+            activityContext.cause() == null ||
+            !(activityContext.cause().container() instanceof PlayerContainer playerContainer)
+        ) {
             return ModificationResult.builder()
                 .activity(activityContext)
                 .skipped()
@@ -203,7 +207,7 @@ public class BukkitItemStackAction extends BukkitMaterialAction implements ItemA
                 .build();
         }
 
-        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(activityContext.player().key());
+        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerContainer.uuid());
 
         // The only time we give items back to a player's personal inventory is when they dropped it
         if (type().equals(BukkitActionTypeRegistry.ITEM_DROP) && offlinePlayer.isOnline()) {

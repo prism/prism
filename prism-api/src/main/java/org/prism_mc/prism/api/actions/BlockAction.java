@@ -21,55 +21,21 @@
 package org.prism_mc.prism.api.actions;
 
 import org.jetbrains.annotations.Nullable;
+import org.prism_mc.prism.api.containers.BlockContainer;
 
-public interface BlockAction extends CustomData, Translatable {
+public interface BlockAction extends CustomData {
     /**
-     * The block namespace. Usually "minecraft"
+     * The block container.
      *
-     * @return The namespace
+     * @return Block container
      */
-    String blockNamespace();
+    BlockContainer blockContainer();
 
     /**
-     * The block name.
+     * The replaced block container.
      *
-     * @return Block name
-     */
-    String blockName();
-
-    /**
-     * Serialize block data.
-     *
-     * @return The block data string
-     */
-    String serializeBlockData();
-
-    /**
-     * Replaced block namespace.
-     *
-     * @return Block namespace
-     */
-    String replacedBlockNamespace();
-
-    /**
-     * The replaced block name.
-     *
-     * @return Block name
-     */
-    String replacedBlockName();
-
-    /**
-     * The translation key for the replaced block.
-     *
-     * @return Translation key
-     */
-    String replacedBlockTranslationKey();
-
-    /**
-     * Serialized the replaced block data.
-     *
-     * @return The serialized block data
+     * @return Block container
      */
     @Nullable
-    String serializeReplacedBlockData();
+    BlockContainer replacedBlockContainer();
 }

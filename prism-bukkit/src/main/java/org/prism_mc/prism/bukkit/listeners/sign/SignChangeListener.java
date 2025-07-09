@@ -99,7 +99,7 @@ public class SignChangeListener extends AbstractListener implements Listener {
             var activity = BukkitActivity.builder()
                 .action(action)
                 .location(event.getBlock().getLocation())
-                .player(player)
+                .cause(player)
                 .build();
 
             recordingService.addToQueue(activity);

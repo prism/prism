@@ -22,8 +22,8 @@ package org.prism_mc.prism.bukkit.actions;
 
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
-import java.util.Locale;
 import java.util.UUID;
+import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -41,19 +41,18 @@ import org.prism_mc.prism.api.services.modifications.ModificationResult;
 import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
 import org.prism_mc.prism.api.util.Coordinate;
 import org.prism_mc.prism.bukkit.PrismBukkit;
+import org.prism_mc.prism.bukkit.api.containers.BukkitEntityContainer;
 import org.prism_mc.prism.bukkit.services.nbt.NbtService;
 
 public class BukkitEntityAction extends BukkitAction implements EntityAction {
+
+    @Getter
+    private final BukkitEntityContainer entityContainer;
 
     /**
      * The read/write nbt.
      */
     private final ReadWriteNBT readWriteNbt;
-
-    /**
-     * The entity type.
-     */
-    private final EntityType entityType;
 
     /**
      * Construct a new entity action.
@@ -75,14 +74,12 @@ public class BukkitEntityAction extends BukkitAction implements EntityAction {
      */
     public BukkitEntityAction(ActionType type, Entity entity) {
         super(type);
-        this.entityType = entity.getType();
+        this.entityContainer = new BukkitEntityContainer(entity.getType());
 
         readWriteNbt = NBT.createNBTObject();
 
         var nbtService = PrismBukkit.instance().injectorProvider().injector().getInstance(NbtService.class);
         nbtService.processEntityNbt(entity, readWriteNbt::mergeCompound);
-
-        this.descriptor = entityType.toString().toLowerCase(Locale.ENGLISH).replace("_", " ");
     }
 
     /**
@@ -91,38 +88,17 @@ public class BukkitEntityAction extends BukkitAction implements EntityAction {
      * @param type The action type
      * @param entityType The entity type
      * @param readWriteNbt The read/write nbt
-     * @param descriptor The descriptor
      * @param metadata The metadata
      */
-    public BukkitEntityAction(
-        ActionType type,
-        EntityType entityType,
-        ReadWriteNBT readWriteNbt,
-        String descriptor,
-        Metadata metadata
-    ) {
-        super(type, descriptor, metadata);
-        this.entityType = entityType;
+    public BukkitEntityAction(ActionType type, EntityType entityType, ReadWriteNBT readWriteNbt, Metadata metadata) {
+        super(type, null, metadata);
+        this.entityContainer = new BukkitEntityContainer(entityType);
         this.readWriteNbt = readWriteNbt;
     }
 
     @Override
     public Component descriptorComponent() {
-        return Component.translatable(entityType.translationKey());
-    }
-
-    /**
-     * Get the entity type.
-     *
-     * @return Entity type
-     */
-    public EntityType entityType() {
-        return entityType;
-    }
-
-    @Override
-    public String serializeEntityType() {
-        return entityType.toString().toLowerCase(Locale.ENGLISH);
+        return Component.translatable(entityContainer.translationKey());
     }
 
     @Override
@@ -163,11 +139,11 @@ public class BukkitEntityAction extends BukkitAction implements EntityAction {
         ModificationQueueMode mode
     ) {
         // Skip if entity is in the blacklist
-        if (modificationRuleset.entityBlacklistContainsAny(entityType.toString())) {
+        if (modificationRuleset.entityBlacklistContainsAny(entityContainer.entityType().toString())) {
             return ModificationResult.builder()
                 .activity(activityContext)
                 .skipped()
-                .target(entityType.translationKey())
+                .target(entityContainer.translationKey())
                 .build();
         }
 
@@ -177,7 +153,7 @@ public class BukkitEntityAction extends BukkitAction implements EntityAction {
             return ModificationResult.builder()
                 .activity(activityContext)
                 .skipped()
-                .target(entityType.translationKey())
+                .target(entityContainer.translationKey())
                 .build();
         }
 
@@ -186,10 +162,10 @@ public class BukkitEntityAction extends BukkitAction implements EntityAction {
             (!isRollback && type().resultType().equals(ActionResultType.CREATES));
 
         if (shouldSpawn) {
-            if (entityType.getEntityClass() != null) {
+            if (entityContainer.entityType().getEntityClass() != null) {
                 Location loc = new Location(world, coordinate.x(), coordinate.y(), coordinate.z());
 
-                world.spawn(loc, entityType.getEntityClass(), entity -> {
+                world.spawn(loc, entityContainer.entityType().getEntityClass(), entity -> {
                     NBT.modify(entity, nbt -> {
                         nbt.mergeCompound(readWriteNbt);
                     });
@@ -220,7 +196,7 @@ public class BukkitEntityAction extends BukkitAction implements EntityAction {
         return ModificationResult.builder()
             .activity(activityContext)
             .skipped()
-            .target(entityType.translationKey())
+            .target(entityContainer.translationKey())
             .build();
     }
 

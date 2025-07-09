@@ -21,7 +21,6 @@
 package org.prism_mc.prism.bukkit.listeners.entity;
 
 import com.google.inject.Inject;
-import java.util.Locale;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -74,7 +73,7 @@ public class EntityUnleashListener extends AbstractListener implements Listener 
         var activity = BukkitActivity.builder()
             .action(action)
             .location(event.getEntity().getLocation())
-            .cause(event.getReason().name().toLowerCase(Locale.ENGLISH).replace("_", " "))
+            .cause(event.getReason())
             .build();
 
         recordingService.addToQueue(activity);

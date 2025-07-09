@@ -30,7 +30,7 @@ import org.jooq.ForeignKey;
 import org.jooq.Identity;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row3;
+import org.jooq.Row2;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -77,16 +77,6 @@ public class PrismCauses extends TableImpl<PrismCausesRecord> {
     public final TableField<PrismCausesRecord, String> CAUSE = createField(
         DSL.name("cause"),
         SQLDataType.VARCHAR(155),
-        this,
-        ""
-    );
-
-    /**
-     * The column <code>prism_causes.player_id</code>.
-     */
-    public final TableField<PrismCausesRecord, UInteger> PLAYER_ID = createField(
-        DSL.name("player_id"),
-        SQLDataType.INTEGERUNSIGNED,
         this,
         ""
     );
@@ -143,25 +133,6 @@ public class PrismCauses extends TableImpl<PrismCausesRecord> {
     }
 
     @Override
-    public List<ForeignKey<PrismCausesRecord, ?>> getReferences() {
-        return Arrays.asList(Keys.PLAYERID);
-    }
-
-    private transient PrismPlayers prismPlayers;
-
-    /**
-     * Get the implicit join path to the <code>prism_players</code>
-     * table.
-     */
-    public PrismPlayers prismPlayers() {
-        if (prismPlayers == null) {
-            prismPlayers = new PrismPlayers(prefix, this, Keys.PLAYERID);
-        }
-
-        return prismPlayers;
-    }
-
-    @Override
     public PrismCauses as(String alias) {
         return new PrismCauses(prefix, DSL.name(alias), this);
     }
@@ -182,7 +153,7 @@ public class PrismCauses extends TableImpl<PrismCausesRecord> {
     }
 
     @Override
-    public Row3<UInteger, String, UInteger> fieldsRow() {
-        return (Row3) super.fieldsRow();
+    public Row2<UInteger, String> fieldsRow() {
+        return (Row2) super.fieldsRow();
     }
 }

@@ -30,48 +30,83 @@ import org.jooq.impl.Internal;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Indexes {
 
-    public static final Index PRISM_ACTIVITIES_ACTIONID = Internal.createIndex(
-        DSL.name("idx_prism_actionId"),
-        PRISM_ACTIVITIES,
-        new OrderField[] { PRISM_ACTIVITIES.ACTION_ID },
-        false
-    );
-    public static final Index PRISM_ACTIVITIES_CAUSEID = Internal.createIndex(
-        DSL.name("idx_prism_causeId"),
-        PRISM_ACTIVITIES,
-        new OrderField[] { PRISM_ACTIVITIES.CAUSE_ID },
-        false
-    );
     public static final Index PRISM_ACTIVITIES_COORDINATE = Internal.createIndex(
         DSL.name("idx_prism_coordinates"),
         PRISM_ACTIVITIES,
         new OrderField[] { PRISM_ACTIVITIES.X, PRISM_ACTIVITIES.Z, PRISM_ACTIVITIES.Y, PRISM_ACTIVITIES.TIMESTAMP },
         false
     );
-    public static final Index PRISM_ACTIVITIES_ENTITYTYPEID = Internal.createIndex(
-        DSL.name("idx_prism_entityTypeId"),
+
+    public static final Index PRISM_ACTIVITIES_ACTION_ID = Internal.createIndex(
+        DSL.name("idx_prism_actionId"),
         PRISM_ACTIVITIES,
-        new OrderField[] { PRISM_ACTIVITIES.ENTITY_TYPE_ID },
+        new OrderField[] { PRISM_ACTIVITIES.ACTION_ID },
         false
     );
-    public static final Index PRISM_ACTIVITIES_ITEMID = Internal.createIndex(
-        DSL.name("idx_prism_itemId"),
+
+    public static final Index PRISM_ACTIVITIES_AFFECTED_ENTITY_TYPE_ID = Internal.createIndex(
+        DSL.name("idx_prism_affectedEntityTypeId"),
         PRISM_ACTIVITIES,
-        new OrderField[] { PRISM_ACTIVITIES.ITEM_ID },
+        new OrderField[] { PRISM_ACTIVITIES.AFFECTED_ENTITY_TYPE_ID },
         false
     );
-    public static final Index PRISM_ACTIVITIES_BLOCKID = Internal.createIndex(
-        DSL.name("idx_prism_blockId"),
+
+    public static final Index PRISM_ACTIVITIES_AFFECTED_ITEM_ID = Internal.createIndex(
+        DSL.name("idx_prism_affectedItemId"),
         PRISM_ACTIVITIES,
-        new OrderField[] { PRISM_ACTIVITIES.BLOCK_ID },
+        new OrderField[] { PRISM_ACTIVITIES.AFFECTED_ITEM_ID },
         false
     );
-    public static final Index PRISM_ACTIVITIES_REPLACEDBLOCKID = Internal.createIndex(
+
+    public static final Index PRISM_ACTIVITIES_AFFECTED_BLOCK_ID = Internal.createIndex(
+        DSL.name("idx_prism_affectedBlockId"),
+        PRISM_ACTIVITIES,
+        new OrderField[] { PRISM_ACTIVITIES.AFFECTED_BLOCK_ID },
+        false
+    );
+
+    public static final Index PRISM_ACTIVITIES_REPLACED_BLOCK_ID = Internal.createIndex(
         DSL.name("idx_prism_replacedBlockId"),
         PRISM_ACTIVITIES,
-        new OrderField[] { PRISM_ACTIVITIES.BLOCK_ID },
+        new OrderField[] { PRISM_ACTIVITIES.REPLACED_BLOCK_ID },
         false
     );
+
+    public static final Index PRISM_ACTIVITIES_AFFECTED_PLAYER_ID = Internal.createIndex(
+        DSL.name("idx_prism_affectedPlayerId"),
+        PRISM_ACTIVITIES,
+        new OrderField[] { PRISM_ACTIVITIES.AFFECTED_PLAYER_ID },
+        false
+    );
+
+    public static final Index PRISM_ACTIVITIES_CAUSE_ID = Internal.createIndex(
+        DSL.name("idx_prism_causeId"),
+        PRISM_ACTIVITIES,
+        new OrderField[] { PRISM_ACTIVITIES.CAUSE_ID },
+        false
+    );
+
+    public static final Index PRISM_ACTIVITIES_CAUSE_ENTITY_TYPE_ID = Internal.createIndex(
+        DSL.name("idx_prism_causeEntityTypeId"),
+        PRISM_ACTIVITIES,
+        new OrderField[] { PRISM_ACTIVITIES.CAUSE_ENTITY_TYPE_ID },
+        false
+    );
+
+    public static final Index PRISM_ACTIVITIES_CAUSE_BLOCK_ID = Internal.createIndex(
+        DSL.name("idx_prism_causeBlockId"),
+        PRISM_ACTIVITIES,
+        new OrderField[] { PRISM_ACTIVITIES.CAUSE_BLOCK_ID },
+        false
+    );
+
+    public static final Index PRISM_ACTIVITIES_CAUSE_PLAYER_ID = Internal.createIndex(
+        DSL.name("idx_prism_causePlayerId"),
+        PRISM_ACTIVITIES,
+        new OrderField[] { PRISM_ACTIVITIES.CAUSE_PLAYER_ID },
+        false
+    );
+
     public static final Index PRISM_ACTIVITIES_WORLDID = Internal.createIndex(
         DSL.name("idx_prism_worldId"),
         PRISM_ACTIVITIES,

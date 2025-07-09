@@ -21,8 +21,6 @@
 package org.prism_mc.prism.bukkit.listeners.entity;
 
 import com.google.inject.Inject;
-import org.bukkit.entity.EnderDragon;
-import org.bukkit.entity.TNTPrimed;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -57,20 +55,11 @@ public class EntityExplodeListener extends AbstractListener implements Listener 
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityExplode(final EntityExplodeEvent event) {
-        String cause = "";
-        if (event.getEntity() instanceof TNTPrimed) {
-            cause = "tnt";
-        } else if (event.getEntity() instanceof EnderDragon) {
-            cause = "ender dragon";
-        } else {
-            cause = event.getEntity().getType().name().toLowerCase().replace("_", " ");
-        }
-
         // Ignore recording block breaks if they are disabled
         if (!configurationService.prismConfig().actions().blockBreak()) {
             return;
         }
 
-        processExplosion(event.blockList(), cause);
+        processExplosion(event.blockList(), event.getEntity().getType());
     }
 }

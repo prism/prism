@@ -153,6 +153,15 @@ public class Keys {
         new TableField[] { PRISM_ACTIONS.ACTION_ID },
         true
     );
+    public static final ForeignKey<PrismActivitiesRecord, PrismCausesRecord> AFFECTEDPLAYERID =
+        Internal.createForeignKey(
+            PRISM_ACTIVITIES,
+            DSL.name("affectedPlayerId"),
+            new TableField[] { PRISM_ACTIVITIES.AFFECTED_PLAYER_ID },
+            Keys.KEY_PRISM_PLAYERS_PRIMARY,
+            new TableField[] { PRISM_PLAYERS.PLAYER_ID },
+            true
+        );
     public static final ForeignKey<PrismActivitiesRecord, PrismCausesRecord> CAUSEID = Internal.createForeignKey(
         PRISM_ACTIVITIES,
         DSL.name("causeId"),
@@ -161,11 +170,36 @@ public class Keys {
         new TableField[] { PRISM_CAUSES.CAUSE_ID },
         true
     );
+    public static final ForeignKey<PrismActivitiesRecord, PrismCausesRecord> CAUSEPLAYERID = Internal.createForeignKey(
+        PRISM_ACTIVITIES,
+        DSL.name("causePlayerId"),
+        new TableField[] { PRISM_ACTIVITIES.CAUSE_PLAYER_ID },
+        Keys.KEY_PRISM_PLAYERS_PRIMARY,
+        new TableField[] { PRISM_PLAYERS.PLAYER_ID },
+        true
+    );
+    public static final ForeignKey<PrismActivitiesRecord, PrismCausesRecord> CAUSEENTITYTYPEID =
+        Internal.createForeignKey(
+            PRISM_ACTIVITIES,
+            DSL.name("causeEntityTypeId"),
+            new TableField[] { PRISM_ACTIVITIES.CAUSE_ENTITY_TYPE_ID },
+            Keys.KEY_PRISM_ENTITY_TYPES_PRIMARY,
+            new TableField[] { PRISM_ENTITY_TYPES.ENTITY_TYPE_ID },
+            true
+        );
+    public static final ForeignKey<PrismActivitiesRecord, PrismCausesRecord> CAUSEBLOCKID = Internal.createForeignKey(
+        PRISM_ACTIVITIES,
+        DSL.name("causeEntityTypeId"),
+        new TableField[] { PRISM_ACTIVITIES.CAUSE_ENTITY_TYPE_ID },
+        Keys.KEY_PRISM_ENTITY_TYPES_PRIMARY,
+        new TableField[] { PRISM_ENTITY_TYPES.ENTITY_TYPE_ID },
+        true
+    );
     public static final ForeignKey<PrismActivitiesRecord, PrismEntityTypesRecord> ENTITYTYPEID =
         Internal.createForeignKey(
             PRISM_ACTIVITIES,
             DSL.name("entityTypeId"),
-            new TableField[] { PRISM_ACTIVITIES.ENTITY_TYPE_ID },
+            new TableField[] { PRISM_ACTIVITIES.AFFECTED_ENTITY_TYPE_ID },
             Keys.KEY_PRISM_ENTITY_TYPES_PRIMARY,
             new TableField[] { PRISM_ENTITY_TYPES.ENTITY_TYPE_ID },
             true
@@ -173,7 +207,7 @@ public class Keys {
     public static final ForeignKey<PrismActivitiesRecord, PrismItemsRecord> ITEMID = Internal.createForeignKey(
         PRISM_ACTIVITIES,
         DSL.name("itemId"),
-        new TableField[] { PRISM_ACTIVITIES.ITEM_ID },
+        new TableField[] { PRISM_ACTIVITIES.AFFECTED_ITEM_ID },
         Keys.KEY_PRISM_ITEMS_PRIMARY,
         new TableField[] { PRISM_ITEMS.ITEM_ID },
         true
@@ -181,7 +215,7 @@ public class Keys {
     public static final ForeignKey<PrismActivitiesRecord, PrismBlocksRecord> BLOCKID = Internal.createForeignKey(
         PRISM_ACTIVITIES,
         DSL.name("blockId"),
-        new TableField[] { PRISM_ACTIVITIES.BLOCK_ID },
+        new TableField[] { PRISM_ACTIVITIES.AFFECTED_BLOCK_ID },
         Keys.KEY_PRISM_BLOCKS_PRIMARY,
         new TableField[] { PRISM_BLOCKS.BLOCK_ID },
         true
@@ -201,14 +235,6 @@ public class Keys {
         new TableField[] { PRISM_ACTIVITIES.WORLD_ID },
         Keys.KEY_PRISM_WORLDS_PRIMARY,
         new TableField[] { PRISM_WORLDS.WORLD_ID },
-        true
-    );
-    public static final ForeignKey<PrismCausesRecord, PrismPlayersRecord> PLAYERID = Internal.createForeignKey(
-        PRISM_CAUSES,
-        DSL.name("playerId"),
-        new TableField[] { PRISM_CAUSES.PLAYER_ID },
-        Keys.KEY_PRISM_PLAYERS_PRIMARY,
-        new TableField[] { PRISM_PLAYERS.PLAYER_ID },
         true
     );
 }

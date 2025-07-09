@@ -36,7 +36,18 @@ public class GenericActionType extends ActionType {
      * @param reversible If action is reversible
      */
     public GenericActionType(String key, ActionResultType resultType, boolean reversible) {
-        super(key, resultType, reversible);
+        super(key, resultType, reversible, true);
+    }
+
+    /**
+     * Construct a new generic action type.
+     *
+     * @param key The key
+     * @param resultType The result type
+     * @param reversible If action is reversible
+     */
+    public GenericActionType(String key, ActionResultType resultType, boolean reversible, boolean usesDescriptor) {
+        super(key, resultType, reversible, usesDescriptor);
     }
 
     @Override

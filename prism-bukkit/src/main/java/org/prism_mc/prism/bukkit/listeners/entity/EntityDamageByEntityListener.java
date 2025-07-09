@@ -22,7 +22,6 @@ package org.prism_mc.prism.bukkit.listeners.entity;
 
 import com.google.inject.Inject;
 import org.bukkit.entity.ItemFrame;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -68,14 +67,10 @@ public class EntityDamageByEntityListener extends AbstractListener implements Li
 
         if (event.getEntity() instanceof ItemFrame itemFrame && ItemUtils.isValidItem(itemFrame.getItem())) {
             var action = new BukkitItemStackAction(BukkitActionTypeRegistry.ITEM_REMOVE, itemFrame.getItem());
-
-            var builder = BukkitActivity.builder().action(action).location(event.getEntity().getLocation());
-            if (event.getDamager() instanceof Player player) {
-                builder.player(player);
-            } else {
-                builder.cause(nameFromCause(event.getDamager()));
-            }
-
+            var builder = BukkitActivity.builder()
+                .action(action)
+                .location(event.getEntity().getLocation())
+                .cause(event.getDamager());
             recordingService.addToQueue(builder.build());
         }
     }

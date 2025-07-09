@@ -67,9 +67,7 @@ public class PlayerCommandPreprocessListener extends AbstractListener implements
         }
 
         var action = new GenericBukkitAction(BukkitActionTypeRegistry.PLAYER_COMMAND, event.getMessage());
-
-        var activity = BukkitActivity.builder().action(action).location(player.getLocation()).player(player).build();
-
+        var activity = BukkitActivity.builder().action(action).location(player.getLocation()).cause(player).build();
         recordingService.addToQueue(activity);
     }
 }

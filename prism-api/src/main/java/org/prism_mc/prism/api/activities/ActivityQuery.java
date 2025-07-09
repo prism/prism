@@ -67,15 +67,21 @@ public class ActivityQuery {
     private Long before;
 
     /**
-     * The blocks.
+     * The affected blocks.
      */
     @Singular
-    private Collection<String> blocks;
+    private Collection<String> affectedBlocks;
 
     /**
-     * The cause.
+     * The cause blocks.
      */
-    private String cause;
+    @Singular
+    private Collection<String> causeBlocks;
+
+    /**
+     * The named cause.
+     */
+    private String namedCause;
 
     /**
      * The default parameters used.
@@ -84,10 +90,16 @@ public class ActivityQuery {
     private Collection<String> defaultsUsed;
 
     /**
-     * The entity types.
+     * The affected entity types.
      */
     @Singular
-    private Collection<String> entityTypes;
+    private Collection<String> affectedEntityTypes;
+
+    /**
+     * The cause entity types.
+     */
+    @Singular
+    private Collection<String> causeEntityTypes;
 
     /**
      * Grouped.
@@ -112,10 +124,10 @@ public class ActivityQuery {
     private boolean lookup = true;
 
     /**
-     * The materials.
+     * The affected materials.
      */
     @Singular
-    private Collection<String> materials;
+    private Collection<String> affectedMaterials;
 
     /**
      * The max x coordinate.
@@ -134,10 +146,16 @@ public class ActivityQuery {
     private int offset = 0;
 
     /**
-     * The player names.
+     * The affected player names.
      */
     @Singular
-    private Collection<String> playerNames;
+    private Collection<String> affectedPlayerNames;
+
+    /**
+     * The cause player names.
+     */
+    @Singular
+    private Collection<String> causePlayerNames;
 
     /**
      * A generic query string for searching text.

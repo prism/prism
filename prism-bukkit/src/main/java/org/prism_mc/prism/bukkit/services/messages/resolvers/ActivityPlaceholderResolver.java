@@ -48,7 +48,11 @@ import org.prism_mc.prism.api.actions.types.ActionResultType;
 import org.prism_mc.prism.api.actions.types.ActionType;
 import org.prism_mc.prism.api.activities.AbstractActivity;
 import org.prism_mc.prism.api.activities.Activity;
+import org.prism_mc.prism.api.activities.Cause;
 import org.prism_mc.prism.api.activities.GroupedActivity;
+import org.prism_mc.prism.api.containers.PlayerContainer;
+import org.prism_mc.prism.api.containers.StringContainer;
+import org.prism_mc.prism.api.containers.TranslatableContainer;
 import org.prism_mc.prism.api.util.Coordinate;
 import org.prism_mc.prism.api.util.Pair;
 import org.prism_mc.prism.bukkit.services.translation.BukkitTranslationService;
@@ -82,7 +86,7 @@ public class ActivityPlaceholderResolver implements IPlaceholderResolver<Command
     ) {
         Component action = Component.text(value.action().type().key());
         Component actionPastTense = actionPastTense(value.action().type());
-        Component cause = cause(receiver, value.cause(), value.player());
+        Component cause = cause(receiver, value.cause());
         Component since = since(receiver, value.timestamp());
         Component descriptor = descriptor(receiver, value);
         Component location = location(receiver, value.world(), value.coordinate());
@@ -153,9 +157,13 @@ public class ActivityPlaceholderResolver implements IPlaceholderResolver<Command
      * @param cause The cause
      * @return The cause name/string
      */
-    protected Component cause(CommandSender receiver, String cause, Pair<UUID, String> player) {
-        if (player != null) {
-            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player.key());
+    protected Component cause(CommandSender receiver, Cause cause) {
+        if (cause == null) {
+            return Component.translatable("prism.unknown-cause");
+        } else if (cause.container() instanceof StringContainer stringContainer) {
+            return Component.text().append(Component.text(stringContainer.value())).build();
+        } else if (cause.container() instanceof PlayerContainer playerContainer) {
+            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerContainer.uuid());
 
             Component playerHeading = MiniMessage.miniMessage()
                 .deserialize(translationService.messageOf(receiver, "prism.player-hover-header"));
@@ -177,7 +185,7 @@ public class ActivityPlaceholderResolver implements IPlaceholderResolver<Command
                 .append(Component.text("\n"))
                 .append(uuid)
                 .append(Component.text(" "))
-                .append(Component.text(player.key().toString(), NamedTextColor.WHITE))
+                .append(Component.text(playerContainer.uuid().toString(), NamedTextColor.WHITE))
                 .append(Component.text("\n"))
                 .append(online)
                 .append(Component.text(" "))
@@ -189,15 +197,11 @@ public class ActivityPlaceholderResolver implements IPlaceholderResolver<Command
                 .build();
 
             return Component.text()
-                .append(Component.text(player.value()))
+                .append(Component.text(playerContainer.name()))
                 .hoverEvent(HoverEvent.showText(hover))
                 .build();
-        }
-
-        if (cause != null) {
-            Component hover = Component.text().append(Component.text("Non-player", NamedTextColor.GRAY)).build();
-
-            return Component.text().append(Component.text(cause)).hoverEvent(HoverEvent.showText(hover)).build();
+        } else if (cause.container() instanceof TranslatableContainer translatableContainer) {
+            return Component.translatable(translatableContainer.translationKey());
         } else {
             return Component.translatable("prism.unknown-cause");
         }
@@ -211,43 +215,42 @@ public class ActivityPlaceholderResolver implements IPlaceholderResolver<Command
      * @return The descriptor component
      */
     protected Component descriptor(CommandSender receiver, AbstractActivity value) {
-        Component descriptor = Component.empty();
-        if (value.action().descriptor() != null) {
-            var builder = Component.text().append(value.action().descriptorComponent());
-
-            if (
-                value.action().metadata() != null &&
-                value.action().metadata().data() != null &&
-                !value.action().metadata().data().isEmpty()
-            ) {
-                var metadataBuilder = Component.text();
-
-                int size = value.action().metadata().data().entrySet().size();
-                int i = 0;
-                for (var entry : value.action().metadata().data().entrySet()) {
-                    var key = translationService.messageOf(
-                        receiver,
-                        String.format("prism.metadata-hover-%s", entry.getKey().toLowerCase(Locale.ROOT))
-                    );
-
-                    metadataBuilder
-                        .append(Component.text(key + ": ", NamedTextColor.GRAY))
-                        .append(Component.text(entry.getValue(), NamedTextColor.WHITE));
-
-                    if (i < size - 1) {
-                        metadataBuilder.appendNewline();
-                    }
-
-                    i++;
-                }
-
-                builder.hoverEvent(HoverEvent.showText(metadataBuilder.build()));
-            }
-
-            descriptor = builder.build();
+        if (!value.action().type().usesDescriptor()) {
+            return Component.empty();
         }
 
-        return descriptor;
+        var builder = Component.text().append(value.action().descriptorComponent());
+
+        if (
+            value.action().metadata() != null &&
+            value.action().metadata().data() != null &&
+            !value.action().metadata().data().isEmpty()
+        ) {
+            var metadataBuilder = Component.text();
+
+            int size = value.action().metadata().data().entrySet().size();
+            int i = 0;
+            for (var entry : value.action().metadata().data().entrySet()) {
+                var key = translationService.messageOf(
+                    receiver,
+                    String.format("prism.metadata-hover-%s", entry.getKey().toLowerCase(Locale.ROOT))
+                );
+
+                metadataBuilder
+                    .append(Component.text(key + ": ", NamedTextColor.GRAY))
+                    .append(Component.text(entry.getValue(), NamedTextColor.WHITE));
+
+                if (i < size - 1) {
+                    metadataBuilder.appendNewline();
+                }
+
+                i++;
+            }
+
+            builder.hoverEvent(HoverEvent.showText(metadataBuilder.build()));
+        }
+
+        return builder.build();
     }
 
     /**

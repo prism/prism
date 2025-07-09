@@ -76,7 +76,7 @@ public class BlockFormListener extends AbstractListener implements Listener {
 
         var activity = BukkitActivity.builder()
             .action(action)
-            .cause(nameFromCause(event.getBlock()))
+            .cause(event.getBlock())
             .location(block.getLocation())
             .build();
 

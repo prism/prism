@@ -73,9 +73,7 @@ public class PlayerExpChangeListener extends AbstractListener implements Listene
         String descriptor = String.format("%dxp", event.getAmount());
 
         var action = new GenericBukkitAction(BukkitActionTypeRegistry.XP_PICKUP, descriptor);
-
-        var activity = BukkitActivity.builder().action(action).location(player.getLocation()).player(player).build();
-
+        var activity = BukkitActivity.builder().action(action).location(player.getLocation()).cause(player).build();
         recordingService.addToQueue(activity);
     }
 }

@@ -82,7 +82,7 @@ public class PlayerHarvestBlockListener extends AbstractListener implements List
 
         var activity = BukkitActivity.builder()
             .action(action)
-            .player(event.getPlayer())
+            .cause(event.getPlayer())
             .location(oldState.getLocation())
             .build();
 

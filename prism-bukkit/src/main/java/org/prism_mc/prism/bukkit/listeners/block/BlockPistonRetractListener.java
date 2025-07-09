@@ -83,7 +83,11 @@ public class BlockPistonRetractListener extends AbstractListener implements List
                 newBlockLocation.getBlock().getState()
             );
 
-            var activity = BukkitActivity.builder().action(action).location(newBlockLocation).cause("piston").build();
+            var activity = BukkitActivity.builder()
+                .action(action)
+                .location(newBlockLocation)
+                .cause(event.getBlock())
+                .build();
 
             recordingService.addToQueue(activity);
         }

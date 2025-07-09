@@ -45,17 +45,12 @@ public abstract class AbstractActivity {
     /**
      * The cause.
      */
-    protected String cause;
+    protected Cause cause;
 
     /**
      * The coordinate, if any.
      */
     protected Coordinate coordinate;
-
-    /**
-     * The causing player.
-     */
-    protected Pair<UUID, String> player;
 
     /**
      * The timestamp.
@@ -74,21 +69,18 @@ public abstract class AbstractActivity {
      * @param action The action
      * @param coordinate The coordinate
      * @param cause The cause
-     * @param player The player
      * @param timestamp The timestamp (or average)
      */
     public AbstractActivity(
         Action action,
         Pair<UUID, String> world,
         Coordinate coordinate,
-        String cause,
-        Pair<UUID, String> player,
+        Cause cause,
         Long timestamp
     ) {
         this.action = action;
         this.cause = cause;
         this.coordinate = coordinate;
-        this.player = player;
         this.timestamp = timestamp;
         this.world = world;
     }

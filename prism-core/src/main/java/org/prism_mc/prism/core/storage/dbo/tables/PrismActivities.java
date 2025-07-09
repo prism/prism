@@ -31,7 +31,7 @@ import org.jooq.Identity;
 import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row18;
+import org.jooq.Row22;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -138,8 +138,8 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
     /**
      * The column <code>prism_activities.item_id</code>.
      */
-    public final TableField<PrismActivitiesRecord, UShort> ITEM_ID = createField(
-        DSL.name("item_id"),
+    public final TableField<PrismActivitiesRecord, UShort> AFFECTED_ITEM_ID = createField(
+        DSL.name("affected_item_id"),
         SQLDataType.SMALLINTUNSIGNED,
         this,
         ""
@@ -148,8 +148,8 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
     /**
      * The column <code>prism_activities.item_quantity</code>.
      */
-    public final TableField<PrismActivitiesRecord, UShort> ITEM_QUANTITY = createField(
-        DSL.name("item_quantity"),
+    public final TableField<PrismActivitiesRecord, UShort> AFFECTED_ITEM_QUANTITY = createField(
+        DSL.name("affected_item_quantity"),
         SQLDataType.SMALLINTUNSIGNED,
         this,
         ""
@@ -158,8 +158,8 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
     /**
      * The column <code>prism_activities.block_id</code>.
      */
-    public final TableField<PrismActivitiesRecord, UInteger> BLOCK_ID = createField(
-        DSL.name("block_id"),
+    public final TableField<PrismActivitiesRecord, UInteger> AFFECTED_BLOCK_ID = createField(
+        DSL.name("affected_block_id"),
         SQLDataType.INTEGERUNSIGNED,
         this,
         ""
@@ -178,9 +178,19 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
     /**
      * The column <code>prism_activities.entity_type_id</code>.
      */
-    public final TableField<PrismActivitiesRecord, UShort> ENTITY_TYPE_ID = createField(
-        DSL.name("entity_type_id"),
+    public final TableField<PrismActivitiesRecord, UShort> AFFECTED_ENTITY_TYPE_ID = createField(
+        DSL.name("affected_entity_type_id"),
         SQLDataType.SMALLINTUNSIGNED,
+        this,
+        ""
+    );
+
+    /**
+     * The column <code>prism_causes.affected_player_id</code>.
+     */
+    public final TableField<PrismActivitiesRecord, UInteger> AFFECTED_PLAYER_ID = createField(
+        DSL.name("affected_player_id"),
+        SQLDataType.INTEGERUNSIGNED,
         this,
         ""
     );
@@ -190,7 +200,37 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
      */
     public final TableField<PrismActivitiesRecord, UInteger> CAUSE_ID = createField(
         DSL.name("cause_id"),
-        SQLDataType.INTEGERUNSIGNED.nullable(false),
+        SQLDataType.INTEGERUNSIGNED,
+        this,
+        ""
+    );
+
+    /**
+     * The column <code>prism_causes.cause_player_id</code>.
+     */
+    public final TableField<PrismActivitiesRecord, UInteger> CAUSE_PLAYER_ID = createField(
+        DSL.name("cause_player_id"),
+        SQLDataType.INTEGERUNSIGNED,
+        this,
+        ""
+    );
+
+    /**
+     * The column <code>prism_causes.cause_entity_type_id</code>.
+     */
+    public final TableField<PrismActivitiesRecord, UShort> CAUSE_ENTITY_TYPE_ID = createField(
+        DSL.name("cause_entity_type_id"),
+        SQLDataType.SMALLINTUNSIGNED,
+        this,
+        ""
+    );
+
+    /**
+     * The column <code>prism_causes.cause_block_id</code>.
+     */
+    public final TableField<PrismActivitiesRecord, UInteger> CAUSE_BLOCK_ID = createField(
+        DSL.name("cause_block_id"),
+        SQLDataType.INTEGERUNSIGNED,
         this,
         ""
     );
@@ -200,7 +240,7 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
      */
     public final TableField<PrismActivitiesRecord, String> DESCRIPTOR = createField(
         DSL.name("descriptor"),
-        SQLDataType.VARCHAR(155),
+        SQLDataType.VARCHAR(256),
         this,
         ""
     );
@@ -284,13 +324,17 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
     @Override
     public List<Index> getIndexes() {
         return Arrays.asList(
-            Indexes.PRISM_ACTIVITIES_ACTIONID,
-            Indexes.PRISM_ACTIVITIES_CAUSEID,
+            Indexes.PRISM_ACTIVITIES_ACTION_ID,
+            Indexes.PRISM_ACTIVITIES_AFFECTED_PLAYER_ID,
+            Indexes.PRISM_ACTIVITIES_CAUSE_ID,
+            Indexes.PRISM_ACTIVITIES_CAUSE_PLAYER_ID,
+            Indexes.PRISM_ACTIVITIES_CAUSE_ENTITY_TYPE_ID,
+            Indexes.PRISM_ACTIVITIES_AFFECTED_BLOCK_ID,
             Indexes.PRISM_ACTIVITIES_COORDINATE,
-            Indexes.PRISM_ACTIVITIES_ENTITYTYPEID,
-            Indexes.PRISM_ACTIVITIES_ITEMID,
-            Indexes.PRISM_ACTIVITIES_BLOCKID,
-            Indexes.PRISM_ACTIVITIES_REPLACEDBLOCKID,
+            Indexes.PRISM_ACTIVITIES_AFFECTED_ENTITY_TYPE_ID,
+            Indexes.PRISM_ACTIVITIES_AFFECTED_ITEM_ID,
+            Indexes.PRISM_ACTIVITIES_AFFECTED_BLOCK_ID,
+            Indexes.PRISM_ACTIVITIES_REPLACED_BLOCK_ID,
             Indexes.PRISM_ACTIVITIES_WORLDID
         );
     }
@@ -314,7 +358,11 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
             Keys.BLOCKID,
             Keys.REPLACEDBLOCKID,
             Keys.ENTITYTYPEID,
-            Keys.CAUSEID
+            Keys.AFFECTEDPLAYERID,
+            Keys.CAUSEID,
+            Keys.CAUSEPLAYERID,
+            Keys.CAUSEENTITYTYPEID,
+            Keys.CAUSEBLOCKID
         );
     }
 
@@ -398,18 +446,6 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
         return prismEntityTypes;
     }
 
-    /**
-     * Get the implicit join path to the <code>prism_causes</code>
-     * table.
-     */
-    public PrismCauses prismCauses() {
-        if (prismCauses == null) {
-            prismCauses = new PrismCauses(prefix, this, Keys.CAUSEID);
-        }
-
-        return prismCauses;
-    }
-
     @Override
     public PrismActivities as(String alias) {
         return new PrismActivities(prefix, DSL.name(alias), this);
@@ -431,7 +467,7 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
     }
 
     @Override
-    public Row18<
+    public Row22<
         UInteger,
         UInteger,
         UByte,
@@ -441,6 +477,10 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
         UByte,
         UShort,
         UShort,
+        UInteger,
+        UInteger,
+        UShort,
+        UInteger,
         UInteger,
         UInteger,
         UShort,
@@ -451,6 +491,6 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
         String,
         Boolean
     > fieldsRow() {
-        return (Row18) super.fieldsRow();
+        return (Row22) super.fieldsRow();
     }
 }

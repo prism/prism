@@ -24,7 +24,6 @@ import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import javax.annotation.Nullable;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.prism_mc.prism.api.actions.Action;
 import org.prism_mc.prism.api.actions.ActionData;
@@ -65,8 +64,6 @@ public class BlockActionType extends ActionType {
                 actionData.replacedBlockName(),
                 actionData.replacedBlockData()
             );
-        } else {
-            replacedBlockData = Bukkit.createBlockData(Material.AIR);
         }
 
         return new BukkitBlockAction(
@@ -78,7 +75,6 @@ public class BlockActionType extends ActionType {
             actionData.replacedBlockNamespace(),
             actionData.replacedBlockName(),
             replacedBlockData,
-            actionData.descriptor(),
             actionData.translationKey(),
             actionData.replacedBlockTranslationKey()
         );

@@ -45,7 +45,6 @@ public final class GroupedActivity extends AbstractActivity {
      * @param world The world
      * @param coordinate The average coordinate
      * @param cause The cause
-     * @param player The player
      * @param timestamp The timestamp
      * @param count The count
      */
@@ -53,12 +52,11 @@ public final class GroupedActivity extends AbstractActivity {
         Action action,
         Pair<UUID, String> world,
         Coordinate coordinate,
-        String cause,
-        Pair<UUID, String> player,
+        Cause cause,
         long timestamp,
         int count
     ) {
-        super(action, world, coordinate, cause, player, timestamp);
+        super(action, world, coordinate, cause, timestamp);
         this.count = count;
     }
 }

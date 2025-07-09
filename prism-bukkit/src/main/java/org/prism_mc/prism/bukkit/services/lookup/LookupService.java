@@ -227,17 +227,17 @@ public class LookupService {
         } else {
             for (var activity : results.results()) {
                 if (activity instanceof GroupedActivity groupedActivity) {
-                    if (activity.action().descriptor() != null && groupedActivity.count() > 1) {
+                    if (activity.action().type().usesDescriptor() && groupedActivity.count() > 1) {
                         messageService.listActivityRowGrouped(sender, activity);
-                    } else if (activity.action().descriptor() != null && groupedActivity.count() == 1) {
+                    } else if (activity.action().type().usesDescriptor() && groupedActivity.count() == 1) {
                         messageService.listActivityRowGroupedNoQuantity(sender, activity);
-                    } else if (activity.action().descriptor() == null && groupedActivity.count() == 1) {
+                    } else if (!activity.action().type().usesDescriptor() && groupedActivity.count() == 1) {
                         messageService.listActivityRowGroupedNoDescriptorNoQuantity(sender, activity);
                     } else {
                         messageService.listActivityRowGroupedNoDescriptor(sender, activity);
                     }
                 } else {
-                    if (activity.action().descriptor() != null) {
+                    if (activity.action().type().usesDescriptor()) {
                         messageService.listActivityRowUngrouped(sender, activity);
                     } else {
                         messageService.listActivityRowUngroupedNoDescriptor(sender, activity);

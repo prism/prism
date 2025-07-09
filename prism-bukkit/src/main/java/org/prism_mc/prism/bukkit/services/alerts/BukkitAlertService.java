@@ -178,7 +178,7 @@ public class BukkitAlertService {
         var query = BukkitActivityQuery.builder()
             .grouped(false)
             .actionType(BukkitActionTypeRegistry.BLOCK_PLACE)
-            .material(blockState.getType().toString().toLowerCase(Locale.ENGLISH))
+            .affectedMaterial(blockState.getType().toString().toLowerCase(Locale.ENGLISH))
             .location(blockState.getLocation())
             .limit(1)
             .build();

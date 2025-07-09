@@ -382,20 +382,20 @@ public class QueryService {
 
         // Read "cause" parameter from arguments or defaults
         String cause = null;
-        if (arguments.getArgument("cause", String.class).isPresent()) {
-            cause = arguments.getArgument("cause", String.class).get();
+        if (arguments.getArgument("c", String.class).isPresent()) {
+            cause = arguments.getArgument("c", String.class).get();
         } else if (
             !arguments.hasFlag("nodefaults") &&
-            configurationService.prismConfig().defaults().parameters().containsKey("cause")
+            configurationService.prismConfig().defaults().parameters().containsKey("c")
         ) {
-            cause = configurationService.prismConfig().defaults().parameters().get("cause");
+            cause = configurationService.prismConfig().defaults().parameters().get("c");
 
-            builder.defaultUsed("cause:" + cause);
+            builder.defaultUsed("c:" + cause);
         }
 
         // Attempt to resolve to a timestamp
         if (cause != null) {
-            builder.cause(cause);
+            builder.namedCause(cause);
         }
 
         // Read "a" parameter from arguments or defaults
@@ -476,7 +476,30 @@ public class QueryService {
         }
 
         if (!blocks.isEmpty()) {
-            builder.blocks(blocks);
+            builder.affectedBlocks(blocks);
+        }
+
+        // Read "bc" parameter from arguments or defaults
+        final Set<String> causeBlocks = new HashSet<>();
+        if (arguments.getListArgument("bc", String.class).isPresent()) {
+            arguments
+                .getListArgument("bc", String.class)
+                .get()
+                .forEach(block -> {
+                    causeBlocks.add(block.toLowerCase(Locale.ENGLISH));
+                });
+        } else if (
+            !arguments.hasFlag("nodefaults") &&
+            configurationService.prismConfig().defaults().parameters().containsKey("bc")
+        ) {
+            String blocksString = configurationService.prismConfig().defaults().parameters().get("bc");
+            Collections.addAll(causeBlocks, blocksString.split(","));
+
+            builder.defaultUsed("bc:" + blocksString);
+        }
+
+        if (!causeBlocks.isEmpty()) {
+            builder.causeBlocks(causeBlocks);
         }
 
         // Read "i" parameter from arguments or defaults
@@ -538,7 +561,7 @@ public class QueryService {
         }
 
         if (!materials.isEmpty()) {
-            builder.materials(materials);
+            builder.affectedMaterials(materials);
         }
 
         // Read "e" parameter from arguments or defaults
@@ -599,9 +622,33 @@ public class QueryService {
             }
         }
 
-        // Add entity types
+        // Add affected entity types
         if (!entityTypes.isEmpty()) {
-            builder.entityTypes(entityTypes);
+            builder.affectedEntityTypes(entityTypes);
+        }
+
+        // Read "ec" parameter from arguments or defaults
+        final Set<String> causeEntityTypes = new HashSet<>();
+        if (arguments.getListArgument("ec", EntityType.class).isPresent()) {
+            arguments
+                .getListArgument("ec", EntityType.class)
+                .get()
+                .forEach(entity -> {
+                    causeEntityTypes.add(entity.toString().toLowerCase(Locale.ENGLISH));
+                });
+        } else if (
+            !arguments.hasFlag("nodefaults") &&
+            configurationService.prismConfig().defaults().parameters().containsKey("ec")
+        ) {
+            String entityString = configurationService.prismConfig().defaults().parameters().get("ec");
+            Collections.addAll(causeEntityTypes, entityString.split(","));
+
+            builder.defaultUsed("ec:" + entityString);
+        }
+
+        // Add cause entity types
+        if (!causeEntityTypes.isEmpty()) {
+            builder.causeEntityTypes(causeEntityTypes);
         }
 
         // Read "p" parameter from arguments or defaults
@@ -623,9 +670,58 @@ public class QueryService {
             builder.defaultUsed("p:" + playerString);
         }
 
-        // Attempt to resolve to players
+        // Attempt to resolve players
         if (!p.isEmpty()) {
-            parsePlayers(builder, p);
+            builder.affectedPlayerNames(p);
+            builder.causePlayerNames(p);
+        }
+
+        // Read "pa" parameter from arguments or defaults
+        final List<String> pa = new ArrayList<>();
+        if (arguments.getListArgument("pa", OfflinePlayer.class).isPresent()) {
+            arguments
+                .getListArgument("pa", OfflinePlayer.class)
+                .get()
+                .forEach(player -> {
+                    pa.add(player.getName());
+                });
+        } else if (
+            !arguments.hasFlag("nodefaults") &&
+            configurationService.prismConfig().defaults().parameters().containsKey("pa")
+        ) {
+            String playerString = configurationService.prismConfig().defaults().parameters().get("pa");
+            Collections.addAll(pa, playerString.split(","));
+
+            builder.defaultUsed("pa:" + playerString);
+        }
+
+        // Attempt to resolve players
+        if (!pa.isEmpty()) {
+            builder.affectedPlayerNames(pa);
+        }
+
+        // Read "pc" parameter from arguments or defaults
+        final List<String> pc = new ArrayList<>();
+        if (arguments.getListArgument("pc", OfflinePlayer.class).isPresent()) {
+            arguments
+                .getListArgument("pc", OfflinePlayer.class)
+                .get()
+                .forEach(player -> {
+                    pc.add(player.getName());
+                });
+        } else if (
+            !arguments.hasFlag("nodefaults") &&
+            configurationService.prismConfig().defaults().parameters().containsKey("pc")
+        ) {
+            String playerString = configurationService.prismConfig().defaults().parameters().get("pc");
+            Collections.addAll(pa, playerString.split(","));
+
+            builder.defaultUsed("pc:" + playerString);
+        }
+
+        // Attempt to resolve players
+        if (!pc.isEmpty()) {
+            builder.causePlayerNames(pc);
         }
 
         // reversed: parameter
@@ -711,18 +807,6 @@ public class QueryService {
             Coordinate chunkMax = LocationUtils.getChunkMaxCoordinate(chunk);
 
             builder.boundingCoordinates(chunkMin, chunkMax);
-        }
-    }
-
-    /**
-     * Parse and apply the "player" parameter to a query builder.
-     *
-     * @param builder The builder
-     * @param playerNames The player names
-     */
-    protected void parsePlayers(ActivityQuery.ActivityQueryBuilder builder, List<String> playerNames) {
-        for (String playerName : playerNames) {
-            builder.playerName(playerName);
         }
     }
 

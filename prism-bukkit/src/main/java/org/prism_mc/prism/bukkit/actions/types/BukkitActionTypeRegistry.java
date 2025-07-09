@@ -44,9 +44,9 @@ public class BukkitActionTypeRegistry extends AbstractActionTypeRegistry {
     public static final ActionType BONEMEAL_USE = new BlockActionType("bonemeal-use", ActionResultType.NONE, false);
     public static final ActionType BUCKET_EMPTY = new ItemActionType("bucket-empty", ActionResultType.NONE, false);
     public static final ActionType BUCKET_FILL = new ItemActionType("bucket-fill", ActionResultType.NONE, false);
+    public static final ActionType ENTITY_DEATH = new EntityActionType("entity-death", ActionResultType.REMOVES, true);
     public static final ActionType ENTITY_DYE = new EntityActionType("entity-dye", ActionResultType.REPLACES, true);
     public static final ActionType ENTITY_EAT = new BlockActionType("entity-eat", ActionResultType.REMOVES, true);
-    public static final ActionType ENTITY_KILL = new EntityActionType("entity-kill", ActionResultType.REMOVES, true);
     public static final ActionType ENTITY_LEASH = new EntityActionType("entity-leash", ActionResultType.NONE, false);
     public static final ActionType ENTITY_PLACE = new EntityActionType("entity-place", ActionResultType.CREATES, true);
     public static final ActionType ENTITY_REMOVE = new EntityActionType(
@@ -97,15 +97,30 @@ public class BukkitActionTypeRegistry extends AbstractActionTypeRegistry {
         ActionResultType.NONE,
         false
     );
-    public static final ActionType PLAYER_DEATH = new GenericActionType("player-death", ActionResultType.NONE, false);
-    public static final ActionType PLAYER_JOIN = new GenericActionType("player-join", ActionResultType.NONE, false);
-    public static final ActionType PLAYER_QUIT = new GenericActionType("player-quit", ActionResultType.NONE, false);
+    public static final ActionType PLAYER_DEATH = new PlayerActionType("player-death", ActionResultType.REMOVES, false);
+    public static final ActionType PLAYER_JOIN = new GenericActionType(
+        "player-join",
+        ActionResultType.NONE,
+        false,
+        false
+    );
+    public static final ActionType PLAYER_QUIT = new GenericActionType(
+        "player-quit",
+        ActionResultType.NONE,
+        false,
+        false
+    );
     public static final ActionType PLAYER_TELEPORT = new GenericActionType(
         "player-teleport",
         ActionResultType.NONE,
         false
     );
-    public static final ActionType RAID_TRIGGER = new GenericActionType("raid-trigger", ActionResultType.NONE, false);
+    public static final ActionType RAID_TRIGGER = new GenericActionType(
+        "raid-trigger",
+        ActionResultType.NONE,
+        false,
+        false
+    );
     public static final ActionType SIGN_EDIT = new BlockActionType("sign-edit", ActionResultType.CREATES, false);
     public static final ActionType VEHICLE_BREAK = new EntityActionType(
         "vehicle-break",
@@ -139,9 +154,9 @@ public class BukkitActionTypeRegistry extends AbstractActionTypeRegistry {
         registerAction(BONEMEAL_USE);
         registerAction(BUCKET_EMPTY);
         registerAction(BUCKET_FILL);
+        registerAction(ENTITY_DEATH);
         registerAction(ENTITY_DYE);
         registerAction(ENTITY_EAT);
-        registerAction(ENTITY_KILL);
         registerAction(ENTITY_LEASH);
         registerAction(ENTITY_PLACE);
         registerAction(ENTITY_REMOVE);

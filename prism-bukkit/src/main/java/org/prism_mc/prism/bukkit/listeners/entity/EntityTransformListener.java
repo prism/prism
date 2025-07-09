@@ -75,7 +75,7 @@ public class EntityTransformListener extends AbstractListener implements Listene
 
         var activity = BukkitActivity.builder()
             .action(action)
-            .cause(nameFromCause(event.getEntity()))
+            .cause(event.getEntity())
             .location(event.getEntity().getLocation())
             .build();
 

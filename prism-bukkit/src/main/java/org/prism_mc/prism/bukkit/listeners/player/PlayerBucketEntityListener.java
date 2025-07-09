@@ -71,7 +71,7 @@ public class PlayerBucketEntityListener extends AbstractListener implements List
         var bucketEmptyActivity = BukkitActivity.builder()
             .action(action)
             .location(event.getEntity().getLocation())
-            .player(event.getPlayer())
+            .cause(event.getPlayer())
             .build();
 
         recordingService.addToQueue(bucketEmptyActivity);

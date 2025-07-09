@@ -21,6 +21,9 @@
 package org.prism_mc.prism.bukkit.listeners.block;
 
 import com.google.inject.Inject;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.block.BlockState;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -31,6 +34,11 @@ import org.prism_mc.prism.bukkit.services.recording.BukkitRecordingService;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 
 public class BlockBurnListener extends AbstractListener implements Listener {
+
+    /**
+     * Fire block state.
+     */
+    private final BlockState fireBlockState;
 
     /**
      * Construct the listener.
@@ -46,6 +54,7 @@ public class BlockBurnListener extends AbstractListener implements Listener {
         BukkitRecordingService recordingService
     ) {
         super(configurationService, expectationService, recordingService);
+        fireBlockState = Bukkit.createBlockData(Material.FIRE).createBlockState();
     }
 
     /**
@@ -55,6 +64,6 @@ public class BlockBurnListener extends AbstractListener implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBurn(final BlockBurnEvent event) {
-        processBlockBreak(event.getBlock(), "fire");
+        processBlockBreak(event.getBlock(), fireBlockState);
     }
 }

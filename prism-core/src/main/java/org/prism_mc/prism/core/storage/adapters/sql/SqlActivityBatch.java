@@ -33,7 +33,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 import org.jooq.types.UByte;
 import org.jooq.types.UInteger;
@@ -42,7 +41,12 @@ import org.prism_mc.prism.api.actions.BlockAction;
 import org.prism_mc.prism.api.actions.CustomData;
 import org.prism_mc.prism.api.actions.EntityAction;
 import org.prism_mc.prism.api.actions.ItemAction;
+import org.prism_mc.prism.api.actions.PlayerAction;
 import org.prism_mc.prism.api.activities.Activity;
+import org.prism_mc.prism.api.containers.BlockContainer;
+import org.prism_mc.prism.api.containers.EntityContainer;
+import org.prism_mc.prism.api.containers.PlayerContainer;
+import org.prism_mc.prism.api.containers.StringContainer;
 import org.prism_mc.prism.api.storage.ActivityBatch;
 import org.prism_mc.prism.core.services.cache.CacheService;
 import org.prism_mc.prism.core.storage.dbo.records.PrismActivitiesRecord;
@@ -114,7 +118,13 @@ public class SqlActivityBatch implements ActivityBatch {
 
         // Set the entity relationship
         if (activity.action() instanceof EntityAction entityAction) {
-            record.setEntityTypeId(UShort.valueOf(getOrCreateEntityTypeId(entityAction.serializeEntityType())));
+            var entityTypeId = UShort.valueOf(
+                getOrCreateEntityTypeId(
+                    entityAction.entityContainer().serializeEntityType(),
+                    entityAction.entityContainer().translationKey()
+                )
+            );
+            record.setEntityTypeId(entityTypeId);
         }
 
         // Set the item relationship
@@ -126,26 +136,27 @@ public class SqlActivityBatch implements ActivityBatch {
         }
 
         // Set the block relationship
+        UInteger blockId = null;
         if (activity.action() instanceof BlockAction blockAction) {
-            record.setBlockId(
-                UInteger.valueOf(
-                    getOrCreateBlockId(
-                        blockAction.blockNamespace(),
-                        blockAction.blockName(),
-                        blockAction.serializeBlockData(),
-                        blockAction.translationKey()
-                    )
+            blockId = UInteger.valueOf(
+                getOrCreateBlockId(
+                    blockAction.blockContainer().blockNamespace(),
+                    blockAction.blockContainer().blockName(),
+                    blockAction.blockContainer().serializeBlockData(),
+                    blockAction.blockContainer().translationKey()
                 )
             );
 
-            if (blockAction.replacedBlockName() != null) {
+            record.setBlockId(blockId);
+
+            if (blockAction.replacedBlockContainer() != null) {
                 record.setReplacedBlockId(
                     UInteger.valueOf(
                         getOrCreateBlockId(
-                            blockAction.replacedBlockNamespace(),
-                            blockAction.replacedBlockName(),
-                            blockAction.serializeReplacedBlockData(),
-                            blockAction.replacedBlockTranslationKey()
+                            blockAction.replacedBlockContainer().blockNamespace(),
+                            blockAction.replacedBlockContainer().blockName(),
+                            blockAction.replacedBlockContainer().serializeBlockData(),
+                            blockAction.replacedBlockContainer().translationKey()
                         )
                     )
                 );
@@ -155,14 +166,40 @@ public class SqlActivityBatch implements ActivityBatch {
         // Set the world relationship
         record.setWorldId(UByte.valueOf(getOrCreateWorldId(activity.world().key(), activity.world().value())));
 
-        // Set the player relationship
-        Long playerId = null;
-        if (activity.player() != null) {
-            playerId = getOrCreatePlayerId(activity.player().key(), activity.player().value());
+        // Set the affected player relationship
+        if (activity.action() instanceof PlayerAction playerAction) {
+            record.setAffectedPlayerId(
+                UInteger.valueOf(
+                    getOrCreatePlayerId(playerAction.playerContainer().uuid(), playerAction.playerContainer().name())
+                )
+            );
         }
 
-        // Set the cause relationship
-        record.setCauseId(UInteger.valueOf(getOrCreateCauseId(activity.cause(), playerId)));
+        // Set the cause
+        if (activity.cause().container() instanceof PlayerContainer playerContainer) {
+            record.setCausePlayerId(
+                UInteger.valueOf(getOrCreatePlayerId(playerContainer.uuid(), playerContainer.name()))
+            );
+        } else if (activity.cause().container() instanceof BlockContainer blockContainer) {
+            record.setCauseBlockId(
+                UInteger.valueOf(
+                    getOrCreateBlockId(
+                        blockContainer.blockNamespace(),
+                        blockContainer.blockName(),
+                        blockContainer.serializeBlockData(),
+                        blockContainer.translationKey()
+                    )
+                )
+            );
+        } else if (activity.cause().container() instanceof EntityContainer entityContainer) {
+            record.setCauseEntityTypeId(
+                UShort.valueOf(
+                    getOrCreateEntityTypeId(entityContainer.serializeEntityType(), entityContainer.translationKey())
+                )
+            );
+        } else if (activity.cause().container() instanceof StringContainer stringContainer) {
+            record.setCauseId(UInteger.valueOf(getOrCreateCauseId(stringContainer.value())));
+        }
 
         // Set the descriptor
         record.setDescriptor(activity.action().descriptor());
@@ -289,42 +326,23 @@ public class SqlActivityBatch implements ActivityBatch {
     /**
      * Get or create the cause record and return the primary key.
      *
-     * @param cause The cause name
-     * @param playerId The player id, if a player
+     * @param causeName The cause name
      * @return The primary key
      * @throws SQLException The database exception
      */
-    private long getOrCreateCauseId(String cause, @Nullable Long playerId) throws SQLException {
-        if (playerId != null) {
-            Long playerCausePk = cacheService.playerCausePkMap().getIfPresent(playerId);
-            if (playerCausePk != null) {
-                return playerCausePk;
-            }
-        } else if (cause != null) {
-            Long causePk = cacheService.namedCausePkMap().getIfPresent(cause);
-            if (causePk != null) {
-                return causePk;
-            }
+    private long getOrCreateCauseId(String causeName) throws SQLException {
+        Long causePk = cacheService.namedCausePkMap().getIfPresent(causeName);
+        if (causePk != null) {
+            return causePk;
         }
 
         long primaryKey;
 
-        UInteger intPk;
-        if (playerId != null) {
-            // Select the existing record on player
-            intPk = dslContext
-                .select(PRISM_CAUSES.CAUSE_ID)
-                .from(PRISM_CAUSES)
-                .where(PRISM_CAUSES.PLAYER_ID.equal(UInteger.valueOf(playerId)))
-                .fetchOne(PRISM_CAUSES.CAUSE_ID);
-        } else {
-            // Select the existing record on cause
-            intPk = dslContext
-                .select(PRISM_CAUSES.CAUSE_ID)
-                .from(PRISM_CAUSES)
-                .where(PRISM_CAUSES.CAUSE.equal(cause))
-                .fetchOne(PRISM_CAUSES.CAUSE_ID);
-        }
+        UInteger intPk = dslContext
+            .select(PRISM_CAUSES.CAUSE_ID)
+            .from(PRISM_CAUSES)
+            .where(PRISM_CAUSES.CAUSE.equal(causeName))
+            .fetchOne(PRISM_CAUSES.CAUSE_ID);
 
         if (intPk != null) {
             primaryKey = intPk.longValue();
@@ -332,8 +350,7 @@ public class SqlActivityBatch implements ActivityBatch {
             // Create the record
             intPk = dslContext
                 .insertInto(PRISM_CAUSES)
-                .set(PRISM_CAUSES.CAUSE, cause)
-                .set(PRISM_CAUSES.PLAYER_ID, playerId == null ? null : UInteger.valueOf(playerId))
+                .set(PRISM_CAUSES.CAUSE, causeName)
                 .returningResult(PRISM_CAUSES.CAUSE_ID)
                 .fetchOne(PRISM_CAUSES.CAUSE_ID);
 
@@ -341,18 +358,12 @@ public class SqlActivityBatch implements ActivityBatch {
                 primaryKey = intPk.longValue();
             } else {
                 throw new SQLException(
-                    String.format("Failed to get or create a cause record. Cause: %s, %d", cause, playerId)
+                    String.format("Failed to get or create a named cause record. Cause name: %s", causeName)
                 );
             }
         }
 
-        if (cause != null) {
-            cacheService.namedCausePkMap().put(cause, primaryKey);
-        }
-
-        if (playerId != null) {
-            cacheService.playerCausePkMap().put(playerId, primaryKey);
-        }
+        cacheService.namedCausePkMap().put(causeName, primaryKey);
 
         return primaryKey;
     }
@@ -361,10 +372,11 @@ public class SqlActivityBatch implements ActivityBatch {
      * Get or create the entity type record and return the primary key.
      *
      * @param entityType The entity type
+     * @param translationKey The translation key
      * @return The primary key
      * @throws SQLException The database exception
      */
-    private int getOrCreateEntityTypeId(String entityType) throws SQLException {
+    private int getOrCreateEntityTypeId(String entityType, String translationKey) throws SQLException {
         Integer entityPk = cacheService.entityTypePkMap().getIfPresent(entityType);
         if (entityPk != null) {
             return entityPk;
@@ -384,8 +396,8 @@ public class SqlActivityBatch implements ActivityBatch {
         } else {
             // Create the record
             shortPk = dslContext
-                .insertInto(PRISM_ENTITY_TYPES, PRISM_ENTITY_TYPES.ENTITY_TYPE)
-                .values(entityType)
+                .insertInto(PRISM_ENTITY_TYPES, PRISM_ENTITY_TYPES.ENTITY_TYPE, PRISM_ENTITY_TYPES.TRANSLATION_KEY)
+                .values(entityType, translationKey)
                 .returningResult(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
                 .fetchOne(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID);
 

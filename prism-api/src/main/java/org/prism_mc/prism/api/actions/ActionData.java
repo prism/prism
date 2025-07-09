@@ -20,6 +20,8 @@
 
 package org.prism_mc.prism.api.actions;
 
+import java.util.UUID;
+
 public record ActionData(
     String material,
     short itemQuantity,
@@ -36,5 +38,7 @@ public record ActionData(
     String metadata,
     short customDataVersion,
     String translationKey,
-    String replacedBlockTranslationKey
+    String replacedBlockTranslationKey,
+    String affectedPlayerName,
+    UUID affectedPlayerUuid
 ) {}

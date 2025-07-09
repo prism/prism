@@ -69,7 +69,7 @@ public class EntityPlaceListener extends AbstractListener implements Listener {
 
             var activity = BukkitActivity.builder()
                 .action(action)
-                .player(event.getPlayer())
+                .cause(event.getPlayer())
                 .location(vehicle.getLocation())
                 .build();
 
@@ -84,7 +84,7 @@ public class EntityPlaceListener extends AbstractListener implements Listener {
 
             var activity = BukkitActivity.builder()
                 .action(action)
-                .player(event.getPlayer())
+                .cause(event.getPlayer())
                 .location(event.getEntity().getLocation())
                 .build();
 

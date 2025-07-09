@@ -50,60 +50,21 @@ import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
 import org.prism_mc.prism.api.services.modifications.ModificationSkipReason;
 import org.prism_mc.prism.api.services.modifications.StateChange;
 import org.prism_mc.prism.api.util.Coordinate;
+import org.prism_mc.prism.bukkit.api.containers.BukkitBlockContainer;
 import org.prism_mc.prism.bukkit.services.modifications.state.BlockStateChange;
 
 public class BukkitBlockAction extends BukkitAction implements BlockAction {
 
-    /**
-     * The block namespace.
-     */
     @Getter
-    private final String blockNamespace;
+    private final BukkitBlockContainer blockContainer;
 
-    /**
-     * The block name.
-     */
     @Getter
-    private final String blockName;
-
-    /**
-     * The block data.
-     */
-    private final BlockData blockData;
+    private final BukkitBlockContainer replacedBlockContainer;
 
     /**
      * The read/write nbt.
      */
     private ReadWriteNBT readWriteNbt;
-
-    /**
-     * The replaced block namespace.
-     */
-    @Getter
-    private final String replacedBlockNamespace;
-
-    /**
-     * The replaced block name.
-     */
-    @Getter
-    private final String replacedBlockName;
-
-    /**
-     * The replaced block data.
-     */
-    private final BlockData replacedBlockData;
-
-    /**
-     * The translation key.
-     */
-    @Getter
-    private final String translationKey;
-
-    /**
-     * The replaced block translation key.
-     */
-    @Getter
-    private final String replacedBlockTranslationKey;
 
     /**
      * Construct a block state action.
@@ -166,6 +127,7 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
      * @param blockData The block data
      * @param translationKey The translation key
      * @param replacedBlockData The replaced block data
+     * @param replacedBlockTranslationKey The replaced block translation key
      */
     public BukkitBlockAction(
         ActionType type,
@@ -175,32 +137,12 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
         @Nullable String replacedBlockTranslationKey
     ) {
         super(type);
-        // Set new block data
-        this.blockData = blockData;
-        this.translationKey = translationKey;
-        this.replacedBlockTranslationKey = replacedBlockTranslationKey;
+        this.blockContainer = new BukkitBlockContainer(blockData, translationKey);
 
-        // Removes all block data and splits the namespaced key into namespace/block name
-        var segments = this.blockData.getAsString().replaceAll("\\[.*$", "").split(":");
-        if (segments.length > 1) {
-            this.blockNamespace = segments[0];
-            this.blockName = segments[1];
-            this.descriptor = this.blockName.replaceAll("_", " ");
-        } else {
-            this.blockNamespace = "";
-            this.blockName = segments[0];
-            this.descriptor = segments[0];
-        }
-
-        // Set replaced block data
-        this.replacedBlockData = replacedBlockData;
         if (replacedBlockData != null) {
-            var replacedSegments = this.replacedBlockData.getAsString().replaceAll("\\[.*$", "").split(":");
-            this.replacedBlockNamespace = replacedSegments[0];
-            this.replacedBlockName = replacedSegments[1];
+            this.replacedBlockContainer = new BukkitBlockContainer(replacedBlockData, replacedBlockTranslationKey);
         } else {
-            this.replacedBlockNamespace = null;
-            this.replacedBlockName = null;
+            this.replacedBlockContainer = null;
         }
     }
 
@@ -215,7 +157,6 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
      * @param replacedBlockNamespace The replaced block namespace
      * @param replacedBlockName The replaced block name
      * @param replacedBlockData The replaced block data
-     * @param descriptor The descriptor
      * @param translationKey The translation key
      * @param replacedBlockTranslationKey The replaced block translation key
      */
@@ -228,27 +169,28 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
         String replacedBlockNamespace,
         String replacedBlockName,
         BlockData replacedBlockData,
-        String descriptor,
         String translationKey,
         String replacedBlockTranslationKey
     ) {
-        super(type, descriptor);
-        this.blockNamespace = blockNamespace;
-        this.blockName = blockName;
-        this.blockData = blockData;
+        super(type);
+        this.blockContainer = new BukkitBlockContainer(blockNamespace, blockName, blockData, translationKey);
         this.readWriteNbt = teData;
-        this.replacedBlockNamespace = replacedBlockNamespace;
-        this.replacedBlockName = replacedBlockName;
-        this.replacedBlockData = replacedBlockData;
-        this.translationKey = translationKey;
-        this.replacedBlockTranslationKey = replacedBlockTranslationKey;
+
+        if (replacedBlockData != null) {
+            this.replacedBlockContainer = new BukkitBlockContainer(
+                replacedBlockNamespace,
+                replacedBlockName,
+                replacedBlockData,
+                replacedBlockTranslationKey
+            );
+        } else {
+            this.replacedBlockContainer = null;
+        }
     }
 
     @Override
     public Component descriptorComponent() {
-        return Component.translatable(
-            translationKey == null ? blockData.getMaterial().getBlockTranslationKey() : translationKey
-        );
+        return Component.translatable(blockContainer.translationKey());
     }
 
     @Override
@@ -268,26 +210,12 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
     }
 
     @Override
-    public @Nullable String serializeBlockData() {
-        return this.blockData != null ? this.blockData.getAsString(true).replaceAll("^[^\\[]+", "") : "";
-    }
-
-    @Override
     public @Nullable String serializeCustomData() {
         if (this.readWriteNbt != null) {
             return this.readWriteNbt.toString();
         }
 
         return null;
-    }
-
-    @Override
-    public @Nullable String serializeReplacedBlockData() {
-        if (replacedBlockData == null) {
-            return null;
-        }
-
-        return this.replacedBlockData.getAsString(true).replaceAll("^[^\\[]+", "");
     }
 
     @Override
@@ -300,16 +228,20 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
         var resultBuilder = ModificationResult.builder().activity(activityContext).statusFromMode(mode);
 
         // Skip if either material is in the blacklist
-        BlockData finalBlockData = blockData;
-        if (modificationRuleset.blockBlacklistContainsAny(blockName)) {
+        BlockData finalBlockData = blockContainer.blockData();
+        if (modificationRuleset.blockBlacklistContainsAny(blockContainer.blockName())) {
             finalBlockData = Bukkit.createBlockData(Material.AIR);
-            resultBuilder.partial().target(translationKey);
+            resultBuilder.partial().target(blockContainer.translationKey());
         }
 
-        BlockData finalReplacedBlockData = replacedBlockData;
-        if (replacedBlockName != null && modificationRuleset.blockBlacklistContainsAny(replacedBlockName)) {
-            finalReplacedBlockData = Bukkit.createBlockData(Material.AIR);
-            resultBuilder.partial().target(replacedBlockTranslationKey);
+        BlockData finalReplacedBlockData = null;
+        if (replacedBlockContainer != null) {
+            finalReplacedBlockData = replacedBlockContainer.blockData();
+
+            if (modificationRuleset.blockBlacklistContainsAny(replacedBlockContainer.blockName())) {
+                finalReplacedBlockData = Bukkit.createBlockData(Material.AIR);
+                resultBuilder.partial().target(replacedBlockContainer.translationKey());
+            }
         }
 
         var location = location(activityContext.worldUuid(), activityContext.coordinate());
@@ -355,16 +287,20 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
         var resultBuilder = ModificationResult.builder().activity(activityContext).statusFromMode(mode);
 
         // Skip if either material is in the blacklist
-        BlockData finalBlockData = blockData;
-        if (modificationRuleset.blockBlacklistContainsAny(blockName)) {
+        BlockData finalBlockData = blockContainer.blockData();
+        if (modificationRuleset.blockBlacklistContainsAny(blockContainer.blockName())) {
             finalBlockData = Bukkit.createBlockData(Material.AIR);
-            resultBuilder.partial().target(translationKey);
+            resultBuilder.partial().target(blockContainer.translationKey());
         }
 
-        BlockData finalReplacedBlockData = replacedBlockData;
-        if (replacedBlockName != null && modificationRuleset.blockBlacklistContainsAny(replacedBlockName)) {
-            finalReplacedBlockData = Bukkit.createBlockData(Material.AIR);
-            resultBuilder.partial().target(replacedBlockTranslationKey);
+        BlockData finalReplacedBlockData = null;
+        if (replacedBlockContainer != null) {
+            finalReplacedBlockData = replacedBlockContainer.blockData();
+
+            if (modificationRuleset.blockBlacklistContainsAny(replacedBlockContainer.blockName())) {
+                finalReplacedBlockData = Bukkit.createBlockData(Material.AIR);
+                resultBuilder.partial().target(replacedBlockContainer.translationKey());
+            }
         }
 
         var location = location(activityContext.worldUuid(), activityContext.coordinate());
@@ -529,10 +465,10 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
     @Override
     public String toString() {
         return String.format(
-            "BlockAction{type=%s,blockData=%s,replacedBlockData=%s}",
+            "BlockAction{type=%s,blockContainer=%s,replacedBlockContainer=%s}",
             type,
-            blockData,
-            replacedBlockData
+            blockContainer,
+            replacedBlockContainer
         );
     }
 }

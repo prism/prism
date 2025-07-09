@@ -20,8 +20,12 @@
 
 package org.prism_mc.prism.core.storage.adapters.h2;
 
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.AFFECTED_PLAYERS;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.CAUSE_BLOCKS;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.CAUSE_ENTITY_TYPES;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ACTIONS;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ACTIVITIES;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_BLOCKS;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_CAUSES;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ENTITY_TYPES;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ITEMS;
@@ -75,26 +79,67 @@ public class H2ActivityQueryBuilder extends SqlActivityQueryBuilder {
             selectQueryBuilder.addJoin(PRISM_ACTIONS, PRISM_ACTIONS.ACTION_ID.equal(PRISM_ACTIVITIES.ACTION_ID));
         }
 
-        if (query.cause() != null) {
-            selectQueryBuilder.addJoin(PRISM_CAUSES, PRISM_CAUSES.CAUSE_ID.equal(PRISM_ACTIVITIES.CAUSE_ID));
+        // Items
+        if (!query.affectedMaterials().isEmpty()) {
+            selectQueryBuilder.addJoin(PRISM_ITEMS, PRISM_ITEMS.ITEM_ID.equal(PRISM_ACTIVITIES.AFFECTED_ITEM_ID));
         }
 
-        if (!query.entityTypes().isEmpty()) {
+        // Blocks
+        if (!query.affectedBlocks().isEmpty() && !query.causeBlocks().isEmpty()) {
+            selectQueryBuilder.addJoin(PRISM_BLOCKS, PRISM_BLOCKS.BLOCK_ID.equal(PRISM_ACTIVITIES.AFFECTED_BLOCK_ID));
+
+            selectQueryBuilder.addJoin(CAUSE_BLOCKS, CAUSE_BLOCKS.BLOCK_ID.equal(PRISM_ACTIVITIES.CAUSE_BLOCK_ID));
+        } else if (!query.affectedBlocks().isEmpty()) {
+            selectQueryBuilder.addJoin(PRISM_BLOCKS, PRISM_BLOCKS.BLOCK_ID.equal(PRISM_ACTIVITIES.AFFECTED_BLOCK_ID));
+        } else if (!query.causeBlocks().isEmpty()) {
+            selectQueryBuilder.addJoin(CAUSE_BLOCKS, CAUSE_BLOCKS.BLOCK_ID.equal(PRISM_ACTIVITIES.CAUSE_BLOCK_ID));
+        }
+
+        // Entity Types
+        if (!query.affectedEntityTypes().isEmpty() && !query.causeEntityTypes().isEmpty()) {
             selectQueryBuilder.addJoin(
                 PRISM_ENTITY_TYPES,
-                PRISM_ENTITY_TYPES.ENTITY_TYPE_ID.equal(PRISM_ACTIVITIES.ENTITY_TYPE_ID)
+                PRISM_ENTITY_TYPES.ENTITY_TYPE_ID.equal(PRISM_ACTIVITIES.AFFECTED_ENTITY_TYPE_ID)
+            );
+
+            selectQueryBuilder.addJoin(
+                CAUSE_ENTITY_TYPES,
+                CAUSE_ENTITY_TYPES.ENTITY_TYPE_ID.equal(PRISM_ACTIVITIES.CAUSE_ENTITY_TYPE_ID)
+            );
+        } else if (!query.affectedEntityTypes().isEmpty()) {
+            selectQueryBuilder.addJoin(
+                PRISM_ENTITY_TYPES,
+                PRISM_ENTITY_TYPES.ENTITY_TYPE_ID.equal(PRISM_ACTIVITIES.AFFECTED_ENTITY_TYPE_ID)
+            );
+        } else if (!query.causeEntityTypes().isEmpty()) {
+            selectQueryBuilder.addJoin(
+                CAUSE_ENTITY_TYPES,
+                CAUSE_ENTITY_TYPES.ENTITY_TYPE_ID.equal(PRISM_ACTIVITIES.CAUSE_ENTITY_TYPE_ID)
             );
         }
 
-        if (!query.materials().isEmpty()) {
-            selectQueryBuilder.addJoin(PRISM_ITEMS, PRISM_ITEMS.ITEM_ID.equal(PRISM_ACTIVITIES.ITEM_ID));
+        // Players
+        if (!query.affectedPlayerNames().isEmpty() && !query.causePlayerNames().isEmpty()) {
+            selectQueryBuilder.addJoin(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER_ID.equal(PRISM_ACTIVITIES.CAUSE_PLAYER_ID));
+            selectQueryBuilder.addJoin(
+                AFFECTED_PLAYERS,
+                AFFECTED_PLAYERS.PLAYER_ID.equal(PRISM_ACTIVITIES.AFFECTED_PLAYER_ID)
+            );
+        } else if (!query.affectedPlayerNames().isEmpty()) {
+            selectQueryBuilder.addJoin(
+                AFFECTED_PLAYERS,
+                AFFECTED_PLAYERS.PLAYER_ID.equal(PRISM_ACTIVITIES.AFFECTED_PLAYER_ID)
+            );
+        } else if (!query.causePlayerNames().isEmpty()) {
+            selectQueryBuilder.addJoin(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER_ID.equal(PRISM_ACTIVITIES.CAUSE_PLAYER_ID));
         }
 
-        if (!query.playerNames().isEmpty()) {
+        // Named Cause
+        if (query.namedCause() != null) {
             selectQueryBuilder.addJoin(PRISM_CAUSES, PRISM_CAUSES.CAUSE_ID.equal(PRISM_ACTIVITIES.CAUSE_ID));
-            selectQueryBuilder.addJoin(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER_ID.equal(PRISM_CAUSES.PLAYER_ID));
         }
 
+        // World
         if (query.worldUuid() != null) {
             selectQueryBuilder.addJoin(PRISM_WORLDS, PRISM_WORLDS.WORLD_ID.equal(PRISM_ACTIVITIES.WORLD_ID));
         }

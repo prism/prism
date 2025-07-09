@@ -29,7 +29,12 @@ import org.prism_mc.prism.api.actions.BlockAction;
 import org.prism_mc.prism.api.actions.CustomData;
 import org.prism_mc.prism.api.actions.EntityAction;
 import org.prism_mc.prism.api.actions.ItemAction;
+import org.prism_mc.prism.api.actions.PlayerAction;
 import org.prism_mc.prism.api.activities.Activity;
+import org.prism_mc.prism.api.containers.BlockContainer;
+import org.prism_mc.prism.api.containers.EntityContainer;
+import org.prism_mc.prism.api.containers.PlayerContainer;
+import org.prism_mc.prism.api.containers.StringContainer;
 import org.prism_mc.prism.api.storage.ActivityBatch;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 
@@ -90,115 +95,171 @@ public class SqlActivityProcedureBatch implements ActivityBatch {
         connection = hikariDataSource.getConnection();
 
         statement = connection.prepareCall(
-            "{ CALL " +
-            prefix +
-            "create_activity(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) }"
+            String.format(
+                "{ CALL %screate_activity(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) }",
+                prefix
+            )
         );
     }
 
     @Override
     public void add(Activity activity) throws SQLException {
-        statement.setLong(1, activity.timestamp() / 1000);
-        statement.setInt(2, activity.coordinate().intX());
-        statement.setInt(3, activity.coordinate().intY());
-        statement.setInt(4, activity.coordinate().intZ());
-        statement.setString(5, activity.action().type().key());
+        int timestampIndex = 1;
+        int worldNameIndex = 2;
+        int worldUuidIndex = 3;
+        int xIndex = 4;
+        int yIndex = 5;
+        int zIndex = 6;
+        int actionIndex = 7;
+        int affectedItemMaterialIndex = 8;
+        int affectedItemQuantityIndex = 9;
+        int affectedItemDataIndex = 10;
+        int affectedBlockNamespaceIndex = 11;
+        int affectedBlockNameIndex = 12;
+        int affectedBlockDataIndex = 13;
+        int affectedBlockTranslationKeyIndex = 14;
+        int replacedBlockNamespaceIndex = 15;
+        int replacedBlockNameIndex = 16;
+        int replacedBlockDataIndex = 17;
+        int replacedBlockTranslationKeyIndex = 18;
+        int affectedEntityTypeIndex = 19;
+        int affectedEntityTypeTranslationKeyIndex = 20;
+        int affectedPlayerNameIndex = 21;
+        int affectedPlayerUuidIndex = 22;
+        int causeNameIndex = 23;
+        int causePlayerNameIndex = 24;
+        int causePlayerUuidIndex = 25;
+        int causeEntityTypeIndex = 26;
+        int causeEntityTypeTranslationKeyIndex = 27;
+        int causeBlockNamespaceIndex = 28;
+        int causeBlockNameIndex = 29;
+        int causeBlockDataIndex = 30;
+        int causeBlockTranslationKeyIndex = 31;
+        int serializerVersionIndex = 32;
+        int serializedDataIndex = 33;
+        int descriptorIndex = 34;
+        int metadataIndex = 35;
 
-        // Cause/player
-        if (activity.player() != null) {
-            statement.setNull(6, Types.VARCHAR);
-            statement.setString(7, activity.player().value());
-            statement.setString(8, activity.player().key().toString());
+        statement.setLong(timestampIndex, activity.timestamp() / 1000);
+        statement.setInt(xIndex, activity.coordinate().intX());
+        statement.setInt(yIndex, activity.coordinate().intY());
+        statement.setInt(zIndex, activity.coordinate().intZ());
+        statement.setString(actionIndex, activity.action().type().key());
+
+        // Affected player
+        if (activity.action() instanceof PlayerAction playerAction) {
+            statement.setString(affectedPlayerNameIndex, playerAction.playerContainer().name());
+            statement.setString(affectedPlayerUuidIndex, playerAction.playerContainer().uuid().toString());
         } else {
-            if (activity.cause() != null) {
-                statement.setString(6, activity.cause());
-            } else {
-                statement.setNull(6, Types.VARCHAR);
-            }
+            statement.setNull(affectedPlayerNameIndex, Types.VARCHAR);
+            statement.setNull(affectedPlayerUuidIndex, Types.VARCHAR);
+        }
 
-            statement.setNull(7, Types.VARCHAR);
-            statement.setNull(8, Types.VARCHAR);
+        // Causes
+        statement.setNull(causeNameIndex, Types.VARCHAR);
+        statement.setNull(causePlayerNameIndex, Types.VARCHAR);
+        statement.setNull(causePlayerUuidIndex, Types.VARCHAR);
+        statement.setNull(causeEntityTypeIndex, Types.VARCHAR);
+        statement.setNull(causeEntityTypeTranslationKeyIndex, Types.VARCHAR);
+        statement.setNull(causeBlockNamespaceIndex, Types.VARCHAR);
+        statement.setNull(causeBlockNameIndex, Types.VARCHAR);
+        statement.setNull(causeBlockDataIndex, Types.VARCHAR);
+        statement.setNull(causeBlockTranslationKeyIndex, Types.VARCHAR);
+
+        if (activity.cause().container() instanceof StringContainer stringContainer) {
+            statement.setString(causeNameIndex, stringContainer.value());
+        } else if (activity.cause().container() instanceof PlayerContainer playerContainer) {
+            statement.setString(causePlayerNameIndex, playerContainer.name());
+            statement.setString(causePlayerUuidIndex, playerContainer.uuid().toString());
+        } else if (activity.cause().container() instanceof EntityContainer entityContainer) {
+            statement.setString(causeEntityTypeIndex, entityContainer.serializeEntityType());
+            statement.setString(causeEntityTypeTranslationKeyIndex, entityContainer.translationKey());
+        } else if (activity.cause().container() instanceof BlockContainer blockContainer) {
+            statement.setString(causeBlockNamespaceIndex, blockContainer.blockNamespace());
+            statement.setString(causeBlockNameIndex, blockContainer.blockName());
+            statement.setString(causeBlockDataIndex, blockContainer.serializeBlockData());
+            statement.setString(causeBlockTranslationKeyIndex, blockContainer.translationKey());
         }
 
         // Entity
-        if (activity.action() instanceof EntityAction) {
-            statement.setString(9, ((EntityAction) activity.action()).serializeEntityType());
+        if (activity.action() instanceof EntityAction entityAction) {
+            statement.setString(affectedEntityTypeIndex, entityAction.entityContainer().serializeEntityType());
+            statement.setString(affectedEntityTypeTranslationKeyIndex, entityAction.entityContainer().translationKey());
         } else {
-            statement.setNull(9, Types.VARCHAR);
+            statement.setNull(affectedEntityTypeIndex, Types.VARCHAR);
+            statement.setNull(affectedEntityTypeTranslationKeyIndex, Types.VARCHAR);
         }
 
         // Material
         if (activity.action() instanceof ItemAction itemAction) {
-            statement.setString(10, itemAction.serializeMaterial());
-            statement.setShort(11, (short) itemAction.quantity());
-            statement.setString(12, itemAction.serializeItemData());
+            statement.setString(affectedItemMaterialIndex, itemAction.serializeMaterial());
+            statement.setShort(affectedItemQuantityIndex, (short) itemAction.quantity());
+            statement.setString(affectedItemDataIndex, itemAction.serializeItemData());
         } else {
-            statement.setNull(10, Types.VARCHAR);
-            statement.setNull(11, Types.SMALLINT);
-            statement.setNull(12, Types.VARCHAR);
+            statement.setNull(affectedItemMaterialIndex, Types.VARCHAR);
+            statement.setNull(affectedItemQuantityIndex, Types.SMALLINT);
+            statement.setNull(affectedItemDataIndex, Types.VARCHAR);
         }
 
         // Block data
         if (activity.action() instanceof BlockAction blockAction) {
-            statement.setString(13, blockAction.blockNamespace());
-            statement.setString(14, blockAction.blockName());
-            statement.setString(15, blockAction.serializeBlockData());
+            statement.setString(affectedBlockNamespaceIndex, blockAction.blockContainer().blockNamespace());
+            statement.setString(affectedBlockNameIndex, blockAction.blockContainer().blockName());
+            statement.setString(affectedBlockDataIndex, blockAction.blockContainer().serializeBlockData());
+            statement.setString(affectedBlockTranslationKeyIndex, blockAction.blockContainer().translationKey());
         } else {
-            statement.setNull(13, Types.VARCHAR);
-            statement.setNull(14, Types.VARCHAR);
-            statement.setNull(15, Types.VARCHAR);
+            statement.setNull(affectedBlockNamespaceIndex, Types.VARCHAR);
+            statement.setNull(affectedBlockNameIndex, Types.VARCHAR);
+            statement.setNull(affectedBlockDataIndex, Types.VARCHAR);
+            statement.setNull(affectedBlockTranslationKeyIndex, Types.VARCHAR);
         }
 
         // Replaced block data
-        if (activity.action() instanceof BlockAction blockAction) {
-            statement.setString(16, blockAction.replacedBlockNamespace());
-            statement.setString(17, blockAction.replacedBlockName());
-            statement.setString(18, blockAction.serializeReplacedBlockData());
+        if (activity.action() instanceof BlockAction blockAction && blockAction.replacedBlockContainer() != null) {
+            statement.setString(replacedBlockNamespaceIndex, blockAction.replacedBlockContainer().blockNamespace());
+            statement.setString(replacedBlockNameIndex, blockAction.replacedBlockContainer().blockName());
+            statement.setString(replacedBlockDataIndex, blockAction.replacedBlockContainer().serializeBlockData());
+            statement.setString(
+                replacedBlockTranslationKeyIndex,
+                blockAction.replacedBlockContainer().translationKey()
+            );
         } else {
-            statement.setNull(16, Types.VARCHAR);
-            statement.setNull(17, Types.VARCHAR);
-            statement.setNull(18, Types.VARCHAR);
+            statement.setNull(replacedBlockNamespaceIndex, Types.VARCHAR);
+            statement.setNull(replacedBlockNameIndex, Types.VARCHAR);
+            statement.setNull(replacedBlockDataIndex, Types.VARCHAR);
+            statement.setNull(replacedBlockTranslationKeyIndex, Types.VARCHAR);
         }
 
         // World
-        statement.setString(19, activity.world().value());
-        statement.setString(20, activity.world().key().toString());
+        statement.setString(worldNameIndex, activity.world().value());
+        statement.setString(worldUuidIndex, activity.world().key().toString());
 
         // Custom data
         if (activity.action() instanceof CustomData) {
-            statement.setInt(21, serializerVersion);
+            statement.setInt(serializerVersionIndex, serializerVersion);
 
             String customData = ((CustomData) activity.action()).serializeCustomData();
-            statement.setString(22, customData);
+            statement.setString(serializedDataIndex, customData);
         } else {
-            statement.setNull(21, Types.SMALLINT);
-            statement.setNull(22, Types.VARCHAR);
+            statement.setNull(serializerVersionIndex, Types.SMALLINT);
+            statement.setNull(serializedDataIndex, Types.VARCHAR);
         }
 
         // Descriptor
         if (activity.action().descriptor() != null) {
-            statement.setString(23, activity.action().descriptor());
+            statement.setString(descriptorIndex, activity.action().descriptor());
         } else {
-            statement.setNull(23, Types.VARCHAR);
+            statement.setNull(descriptorIndex, Types.VARCHAR);
         }
 
         // Serialize the metadata
+        statement.setNull(metadataIndex, Types.VARCHAR);
         if (activity.action().metadata() != null) {
             try {
-                statement.setString(24, activity.action().serializeMetadata());
+                statement.setString(metadataIndex, activity.action().serializeMetadata());
             } catch (Exception e) {
                 loggingService.handleException(e);
-                statement.setNull(24, Types.VARCHAR);
             }
-        } else {
-            statement.setNull(24, Types.VARCHAR);
-        }
-
-        // Translation keys
-        if (activity.action() instanceof BlockAction blockAction) {
-            statement.setString(25, blockAction.translationKey());
-        } else {
-            statement.setNull(25, Types.VARCHAR);
         }
 
         statement.addBatch();
@@ -208,7 +269,6 @@ public class SqlActivityProcedureBatch implements ActivityBatch {
     public void commitBatch() throws SQLException {
         statement.executeBatch();
 
-        // Close stuff
         statement.close();
         connection.close();
     }

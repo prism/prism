@@ -24,8 +24,8 @@ import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAda
 
 import org.jooq.Field;
 import org.jooq.Record1;
-import org.jooq.Record18;
-import org.jooq.Row18;
+import org.jooq.Record22;
+import org.jooq.Row22;
 import org.jooq.impl.UpdatableRecordImpl;
 import org.jooq.types.UByte;
 import org.jooq.types.UInteger;
@@ -35,7 +35,7 @@ import org.jooq.types.UShort;
 public class PrismActivitiesRecord
     extends UpdatableRecordImpl<PrismActivitiesRecord>
     implements
-        Record18<
+        Record22<
             UInteger,
             UInteger,
             UByte,
@@ -45,6 +45,10 @@ public class PrismActivitiesRecord
             UByte,
             UShort,
             UShort,
+            UInteger,
+            UInteger,
+            UShort,
+            UInteger,
             UInteger,
             UInteger,
             UShort,
@@ -239,10 +243,25 @@ public class PrismActivitiesRecord
     }
 
     /**
+     * Setter for <code>prism_activities.affected_player_id</code>.
+     */
+    public PrismActivitiesRecord setAffectedPlayerId(UInteger value) {
+        set(12, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>prism_activities.affected_player_id</code>.
+     */
+    public UInteger getAffectedPlayerId() {
+        return (UInteger) get(12);
+    }
+
+    /**
      * Setter for <code>prism_activities.cause_id</code>.
      */
     public PrismActivitiesRecord setCauseId(UInteger value) {
-        set(12, value);
+        set(13, value);
         return this;
     }
 
@@ -250,14 +269,59 @@ public class PrismActivitiesRecord
      * Getter for <code>prism_activities.cause_id</code>.
      */
     public UInteger getCauseId() {
-        return (UInteger) get(12);
+        return (UInteger) get(13);
+    }
+
+    /**
+     * Setter for <code>prism_activities.cause_player_id</code>.
+     */
+    public PrismActivitiesRecord setCausePlayerId(UInteger value) {
+        set(14, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>prism_activities.cause_player_id</code>.
+     */
+    public UInteger getCausePlayerId() {
+        return (UInteger) get(14);
+    }
+
+    /**
+     * Setter for <code>prism_activities.cause_entity_type_id</code>.
+     */
+    public PrismActivitiesRecord setCauseEntityTypeId(UShort value) {
+        set(15, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>prism_activities.cause_entity_type_id</code>.
+     */
+    public UShort getCauseEntityTypeId() {
+        return (UShort) get(15);
+    }
+
+    /**
+     * Setter for <code>prism_activities.cause_block_id</code>.
+     */
+    public PrismActivitiesRecord setCauseBlockId(UInteger value) {
+        set(16, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>prism_activities.cause_block_id</code>.
+     */
+    public UInteger getCauseBlockId() {
+        return (UInteger) get(16);
     }
 
     /**
      * Setter for <code>prism_activities.descriptor</code>.
      */
     public PrismActivitiesRecord setDescriptor(String value) {
-        set(13, value);
+        set(17, value);
         return this;
     }
 
@@ -265,14 +329,14 @@ public class PrismActivitiesRecord
      * Getter for <code>prism_activities.descriptor</code>.
      */
     public String getDescriptor() {
-        return (String) get(13);
+        return (String) get(17);
     }
 
     /**
      * Setter for <code>prism_activities.metadata</code>.
      */
     public PrismActivitiesRecord setMetadata(String value) {
-        set(14, value);
+        set(18, value);
         return this;
     }
 
@@ -280,14 +344,14 @@ public class PrismActivitiesRecord
      * Getter for <code>prism_activities.metadata</code>.
      */
     public String getMetadata() {
-        return (String) get(14);
+        return (String) get(18);
     }
 
     /**
      * Setter for <code>prism_activities.serializer_version</code>.
      */
     public PrismActivitiesRecord setSerializerVersion(UShort value) {
-        set(15, value);
+        set(19, value);
         return this;
     }
 
@@ -295,14 +359,14 @@ public class PrismActivitiesRecord
      * Getter for <code>prism_activities.serializer_version</code>.
      */
     public UShort getSerializerVersion() {
-        return (UShort) get(15);
+        return (UShort) get(19);
     }
 
     /**
      * Setter for <code>prism_activities.serialized_data</code>.
      */
     public PrismActivitiesRecord setSerializedData(String value) {
-        set(16, value);
+        set(20, value);
         return this;
     }
 
@@ -310,14 +374,14 @@ public class PrismActivitiesRecord
      * Getter for <code>prism_activities.serialized_data</code>.
      */
     public String getSerializedData() {
-        return (String) get(16);
+        return (String) get(20);
     }
 
     /**
      * Setter for <code>prism_activities.reversed</code>.
      */
     public PrismActivitiesRecord setReversed(Boolean value) {
-        set(17, value);
+        set(21, value);
         return this;
     }
 
@@ -325,7 +389,7 @@ public class PrismActivitiesRecord
      * Getter for <code>prism_activities.reversed</code>.
      */
     public Boolean getReversed() {
-        return (Boolean) get(17);
+        return (Boolean) get(21);
     }
 
     // -------------------------------------------------------------------------
@@ -342,7 +406,7 @@ public class PrismActivitiesRecord
     // -------------------------------------------------------------------------
 
     @Override
-    public Row18<
+    public Row22<
         UInteger,
         UInteger,
         UByte,
@@ -352,6 +416,10 @@ public class PrismActivitiesRecord
         UByte,
         UShort,
         UShort,
+        UInteger,
+        UInteger,
+        UShort,
+        UInteger,
         UInteger,
         UInteger,
         UShort,
@@ -362,11 +430,11 @@ public class PrismActivitiesRecord
         String,
         Boolean
     > fieldsRow() {
-        return (Row18) super.fieldsRow();
+        return (Row22) super.fieldsRow();
     }
 
     @Override
-    public Row18<
+    public Row22<
         UInteger,
         UInteger,
         UByte,
@@ -376,6 +444,10 @@ public class PrismActivitiesRecord
         UByte,
         UShort,
         UShort,
+        UInteger,
+        UInteger,
+        UShort,
+        UInteger,
         UInteger,
         UInteger,
         UShort,
@@ -386,7 +458,7 @@ public class PrismActivitiesRecord
         String,
         Boolean
     > valuesRow() {
-        return (Row18) super.valuesRow();
+        return (Row22) super.valuesRow();
     }
 
     @Override
@@ -426,17 +498,17 @@ public class PrismActivitiesRecord
 
     @Override
     public Field<UShort> field8() {
-        return PRISM_ACTIVITIES.ITEM_ID;
+        return PRISM_ACTIVITIES.AFFECTED_ITEM_ID;
     }
 
     @Override
     public Field<UShort> field9() {
-        return PRISM_ACTIVITIES.ITEM_QUANTITY;
+        return PRISM_ACTIVITIES.AFFECTED_ITEM_QUANTITY;
     }
 
     @Override
     public Field<UInteger> field10() {
-        return PRISM_ACTIVITIES.BLOCK_ID;
+        return PRISM_ACTIVITIES.AFFECTED_BLOCK_ID;
     }
 
     @Override
@@ -446,36 +518,56 @@ public class PrismActivitiesRecord
 
     @Override
     public Field<UShort> field12() {
-        return PRISM_ACTIVITIES.ENTITY_TYPE_ID;
+        return PRISM_ACTIVITIES.AFFECTED_ENTITY_TYPE_ID;
     }
 
     @Override
     public Field<UInteger> field13() {
+        return PRISM_ACTIVITIES.AFFECTED_PLAYER_ID;
+    }
+
+    @Override
+    public Field<UInteger> field14() {
         return PRISM_ACTIVITIES.CAUSE_ID;
     }
 
     @Override
-    public Field<String> field14() {
-        return PRISM_ACTIVITIES.DESCRIPTOR;
-    }
-
-    @Override
-    public Field<String> field15() {
-        return PRISM_ACTIVITIES.METADATA;
+    public Field<UInteger> field15() {
+        return PRISM_ACTIVITIES.CAUSE_PLAYER_ID;
     }
 
     @Override
     public Field<UShort> field16() {
+        return PRISM_ACTIVITIES.CAUSE_ENTITY_TYPE_ID;
+    }
+
+    @Override
+    public Field<UInteger> field17() {
+        return PRISM_ACTIVITIES.CAUSE_BLOCK_ID;
+    }
+
+    @Override
+    public Field<String> field18() {
+        return PRISM_ACTIVITIES.DESCRIPTOR;
+    }
+
+    @Override
+    public Field<String> field19() {
+        return PRISM_ACTIVITIES.METADATA;
+    }
+
+    @Override
+    public Field<UShort> field20() {
         return PRISM_ACTIVITIES.SERIALIZER_VERSION;
     }
 
     @Override
-    public Field<String> field17() {
+    public Field<String> field21() {
         return PRISM_ACTIVITIES.SERIALIZED_DATA;
     }
 
     @Override
-    public Field<Boolean> field18() {
+    public Field<Boolean> field22() {
         return PRISM_ACTIVITIES.REVERSED;
     }
 
@@ -541,31 +633,51 @@ public class PrismActivitiesRecord
 
     @Override
     public UInteger component13() {
+        return getAffectedPlayerId();
+    }
+
+    @Override
+    public UInteger component14() {
         return getCauseId();
     }
 
     @Override
-    public String component14() {
-        return getDescriptor();
-    }
-
-    @Override
-    public String component15() {
-        return getMetadata();
+    public UInteger component15() {
+        return getCausePlayerId();
     }
 
     @Override
     public UShort component16() {
+        return getCauseEntityTypeId();
+    }
+
+    @Override
+    public UInteger component17() {
+        return getCauseBlockId();
+    }
+
+    @Override
+    public String component18() {
+        return getDescriptor();
+    }
+
+    @Override
+    public String component19() {
+        return getMetadata();
+    }
+
+    @Override
+    public UShort component20() {
         return getSerializerVersion();
     }
 
     @Override
-    public String component17() {
+    public String component21() {
         return getSerializedData();
     }
 
     @Override
-    public Boolean component18() {
+    public Boolean component22() {
         return getReversed();
     }
 
@@ -703,66 +815,110 @@ public class PrismActivitiesRecord
 
     @Override
     public UInteger value13() {
-        return getCauseId();
+        return getAffectedPlayerId();
     }
 
     @Override
     public PrismActivitiesRecord value13(UInteger value) {
+        setAffectedPlayerId(value);
+        return this;
+    }
+
+    @Override
+    public UInteger value14() {
+        return getCauseId();
+    }
+
+    @Override
+    public PrismActivitiesRecord value14(UInteger value) {
         setCauseId(value);
         return this;
     }
 
     @Override
-    public String value14() {
-        return getDescriptor();
+    public UInteger value15() {
+        return getCausePlayerId();
     }
 
     @Override
-    public PrismActivitiesRecord value14(String value) {
-        setDescriptor(value);
-        return this;
-    }
-
-    @Override
-    public String value15() {
-        return getMetadata();
-    }
-
-    @Override
-    public PrismActivitiesRecord value15(String value) {
-        setMetadata(value);
+    public PrismActivitiesRecord value15(UInteger value) {
+        setCausePlayerId(value);
         return this;
     }
 
     @Override
     public UShort value16() {
-        return getSerializerVersion();
+        return getCauseEntityTypeId();
     }
 
     @Override
     public PrismActivitiesRecord value16(UShort value) {
+        setCauseEntityTypeId(value);
+        return this;
+    }
+
+    @Override
+    public UInteger value17() {
+        return getCauseBlockId();
+    }
+
+    @Override
+    public PrismActivitiesRecord value17(UInteger value) {
+        setCauseBlockId(value);
+        return this;
+    }
+
+    @Override
+    public String value18() {
+        return getDescriptor();
+    }
+
+    @Override
+    public PrismActivitiesRecord value18(String value) {
+        setDescriptor(value);
+        return this;
+    }
+
+    @Override
+    public String value19() {
+        return getMetadata();
+    }
+
+    @Override
+    public PrismActivitiesRecord value19(String value) {
+        setMetadata(value);
+        return this;
+    }
+
+    @Override
+    public UShort value20() {
+        return getSerializerVersion();
+    }
+
+    @Override
+    public PrismActivitiesRecord value20(UShort value) {
         setSerializerVersion(value);
         return this;
     }
 
     @Override
-    public String value17() {
+    public String value21() {
         return getSerializedData();
     }
 
     @Override
-    public PrismActivitiesRecord value17(String value) {
+    public PrismActivitiesRecord value21(String value) {
         setSerializedData(value);
         return this;
     }
 
     @Override
-    public Boolean value18() {
+    public Boolean value22() {
         return getReversed();
     }
 
     @Override
-    public PrismActivitiesRecord value18(Boolean value) {
+    public PrismActivitiesRecord value22(Boolean value) {
         setReversed(value);
         return this;
     }
@@ -782,11 +938,15 @@ public class PrismActivitiesRecord
         UInteger value11,
         UShort value12,
         UInteger value13,
-        String value14,
-        String value15,
+        UInteger value14,
+        UInteger value15,
         UShort value16,
-        String value17,
-        Boolean value18
+        UInteger value17,
+        String value18,
+        String value19,
+        UShort value20,
+        String value21,
+        Boolean value22
     ) {
         value1(value1);
         value2(value2);
@@ -806,6 +966,10 @@ public class PrismActivitiesRecord
         value16(value16);
         value17(value17);
         value18(value18);
+        value19(value19);
+        value20(value20);
+        value21(value21);
+        value22(value22);
         return this;
     }
 
@@ -836,7 +1000,11 @@ public class PrismActivitiesRecord
         UInteger blockId,
         UInteger replacedBlockId,
         UShort entityTypeId,
+        UInteger affectedPlayerId,
         UInteger causeId,
+        UInteger causePlayerId,
+        UShort causeEntityTypeId,
+        UInteger causeBlockId,
         String descriptor,
         String metadata,
         UShort serializerVersion,
@@ -856,7 +1024,11 @@ public class PrismActivitiesRecord
         setBlockId(blockId);
         setReplacedBlockId(replacedBlockId);
         setEntityTypeId(entityTypeId);
+        setAffectedPlayerId(affectedPlayerId);
         setCauseId(causeId);
+        setCausePlayerId(causePlayerId);
+        setCauseEntityTypeId(causeEntityTypeId);
+        setCauseBlockId(causeBlockId);
         setDescriptor(descriptor);
         setMetadata(metadata);
         setSerializerVersion(serializerVersion);

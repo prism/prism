@@ -103,7 +103,6 @@ import org.prism_mc.prism.bukkit.listeners.player.PlayerBucketEmptyListener;
 import org.prism_mc.prism.bukkit.listeners.player.PlayerBucketEntityListener;
 import org.prism_mc.prism.bukkit.listeners.player.PlayerBucketFillListener;
 import org.prism_mc.prism.bukkit.listeners.player.PlayerCommandPreprocessListener;
-import org.prism_mc.prism.bukkit.listeners.player.PlayerDeathListener;
 import org.prism_mc.prism.bukkit.listeners.player.PlayerDropItemListener;
 import org.prism_mc.prism.bukkit.listeners.player.PlayerExpChangeListener;
 import org.prism_mc.prism.bukkit.listeners.player.PlayerHarvestBlockListener;
@@ -290,7 +289,6 @@ public class PrismBukkit implements Prism {
             registerEvent(PlayerBucketEntityListener.class);
             registerEvent(PlayerBucketFillListener.class);
             registerEvent(PlayerCommandPreprocessListener.class);
-            registerEvent(PlayerDeathListener.class);
             registerEvent(PlayerDropItemListener.class);
             registerEvent(PlayerExpChangeListener.class);
             registerEvent(PlayerHarvestBlockListener.class);
@@ -501,7 +499,7 @@ public class PrismBukkit implements Prism {
                 Argument.forString().name("in").suggestion(SuggestionKey.of("ins")).build(),
                 Argument.forString().name("since").build(),
                 Argument.forString().name("before").build(),
-                Argument.forString().name("cause").build(),
+                Argument.forString().name("c").build(),
                 Argument.forString().name("world").suggestion(SuggestionKey.of("worlds")).build(),
                 Argument.forString().name("at").build(),
                 Argument.forString().name("bounds").build(),
@@ -511,9 +509,13 @@ public class PrismBukkit implements Prism {
                 Argument.listOf(String.class).name("etag").suggestion(SuggestionKey.of("entitytypetags")).build(),
                 Argument.listOf(String.class).name("itag").suggestion(SuggestionKey.of("itemtags")).build(),
                 Argument.listOf(String.class).name("b").suggestion(SuggestionKey.of("blocks")).build(),
+                Argument.listOf(String.class).name("bc").suggestion(SuggestionKey.of("blocks")).build(),
                 Argument.listOf(Material.class).name("i").build(),
                 Argument.listOf(EntityType.class).name("e").build(),
+                Argument.listOf(EntityType.class).name("ec").build(),
                 Argument.listOf(OfflinePlayer.class).name("p").build(),
+                Argument.listOf(OfflinePlayer.class).name("pc").build(),
+                Argument.listOf(OfflinePlayer.class).name("pa").build(),
                 Argument.forString().name("q").build()
             );
 

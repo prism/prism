@@ -75,7 +75,7 @@ public class PlayerBucketFillListener extends AbstractListener implements Listen
         var bucketEmptyActivity = BukkitActivity.builder()
             .action(bucketEmptyAction)
             .location(event.getBlock().getLocation())
-            .player(event.getPlayer())
+            .cause(event.getPlayer())
             .build();
 
         recordingService.addToQueue(bucketEmptyActivity);
@@ -104,7 +104,7 @@ public class PlayerBucketFillListener extends AbstractListener implements Listen
         var blockPlaceActivity = BukkitActivity.builder()
             .action(blockPlaceAction)
             .location(event.getBlock().getLocation())
-            .player(event.getPlayer())
+            .cause(event.getPlayer())
             .build();
 
         recordingService.addToQueue(blockPlaceActivity);

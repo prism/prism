@@ -22,21 +22,16 @@ package org.prism_mc.prism.bukkit.listeners;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
 import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.type.Bed;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.block.data.type.Stairs;
 import org.bukkit.block.data.type.TrapDoor;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Hanging;
 import org.bukkit.entity.Player;
-import org.bukkit.event.block.BlockIgniteEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.DoubleChestInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -86,39 +81,6 @@ public class AbstractListener {
         this.configurationService = configurationService;
         this.expectationService = expectationService;
         this.recordingService = recordingService;
-    }
-
-    /**
-     * Converts a cause to a string name.
-     *
-     * <p>Note: This is for non-players.</p>
-     *
-     * @param cause The cause
-     * @return The cause name
-     */
-    protected String nameFromCause(Object cause) {
-        String finalCause = null;
-        if (cause instanceof Entity causeEntity) {
-            if (causeEntity.getType().equals(EntityType.FALLING_BLOCK)) {
-                finalCause = "gravity";
-            } else {
-                finalCause = causeEntity.getType().name().toLowerCase(Locale.ENGLISH).replace('_', ' ');
-            }
-        } else if (cause instanceof EntityType causeEntityType) {
-            finalCause = causeEntityType.name().toLowerCase(Locale.ENGLISH).replace('_', ' ');
-        } else if (cause instanceof Block causeBlock) {
-            finalCause = causeBlock.getType().name().toLowerCase(Locale.ENGLISH).replace('_', ' ');
-        } else if (cause instanceof BlockState causeBlockState) {
-            finalCause = causeBlockState.getType().name().toLowerCase(Locale.ENGLISH).replace('_', ' ');
-        } else if (cause instanceof BlockIgniteEvent.IgniteCause igniteCause) {
-            finalCause = igniteCause.name().toLowerCase(Locale.ENGLISH).replace('_', ' ');
-        } else if (cause instanceof EntityDamageEvent.DamageCause damageCause) {
-            finalCause = damageCause.name().toLowerCase(Locale.ENGLISH).replace('_', ' ');
-        } else if (cause instanceof String causeStr) {
-            finalCause = causeStr;
-        }
-
-        return finalCause;
     }
 
     /**
@@ -202,16 +164,10 @@ public class AbstractListener {
     protected void recordBlockBreakAction(Block block, Object cause) {
         var action = new BukkitBlockAction(BukkitActionTypeRegistry.BLOCK_BREAK, block.getState());
 
-        recordItemDropFromBlockContents(block);
-
-        var builder = BukkitActivity.builder().action(action).location(block.getLocation());
-        if (cause instanceof String) {
-            builder.cause((String) cause);
-        } else if (cause instanceof Player player) {
-            builder.player(player);
-        }
-
+        var builder = BukkitActivity.builder().action(action).location(block.getLocation()).cause(cause);
         recordingService.addToQueue(builder.build());
+
+        recordItemDropFromBlockContents(block);
     }
 
     /**
@@ -223,13 +179,7 @@ public class AbstractListener {
     protected void recordHangingBreak(Entity hanging, Object cause) {
         var action = new BukkitEntityAction(BukkitActionTypeRegistry.HANGING_BREAK, hanging);
 
-        var builder = BukkitActivity.builder().action(action).location(hanging.getLocation());
-        if (cause instanceof Player player) {
-            builder.player(player);
-        } else {
-            builder.cause(nameFromCause(cause));
-        }
-
+        var builder = BukkitActivity.builder().action(action).location(hanging.getLocation()).cause(cause);
         recordingService.addToQueue(builder.build());
     }
 
@@ -257,16 +207,7 @@ public class AbstractListener {
             return;
         }
 
-        Player player = null;
-        String namedCause = null;
-
-        if (cause instanceof Player _player) {
-            player = _player;
-        } else {
-            namedCause = nameFromCause(cause);
-        }
-
-        recordItemActivity(BukkitActionTypeRegistry.ITEM_DROP, location, player, namedCause, itemStack, amount);
+        recordItemActivity(BukkitActionTypeRegistry.ITEM_DROP, location, cause, itemStack, amount);
     }
 
     /**
@@ -304,11 +245,7 @@ public class AbstractListener {
                 }
             }
 
-            recordItemDropFromInventory(
-                inventory,
-                block.getLocation(),
-                String.format("broken %s", nameFromCause(block))
-            );
+            recordItemDropFromInventory(inventory, block.getLocation(), block.getState());
         }
     }
 
@@ -344,7 +281,7 @@ public class AbstractListener {
             return;
         }
 
-        recordItemActivity(BukkitActionTypeRegistry.ITEM_INSERT, location, player, null, itemStack, amount);
+        recordItemActivity(BukkitActionTypeRegistry.ITEM_INSERT, location, player, itemStack, amount);
     }
 
     /**
@@ -359,7 +296,7 @@ public class AbstractListener {
             return;
         }
 
-        recordItemActivity(BukkitActionTypeRegistry.ITEM_INSERT, location, player, null, itemStack, null);
+        recordItemActivity(BukkitActionTypeRegistry.ITEM_INSERT, location, player, itemStack, null);
     }
 
     /**
@@ -374,7 +311,7 @@ public class AbstractListener {
             return;
         }
 
-        recordItemActivity(BukkitActionTypeRegistry.ITEM_REMOVE, location, player, null, itemStack, null);
+        recordItemActivity(BukkitActionTypeRegistry.ITEM_REMOVE, location, player, itemStack, null);
     }
 
     /**
@@ -390,7 +327,7 @@ public class AbstractListener {
             return;
         }
 
-        recordItemActivity(BukkitActionTypeRegistry.ITEM_REMOVE, location, player, null, itemStack, amount);
+        recordItemActivity(BukkitActionTypeRegistry.ITEM_REMOVE, location, player, itemStack, amount);
     }
 
     /**
@@ -405,7 +342,7 @@ public class AbstractListener {
             return;
         }
 
-        recordItemActivity(BukkitActionTypeRegistry.ITEM_USE, location, player, null, itemStack, 1);
+        recordItemActivity(BukkitActionTypeRegistry.ITEM_USE, location, player, itemStack, 1);
     }
 
     /**
@@ -413,7 +350,6 @@ public class AbstractListener {
      *
      * @param actionType The action type
      * @param location The location
-     * @param player The player
      * @param cause The cause
      * @param itemStack The item stack
      * @param amount The amount
@@ -421,8 +357,7 @@ public class AbstractListener {
     private void recordItemActivity(
         ActionType actionType,
         Location location,
-        Player player,
-        String cause,
+        Object cause,
         ItemStack itemStack,
         Integer amount
     ) {
@@ -440,15 +375,7 @@ public class AbstractListener {
 
         var action = new BukkitItemStackAction(actionType, clonedStack);
 
-        var builder = BukkitActivity.builder().action(action).location(location);
-        if (player != null) {
-            builder.player(player);
-        }
-
-        if (cause != null) {
-            builder.cause(cause);
-        }
-
+        var builder = BukkitActivity.builder().action(action).location(location).cause(cause);
         recordingService.addToQueue(builder.build());
     }
 }

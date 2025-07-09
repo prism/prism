@@ -21,8 +21,6 @@
 package org.prism_mc.prism.bukkit.listeners.block;
 
 import com.google.inject.Inject;
-import java.util.Locale;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -69,12 +67,10 @@ public class TntPrimeListener extends AbstractListener implements Listener {
 
         var builder = BukkitActivity.builder().action(action).location(event.getBlock().getLocation());
 
-        if (event.getPrimingEntity() instanceof Player player) {
-            builder.player(player);
-        } else if (event.getPrimingEntity() != null) {
-            builder.cause(nameFromCause(event.getPrimingEntity()));
+        if (event.getPrimingEntity() != null) {
+            builder.cause(event.getPrimingEntity());
         } else {
-            builder.cause(event.getCause().name().toLowerCase(Locale.ENGLISH).replace("_", " "));
+            builder.cause(event.getCause());
         }
 
         recordingService.addToQueue(builder.build());

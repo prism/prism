@@ -89,7 +89,7 @@ public abstract class BukkitAction implements Action {
 
     @Override
     public Component descriptorComponent() {
-        return Component.text(descriptor);
+        return descriptor == null ? Component.empty() : Component.text(descriptor);
     }
 
     @Override

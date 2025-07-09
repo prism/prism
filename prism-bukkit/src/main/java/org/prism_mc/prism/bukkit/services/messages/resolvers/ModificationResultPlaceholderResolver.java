@@ -20,9 +20,10 @@
 
 package org.prism_mc.prism.bukkit.services.messages.resolvers;
 
+import static org.prism_mc.prism.bukkit.api.activities.BukkitActivity.enumNameToString;
+
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.Locale;
 import java.util.Map;
 import net.kyori.adventure.text.Component;
 import net.kyori.moonshine.placeholder.ConclusionValue;
@@ -66,9 +67,9 @@ public class ModificationResultPlaceholderResolver
      */
     protected Component reason(ModificationResult result) {
         if (result.status().equals(ModificationResultStatus.PARTIAL)) {
-            return Component.text(result.partialReason().toString().replaceAll("_", " ").toLowerCase(Locale.ROOT));
+            return Component.text(enumNameToString(result.partialReason().toString()));
         } else if (result.status().equals(ModificationResultStatus.SKIPPED)) {
-            return Component.text(result.skipReason().toString().replaceAll("_", " ").toLowerCase(Locale.ROOT));
+            return Component.text(enumNameToString(result.skipReason().toString()));
         }
 
         return Component.empty();

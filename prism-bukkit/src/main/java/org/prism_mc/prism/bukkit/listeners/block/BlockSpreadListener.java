@@ -75,7 +75,7 @@ public class BlockSpreadListener extends AbstractListener implements Listener {
 
         var activity = BukkitActivity.builder()
             .action(action)
-            .cause(nameFromCause(event.getSource()))
+            .cause(event.getSource())
             .location(block.getLocation())
             .build();
 

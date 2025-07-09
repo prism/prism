@@ -49,7 +49,6 @@ public class Activity extends AbstractActivity {
      * @param world The world
      * @param coordinate The coordinate
      * @param cause The cause
-     * @param player The player
      * @param timestamp The timestamp
      */
     public Activity(
@@ -57,21 +56,19 @@ public class Activity extends AbstractActivity {
         Action action,
         Pair<UUID, String> world,
         Coordinate coordinate,
-        String cause,
-        Pair<UUID, String> player,
+        Cause cause,
         long timestamp
     ) {
-        super(action, world, coordinate, cause, player, timestamp);
+        super(action, world, coordinate, cause, timestamp);
         this.primaryKey = primaryKey;
     }
 
     @Override
     public String toString() {
         return String.format(
-            "Activity{action=%s,cause=%s,player=%s,world=%s,coordinate=%s,timestamp=%s}",
+            "Activity{action=%s,cause=%s,world=%s,coordinate=%s,timestamp=%s}",
             action,
             cause,
-            player,
             world,
             coordinate,
             timestamp
@@ -98,19 +95,6 @@ public class Activity extends AbstractActivity {
         @Tolerate
         public B coordinate(double x, double y, double z) {
             this.coordinate(new Coordinate(x, y, z));
-            return self();
-        }
-
-        /**
-         * Set the player.
-         *
-         * @param playerUuid The player uuid
-         * @param playerName The player name
-         * @return The builder
-         */
-        @Tolerate
-        public B player(UUID playerUuid, String playerName) {
-            this.player(new Pair<>(playerUuid, playerName));
             return self();
         }
     }

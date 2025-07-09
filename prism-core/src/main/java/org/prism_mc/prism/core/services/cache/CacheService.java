@@ -72,11 +72,6 @@ public class CacheService {
     private final Cache<String, Long> namedCausePkMap;
 
     /**
-     * A cache of player ids to cause primary keys.
-     */
-    private final Cache<Long, Long> playerCausePkMap;
-
-    /**
      * A cache of player uuids to primary keys.
      */
     private final Cache<UUID, Long> playerUuidPkMap;
@@ -240,35 +235,6 @@ public class CacheService {
 
         namedCausePkMap = namedCauseBuilder.build();
         primaryKeyCaches.put("namedCausePkMap", namedCausePkMap);
-
-        // Build the player cause cache
-        Caffeine<Long, Long> playerCauseBuilder = Caffeine.newBuilder()
-            .maximumSize(cacheConfiguration.pkCachePlayer().maxSize())
-            .evictionListener((key, value, cause) -> {
-                String msg = "Evicting player cause from PK cache: Key: {0}, Value: {1}, Removal Cause: {2}";
-                loggingService.debug(msg, key, value, cause);
-            })
-            .removalListener((key, value, cause) -> {
-                String msg = "Removing player cause from PK cache: Key: {0}, Value: {1}, Removal Cause: {2}";
-                loggingService.debug(msg, key, value, cause);
-            });
-
-        if (
-            cacheConfiguration.pkCachePlayer().expiresAfterAccess() != null &&
-            cacheConfiguration.pkCachePlayer().expiresAfterAccess().duration() != null
-        ) {
-            playerCauseBuilder.expireAfterAccess(
-                cacheConfiguration.pkCachePlayer().expiresAfterAccess().duration(),
-                cacheConfiguration.pkCachePlayer().expiresAfterAccess().timeUnit()
-            );
-        }
-
-        if (cacheConfiguration.recordStats()) {
-            playerCauseBuilder.recordStats();
-        }
-
-        playerCausePkMap = playerCauseBuilder.build();
-        primaryKeyCaches.put("playerCausePkMap", playerCausePkMap);
 
         // Build the player cache
         Caffeine<UUID, Long> playerBuilder = Caffeine.newBuilder()

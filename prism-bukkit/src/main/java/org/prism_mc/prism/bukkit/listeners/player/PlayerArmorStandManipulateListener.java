@@ -89,7 +89,7 @@ public class PlayerArmorStandManipulateListener extends AbstractListener impleme
 
         var activity = BukkitActivity.builder()
             .action(action)
-            .player(event.getPlayer())
+            .cause(event.getPlayer())
             .location(event.getRightClicked().getLocation())
             .build();
 

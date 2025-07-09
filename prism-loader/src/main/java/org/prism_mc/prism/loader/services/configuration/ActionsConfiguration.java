@@ -84,14 +84,14 @@ public class ActionsConfiguration {
     @Comment("bucket-fill is when a player removes a block by filling a bucket.")
     private boolean bucketFill = true;
 
+    @Comment("entity-death is when a non-player entity dies.")
+    private boolean entityDeath = true;
+
     @Comment("entity-dye is when a player dyes an entity.")
     private boolean entityDye = false;
 
     @Comment("entity-eat is when an entity eats a block and changes it.")
     private boolean entityEat = false;
-
-    @Comment("entity-kill is when an entity (or player) kills another.")
-    private boolean entityKill = true;
 
     @Comment("entity-leash is when a player leashes an entity.")
     private boolean entityLeash = false;

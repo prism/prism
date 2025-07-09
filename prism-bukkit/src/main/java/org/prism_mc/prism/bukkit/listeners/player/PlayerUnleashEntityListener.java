@@ -68,7 +68,7 @@ public class PlayerUnleashEntityListener extends AbstractListener implements Lis
         var activity = BukkitActivity.builder()
             .action(action)
             .location(event.getEntity().getLocation())
-            .player(event.getPlayer())
+            .cause(event.getPlayer())
             .build();
 
         recordingService.addToQueue(activity);

@@ -76,7 +76,7 @@ public class BlockFromToListener extends AbstractListener implements Listener {
 
             var activity = BukkitActivity.builder()
                 .action(action)
-                .cause(nameFromCause(fromState))
+                .cause(fromState)
                 .location(block.getLocation())
                 .build();
 
@@ -94,7 +94,7 @@ public class BlockFromToListener extends AbstractListener implements Listener {
 
         var activity = BukkitActivity.builder()
             .action(action)
-            .cause(nameFromCause(fromState))
+            .cause(fromState)
             .location(fromState.getLocation())
             .build();
 

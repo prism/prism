@@ -20,10 +20,11 @@
 
 package org.prism_mc.prism.bukkit.listeners.projectile;
 
+import static org.prism_mc.prism.bukkit.api.activities.BukkitActivity.enumNameToString;
+
 import com.google.inject.Inject;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Firework;
-import org.bukkit.entity.Player;
 import org.bukkit.entity.ThrowableProjectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -69,6 +70,7 @@ public class ProjectileLaunchListener extends AbstractListener implements Listen
         }
 
         Action action = null;
+        String descriptor = enumNameToString(event.getEntity().getType().name());
         if (event.getEntity() instanceof ThrowableProjectile throwableProjectile) {
             // Ignore if this event is disabled
             if (!configurationService.prismConfig().actions().itemThrow()) {
@@ -82,26 +84,20 @@ public class ProjectileLaunchListener extends AbstractListener implements Listen
                 return;
             }
 
-            action = new GenericBukkitAction(
-                BukkitActionTypeRegistry.FIREWORK_LAUNCH,
-                nameFromCause(event.getEntity())
-            );
+            action = new GenericBukkitAction(BukkitActionTypeRegistry.FIREWORK_LAUNCH, descriptor);
         } else {
             // Ignore if this event is disabled
             if (!configurationService.prismConfig().actions().itemThrow()) {
                 return;
             }
 
-            action = new GenericBukkitAction(BukkitActionTypeRegistry.ITEM_THROW, nameFromCause(event.getEntity()));
+            action = new GenericBukkitAction(BukkitActionTypeRegistry.ITEM_THROW, descriptor);
         }
 
-        var builder = BukkitActivity.builder().action(action).location(event.getLocation());
-
-        if (event.getEntity().getShooter() instanceof Player player) {
-            builder.player(player);
-        } else {
-            builder.cause(nameFromCause(event.getEntity().getShooter()));
-        }
+        var builder = BukkitActivity.builder()
+            .action(action)
+            .location(event.getLocation())
+            .cause(event.getEntity().getShooter());
 
         recordingService.addToQueue(builder.build());
     }

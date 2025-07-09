@@ -31,7 +31,7 @@ import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.services.filters.FilterBehavior;
 import org.prism_mc.prism.bukkit.actions.BukkitEntityAction;
 import org.prism_mc.prism.bukkit.actions.BukkitMaterialAction;
-import org.prism_mc.prism.bukkit.api.activities.BukkitActivity;
+import org.prism_mc.prism.bukkit.api.containers.BukkitPlayerContainer;
 import org.prism_mc.prism.bukkit.utils.CustomTag;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 
@@ -316,7 +316,7 @@ public class ActivityFilter {
         }
 
         if (activity.action() instanceof BukkitEntityAction entityAction) {
-            if (entityTypeTag.isTagged(entityAction.entityType())) {
+            if (entityTypeTag.isTagged(entityAction.entityContainer().entityType())) {
                 return ConditionResult.MATCHED;
             }
 
@@ -339,8 +339,8 @@ public class ActivityFilter {
             return ConditionResult.NOT_APPLICABLE;
         }
 
-        if (activity instanceof BukkitActivity bukkitActivity && bukkitActivity.bukkitPlayer() != null) {
-            if (gameModes.contains(bukkitActivity.bukkitPlayer().getGameMode())) {
+        if (activity.cause().container() instanceof BukkitPlayerContainer bukkitPlayerContainer) {
+            if (gameModes.contains(bukkitPlayerContainer.player().getGameMode())) {
                 return ConditionResult.MATCHED;
             }
 
@@ -387,10 +387,8 @@ public class ActivityFilter {
             return ConditionResult.NOT_APPLICABLE;
         }
 
-        var playerIdentity = activity.player();
-
-        if (playerIdentity != null) {
-            var player = Bukkit.getServer().getPlayer(playerIdentity.value());
+        if (activity.cause().container() instanceof BukkitPlayerContainer bukkitPlayerContainer) {
+            var player = Bukkit.getServer().getPlayer(bukkitPlayerContainer.name());
             if (player != null) {
                 for (String permission : permissions) {
                     if (player.hasPermission(permission)) {

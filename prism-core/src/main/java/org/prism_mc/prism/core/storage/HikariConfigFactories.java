@@ -22,9 +22,6 @@ package org.prism_mc.prism.core.storage;
 
 import com.zaxxer.hikari.HikariConfig;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.Properties;
 import lombok.experimental.UtilityClass;
 import org.prism_mc.prism.loader.services.configuration.storage.SqlDataSourceConfiguration;
 import org.prism_mc.prism.loader.services.configuration.storage.StorageConfiguration;

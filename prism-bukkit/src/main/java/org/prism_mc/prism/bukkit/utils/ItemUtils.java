@@ -20,7 +20,8 @@
 
 package org.prism_mc.prism.bukkit.utils;
 
-import java.util.Locale;
+import static org.prism_mc.prism.bukkit.api.activities.BukkitActivity.enumNameToString;
+
 import lombok.experimental.UtilityClass;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
@@ -122,7 +123,7 @@ public class ItemUtils {
      * @return The material name
      */
     public static String materialName(ItemStack itemStack) {
-        return itemStack.getType().name().toLowerCase(Locale.ENGLISH).replace('_', ' ');
+        return enumNameToString(itemStack.getType().name());
     }
 
     /**

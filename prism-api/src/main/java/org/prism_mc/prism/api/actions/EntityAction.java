@@ -20,11 +20,13 @@
 
 package org.prism_mc.prism.api.actions;
 
+import org.prism_mc.prism.api.containers.EntityContainer;
+
 public interface EntityAction extends Action, CustomData {
     /**
-     * Serialize the entity type.
+     * Get the entity container.
      *
-     * @return The serialized entity type
+     * @return Entity container
      */
-    String serializeEntityType();
+    EntityContainer entityContainer();
 }

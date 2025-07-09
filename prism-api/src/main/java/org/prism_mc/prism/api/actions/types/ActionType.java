@@ -51,6 +51,11 @@ public abstract class ActionType {
     protected final Metadata metadata;
 
     /**
+     * Whether action type uses a descriptor.
+     */
+    protected final boolean usesDescriptor;
+
+    /**
      * Construct a new action type.
      *
      * @param key The key
@@ -58,7 +63,19 @@ public abstract class ActionType {
      * @param reversible If action is reversible
      */
     public ActionType(String key, ActionResultType resultType, boolean reversible) {
-        this(key, resultType, reversible, null);
+        this(key, resultType, reversible, true, null);
+    }
+
+    /**
+     * Construct a new action type.
+     *
+     * @param key The key
+     * @param resultType The result type
+     * @param reversible If action is reversible
+     * @param usesDescriptor Whether the action uses a descriptor
+     */
+    public ActionType(String key, ActionResultType resultType, boolean reversible, boolean usesDescriptor) {
+        this(key, resultType, reversible, usesDescriptor, null);
     }
 
     /**
@@ -68,12 +85,20 @@ public abstract class ActionType {
      * @param metadata The metadata
      * @param resultType The result type
      * @param reversible If action is reversible
+     * @param usesDescriptor Whether the action uses a descriptor
      */
-    public ActionType(String key, ActionResultType resultType, boolean reversible, Metadata metadata) {
+    public ActionType(
+        String key,
+        ActionResultType resultType,
+        boolean reversible,
+        boolean usesDescriptor,
+        Metadata metadata
+    ) {
         this.key = key;
         this.metadata = metadata;
         this.resultType = resultType;
         this.reversible = reversible;
+        this.usesDescriptor = usesDescriptor;
     }
 
     /**
@@ -105,6 +130,12 @@ public abstract class ActionType {
     public abstract Action createAction(ActionData actionData) throws Exception;
 
     public String toString() {
-        return String.format("ActionType{key=%s,resultType=%s,reversible=%s}", key, resultType, reversible);
+        return String.format(
+            "ActionType{key=%s,resultType=%s,reversible=%s,usesDescriptor=%s}",
+            key,
+            resultType,
+            reversible,
+            usesDescriptor
+        );
     }
 }

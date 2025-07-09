@@ -21,7 +21,6 @@
 package org.prism_mc.prism.bukkit.listeners.entity;
 
 import com.google.inject.Inject;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -68,14 +67,10 @@ public class EntityPickupItemListener extends AbstractListener implements Listen
         }
 
         var action = new BukkitItemStackAction(BukkitActionTypeRegistry.ITEM_PICKUP, itemStack);
-
-        var builder = BukkitActivity.builder().action(action).location(event.getEntity().getLocation());
-        if (event.getEntity() instanceof Player player) {
-            builder.player(player);
-        } else {
-            builder.cause(nameFromCause(event.getEntity()));
-        }
-
+        var builder = BukkitActivity.builder()
+            .action(action)
+            .location(event.getEntity().getLocation())
+            .cause(event.getEntity());
         recordingService.addToQueue(builder.build());
     }
 }

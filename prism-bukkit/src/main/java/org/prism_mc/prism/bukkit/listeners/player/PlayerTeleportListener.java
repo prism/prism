@@ -84,7 +84,7 @@ public class PlayerTeleportListener extends AbstractListener implements Listener
         var activity = BukkitActivity.builder()
             .action(action)
             .location(event.getFrom())
-            .player(event.getPlayer())
+            .cause(event.getPlayer())
             .build();
 
         recordingService.addToQueue(activity);

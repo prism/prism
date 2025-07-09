@@ -65,7 +65,7 @@ public class BlockFertilizeListener extends AbstractListener implements Listener
             var builder = BukkitActivity.builder().action(action).location(event.getBlock().getLocation());
 
             if (event.getPlayer() != null) {
-                builder.player(event.getPlayer());
+                builder.cause(event.getPlayer());
             } else {
                 builder.cause("unknown");
             }
@@ -91,7 +91,7 @@ public class BlockFertilizeListener extends AbstractListener implements Listener
             var builder = BukkitActivity.builder().action(action).location(event.getBlock().getLocation());
 
             if (event.getPlayer() != null) {
-                builder.player(event.getPlayer());
+                builder.cause(event.getPlayer());
             } else {
                 builder.cause("unknown");
             }

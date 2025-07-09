@@ -49,6 +49,7 @@ import java.util.Scanner;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -59,7 +60,11 @@ import org.prism_mc.prism.api.actions.types.ActionTypeRegistry;
 import org.prism_mc.prism.api.activities.AbstractActivity;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
+import org.prism_mc.prism.api.activities.Cause;
 import org.prism_mc.prism.api.activities.GroupedActivity;
+import org.prism_mc.prism.api.containers.PlayerContainer;
+import org.prism_mc.prism.api.containers.StringContainer;
+import org.prism_mc.prism.api.containers.TranslatableContainer;
 import org.prism_mc.prism.api.storage.ActivityBatch;
 import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.api.util.Coordinate;
@@ -138,6 +143,41 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
     public static PrismWorlds PRISM_WORLDS;
 
     /**
+     * The aliased replaced blocks table.
+     */
+    public static PrismBlocks REPLACED_BLOCKS;
+
+    /**
+     * The aliased affected players table.
+     */
+    public static PrismPlayers AFFECTED_PLAYERS;
+
+    /**
+     * The aliased cause entity types table.
+     */
+    public static PrismEntityTypes CAUSE_ENTITY_TYPES;
+
+    /**
+     * The aliased cause blocks table.
+     */
+    public static PrismBlocks CAUSE_BLOCKS;
+
+    /**
+     * The aliased replaced blocks translation key.
+     */
+    public static Field<String> REPLACED_BLOCKS_TRANSLATION_KEY;
+
+    /**
+     * The aliased cause blocks translation key.
+     */
+    public static Field<String> CAUSE_BLOCKS_TRANSLATION_KEY;
+
+    /**
+     * The aliased cause entity types translation key.
+     */
+    public static Field<String> CAUSE_ENTITY_TYPES_TRANSLATION_KEY;
+
+    /**
      * The hikari config.
      */
     protected HikariConfig hikariConfig;
@@ -196,11 +236,6 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
      * The dsl context.
      */
     protected DSLContext dslContext;
-
-    /**
-     * The aliased replaced blocks table.
-     */
-    protected final PrismBlocks REPLACED_BLOCKS;
 
     /**
      * The schema/table prefix.
@@ -271,6 +306,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             Arrays.asList(
                 PRISM_ACTIONS,
                 PRISM_ACTIVITIES,
+                PRISM_BLOCKS,
                 PRISM_CAUSES,
                 PRISM_ENTITY_TYPES,
                 PRISM_ITEMS,
@@ -282,6 +318,18 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
 
         // Table aliases
         REPLACED_BLOCKS = PRISM_BLOCKS.as("replaced_blocks");
+        AFFECTED_PLAYERS = PRISM_PLAYERS.as("affected_players");
+        CAUSE_BLOCKS = PRISM_BLOCKS.as("cause_blocks");
+        CAUSE_ENTITY_TYPES = PRISM_ENTITY_TYPES.as("cause_entity_types");
+
+        /*
+         * Field aliases
+         * For some reason JOOQ throws ambiguous field errors even though the tables are aliased
+         * and the query is fine, so we alias these fields too.
+         */
+        REPLACED_BLOCKS_TRANSLATION_KEY = REPLACED_BLOCKS.TRANSLATION_KEY.as("replaced_block_translation_key");
+        CAUSE_ENTITY_TYPES_TRANSLATION_KEY = CAUSE_ENTITY_TYPES.TRANSLATION_KEY.as("cause_entity_type_translation_key");
+        CAUSE_BLOCKS_TRANSLATION_KEY = CAUSE_BLOCKS.TRANSLATION_KEY.as("cause_block_translation_key");
 
         // Turn off jooq crap. Lame
         System.setProperty("org.jooq.no-logo", "true");
@@ -410,29 +458,23 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .unique(PRISM_BLOCKS.NS, PRISM_BLOCKS.NAME, PRISM_BLOCKS.DATA)
             .execute();
 
-        // Create the causes table
-        dslContext
-            .createTableIfNotExists(PRISM_CAUSES)
-            .column(PRISM_CAUSES.CAUSE_ID)
-            .column(PRISM_CAUSES.CAUSE)
-            .column(PRISM_CAUSES.PLAYER_ID)
-            .primaryKey(PRISM_CAUSES.CAUSE_ID)
-            .unique(PRISM_CAUSES.CAUSE)
-            .constraints(
-                constraint(String.format("%s_playerId", prefix))
-                    .foreignKey(PRISM_CAUSES.PLAYER_ID)
-                    .references(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER_ID)
-                    .onDeleteCascade()
-            )
-            .execute();
-
         // Create the entity types table
         dslContext
             .createTableIfNotExists(PRISM_ENTITY_TYPES)
             .column(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
             .column(PRISM_ENTITY_TYPES.ENTITY_TYPE)
+            .column(PRISM_ENTITY_TYPES.TRANSLATION_KEY)
             .primaryKey(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
             .unique(PRISM_ENTITY_TYPES.ENTITY_TYPE)
+            .execute();
+
+        // Create the causes table
+        dslContext
+            .createTableIfNotExists(PRISM_CAUSES)
+            .column(PRISM_CAUSES.CAUSE_ID)
+            .column(PRISM_CAUSES.CAUSE)
+            .primaryKey(PRISM_CAUSES.CAUSE_ID)
+            .unique(PRISM_CAUSES.CAUSE)
             .execute();
 
         // Create actions table
@@ -473,12 +515,16 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .column(PRISM_ACTIVITIES.Y)
             .column(PRISM_ACTIVITIES.Z)
             .column(PRISM_ACTIVITIES.ACTION_ID)
-            .column(PRISM_ACTIVITIES.ITEM_ID)
-            .column(PRISM_ACTIVITIES.ITEM_QUANTITY)
-            .column(PRISM_ACTIVITIES.BLOCK_ID)
+            .column(PRISM_ACTIVITIES.AFFECTED_ITEM_ID)
+            .column(PRISM_ACTIVITIES.AFFECTED_ITEM_QUANTITY)
+            .column(PRISM_ACTIVITIES.AFFECTED_BLOCK_ID)
             .column(PRISM_ACTIVITIES.REPLACED_BLOCK_ID)
-            .column(PRISM_ACTIVITIES.ENTITY_TYPE_ID)
+            .column(PRISM_ACTIVITIES.AFFECTED_ENTITY_TYPE_ID)
+            .column(PRISM_ACTIVITIES.AFFECTED_PLAYER_ID)
             .column(PRISM_ACTIVITIES.CAUSE_ID)
+            .column(PRISM_ACTIVITIES.CAUSE_PLAYER_ID)
+            .column(PRISM_ACTIVITIES.CAUSE_ENTITY_TYPE_ID)
+            .column(PRISM_ACTIVITIES.CAUSE_BLOCK_ID)
             .column(PRISM_ACTIVITIES.DESCRIPTOR)
             .column(PRISM_ACTIVITIES.METADATA)
             .column(PRISM_ACTIVITIES.SERIALIZER_VERSION)
@@ -490,24 +536,40 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                     .foreignKey(PRISM_ACTIVITIES.ACTION_ID)
                     .references(PRISM_ACTIONS, PRISM_ACTIONS.ACTION_ID)
                     .onDeleteCascade(),
-                constraint(String.format("%s_causeId", prefix))
-                    .foreignKey(PRISM_ACTIVITIES.CAUSE_ID)
-                    .references(PRISM_CAUSES, PRISM_CAUSES.CAUSE_ID)
-                    .onDeleteCascade(),
-                constraint(String.format("%s_entityTypeId", prefix))
-                    .foreignKey(PRISM_ACTIVITIES.ENTITY_TYPE_ID)
+                constraint(String.format("%s_affectedEntityTypeId", prefix))
+                    .foreignKey(PRISM_ACTIVITIES.AFFECTED_ENTITY_TYPE_ID)
                     .references(PRISM_ENTITY_TYPES, PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
                     .onDeleteCascade(),
-                constraint(String.format("%s_itemId", prefix))
-                    .foreignKey(PRISM_ACTIVITIES.ITEM_ID)
+                constraint(String.format("%s_affectedItemId", prefix))
+                    .foreignKey(PRISM_ACTIVITIES.AFFECTED_ITEM_ID)
                     .references(PRISM_ITEMS, PRISM_ITEMS.ITEM_ID)
                     .onDeleteCascade(),
-                constraint(String.format("%s_blockId", prefix))
-                    .foreignKey(PRISM_ACTIVITIES.BLOCK_ID)
+                constraint(String.format("%s_affectedBlockId", prefix))
+                    .foreignKey(PRISM_ACTIVITIES.AFFECTED_BLOCK_ID)
                     .references(PRISM_BLOCKS, PRISM_BLOCKS.BLOCK_ID)
                     .onDeleteCascade(),
                 constraint(String.format("%s_replacedBlockId", prefix))
                     .foreignKey(PRISM_ACTIVITIES.REPLACED_BLOCK_ID)
+                    .references(PRISM_BLOCKS, PRISM_BLOCKS.BLOCK_ID)
+                    .onDeleteCascade(),
+                constraint(String.format("%s_affectedPlayerId", prefix))
+                    .foreignKey(PRISM_ACTIVITIES.AFFECTED_PLAYER_ID)
+                    .references(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER_ID)
+                    .onDeleteCascade(),
+                constraint(String.format("%s_causeId", prefix))
+                    .foreignKey(PRISM_ACTIVITIES.CAUSE_ID)
+                    .references(PRISM_CAUSES, PRISM_CAUSES.CAUSE_ID)
+                    .onDeleteCascade(),
+                constraint(String.format("%s_causePlayerId", prefix))
+                    .foreignKey(PRISM_ACTIVITIES.CAUSE_PLAYER_ID)
+                    .references(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER_ID)
+                    .onDeleteCascade(),
+                constraint(String.format("%s_causeEntityTypeId", prefix))
+                    .foreignKey(PRISM_ACTIVITIES.CAUSE_ENTITY_TYPE_ID)
+                    .references(PRISM_ENTITY_TYPES, PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
+                    .onDeleteCascade(),
+                constraint(String.format("%s_causeBlockId", prefix))
+                    .foreignKey(PRISM_ACTIVITIES.CAUSE_BLOCK_ID)
                     .references(PRISM_BLOCKS, PRISM_BLOCKS.BLOCK_ID)
                     .onDeleteCascade(),
                 constraint(String.format("%s_worldId", prefix))
@@ -525,17 +587,73 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .map(org.jooq.Named::getName)
             .collect(Collectors.toCollection(ArrayList::new));
 
-        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_ACTIONID.getName())) {
+        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_ACTION_ID.getName())) {
             dslContext
-                .createIndex(Indexes.PRISM_ACTIVITIES_ACTIONID)
+                .createIndex(Indexes.PRISM_ACTIVITIES_ACTION_ID)
                 .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.ACTION_ID)
                 .execute();
         }
 
-        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_CAUSEID.getName())) {
+        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_AFFECTED_ENTITY_TYPE_ID.getName())) {
             dslContext
-                .createIndex(Indexes.PRISM_ACTIVITIES_CAUSEID)
+                .createIndex(Indexes.PRISM_ACTIVITIES_AFFECTED_ENTITY_TYPE_ID)
+                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.AFFECTED_ENTITY_TYPE_ID)
+                .execute();
+        }
+
+        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_AFFECTED_ITEM_ID.getName())) {
+            dslContext
+                .createIndex(Indexes.PRISM_ACTIVITIES_AFFECTED_ITEM_ID)
+                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.AFFECTED_ITEM_ID)
+                .execute();
+        }
+
+        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_AFFECTED_BLOCK_ID.getName())) {
+            dslContext
+                .createIndex(Indexes.PRISM_ACTIVITIES_AFFECTED_BLOCK_ID)
+                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.AFFECTED_BLOCK_ID)
+                .execute();
+        }
+
+        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_REPLACED_BLOCK_ID.getName())) {
+            dslContext
+                .createIndex(Indexes.PRISM_ACTIVITIES_REPLACED_BLOCK_ID)
+                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.AFFECTED_BLOCK_ID)
+                .execute();
+        }
+
+        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_AFFECTED_PLAYER_ID.getName())) {
+            dslContext
+                .createIndex(Indexes.PRISM_ACTIVITIES_AFFECTED_PLAYER_ID)
+                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.AFFECTED_PLAYER_ID)
+                .execute();
+        }
+
+        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_CAUSE_ID.getName())) {
+            dslContext
+                .createIndex(Indexes.PRISM_ACTIVITIES_CAUSE_ID)
                 .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.CAUSE_ID)
+                .execute();
+        }
+
+        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_CAUSE_PLAYER_ID.getName())) {
+            dslContext
+                .createIndex(Indexes.PRISM_ACTIVITIES_CAUSE_PLAYER_ID)
+                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.CAUSE_PLAYER_ID)
+                .execute();
+        }
+
+        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_CAUSE_ENTITY_TYPE_ID.getName())) {
+            dslContext
+                .createIndex(Indexes.PRISM_ACTIVITIES_CAUSE_ENTITY_TYPE_ID)
+                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.CAUSE_ENTITY_TYPE_ID)
+                .execute();
+        }
+
+        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_CAUSE_BLOCK_ID.getName())) {
+            dslContext
+                .createIndex(Indexes.PRISM_ACTIVITIES_CAUSE_BLOCK_ID)
+                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.CAUSE_BLOCK_ID)
                 .execute();
         }
 
@@ -549,34 +667,6 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                     PRISM_ACTIVITIES.Z,
                     PRISM_ACTIVITIES.TIMESTAMP
                 )
-                .execute();
-        }
-
-        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_ENTITYTYPEID.getName())) {
-            dslContext
-                .createIndex(Indexes.PRISM_ACTIVITIES_ENTITYTYPEID)
-                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.ENTITY_TYPE_ID)
-                .execute();
-        }
-
-        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_ITEMID.getName())) {
-            dslContext
-                .createIndex(Indexes.PRISM_ACTIVITIES_ITEMID)
-                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.ITEM_ID)
-                .execute();
-        }
-
-        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_BLOCKID.getName())) {
-            dslContext
-                .createIndex(Indexes.PRISM_ACTIVITIES_BLOCKID)
-                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.BLOCK_ID)
-                .execute();
-        }
-
-        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_REPLACEDBLOCKID.getName())) {
-            dslContext
-                .createIndex(Indexes.PRISM_ACTIVITIES_REPLACEDBLOCKID)
-                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.BLOCK_ID)
                 .execute();
         }
 
@@ -721,18 +811,28 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             String itemData = r.getValue(PRISM_ITEMS.DATA);
 
             // Item quantity
-            short itemQuantity = r.getValue(coalesce(PRISM_ACTIVITIES.ITEM_QUANTITY, DSL.val(0))).shortValue();
+            short itemQuantity = r.getValue(coalesce(PRISM_ACTIVITIES.AFFECTED_ITEM_QUANTITY, DSL.val(0))).shortValue();
+
+            // Affected player
+            String affectedPlayerName = r.getValue(AFFECTED_PLAYERS.PLAYER);
+            UUID affectedPlayerUuid = null;
+            if (r.getValue(AFFECTED_PLAYERS.PLAYER_UUID) != null) {
+                affectedPlayerUuid = UUID.fromString(r.getValue(AFFECTED_PLAYERS.PLAYER_UUID));
+            }
 
             // Cause
-            String cause = r.getValue(PRISM_CAUSES.CAUSE);
-            Pair<UUID, String> player = null;
-
-            // Player
-            if (r.getValue(PRISM_PLAYERS.PLAYER_UUID) != null) {
+            Cause cause = null;
+            if (query.lookup() && r.getValue(PRISM_CAUSES.CAUSE) != null) {
+                cause = new Cause(new StringContainer(r.getValue(PRISM_CAUSES.CAUSE)));
+            } else if (r.getValue(PRISM_PLAYERS.PLAYER_UUID) != null) {
                 String playerName = r.getValue(PRISM_PLAYERS.PLAYER);
                 UUID playerUuid = UUID.fromString(r.getValue(PRISM_PLAYERS.PLAYER_UUID));
 
-                player = new Pair<>(playerUuid, playerName);
+                cause = new Cause(new PlayerContainer(playerName, playerUuid));
+            } else if (query.lookup() && r.getValue(CAUSE_ENTITY_TYPES_TRANSLATION_KEY) != null) {
+                cause = new Cause(new TranslatableContainer(r.getValue(CAUSE_ENTITY_TYPES_TRANSLATION_KEY)));
+            } else if (query.lookup() && r.getValue(CAUSE_BLOCKS_TRANSLATION_KEY) != null) {
+                cause = new Cause(new TranslatableContainer(r.getValue(CAUSE_BLOCKS_TRANSLATION_KEY)));
             }
 
             String descriptor = query.lookup() ? r.getValue(PRISM_ACTIVITIES.DESCRIPTOR) : null;
@@ -749,7 +849,6 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             }
 
             String translationKey = r.getValue(PRISM_BLOCKS.TRANSLATION_KEY);
-            String replacedBlockTranslationKey = r.getValue(REPLACED_BLOCKS.TRANSLATION_KEY);
 
             if (!query.grouped() && query.modification()) {
                 long activityId = r.getValue(PRISM_ACTIVITIES.ACTIVITY_ID).longValue();
@@ -760,6 +859,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                 String replacedBlockNamespace = r.getValue(REPLACED_BLOCKS.NS);
                 String replacedBlockName = r.getValue(REPLACED_BLOCKS.NAME);
                 String replacedBlockData = r.getValue(REPLACED_BLOCKS.DATA);
+                String replacedBlockTranslationKey = r.getValue(REPLACED_BLOCKS_TRANSLATION_KEY);
 
                 // Build the action data
                 ActionData actionData = new ActionData(
@@ -778,7 +878,9 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                     metadata,
                     customDataVersion.shortValue(),
                     translationKey,
-                    replacedBlockTranslationKey
+                    replacedBlockTranslationKey,
+                    null,
+                    null
                 );
 
                 // Build the activity
@@ -789,7 +891,6 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                         world,
                         coordinate,
                         cause,
-                        player,
                         timestamp
                     );
 
@@ -818,7 +919,9 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                     metadata,
                     (short) 0,
                     translationKey,
-                    replacedBlockTranslationKey
+                    null,
+                    affectedPlayerName,
+                    affectedPlayerUuid
                 );
 
                 // Build the activity
@@ -829,7 +932,6 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                         world,
                         coordinate,
                         cause,
-                        player,
                         timestamp
                     );
 
@@ -856,7 +958,9 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                     metadata,
                     (short) 0,
                     translationKey,
-                    replacedBlockTranslationKey
+                    null,
+                    affectedPlayerName,
+                    affectedPlayerUuid
                 );
 
                 // Count
@@ -869,7 +973,6 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                         world,
                         coordinate,
                         cause,
-                        player,
                         timestamp,
                         count
                     );

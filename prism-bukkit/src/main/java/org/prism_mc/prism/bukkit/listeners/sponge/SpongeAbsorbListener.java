@@ -73,7 +73,7 @@ public class SpongeAbsorbListener extends AbstractListener implements Listener {
 
             var activity = BukkitActivity.builder()
                 .action(action)
-                .cause(nameFromCause(event.getBlock()))
+                .cause(event.getBlock())
                 .location(blockState.getLocation())
                 .build();
 

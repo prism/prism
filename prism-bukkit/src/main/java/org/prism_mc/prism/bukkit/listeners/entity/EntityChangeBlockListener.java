@@ -100,7 +100,7 @@ public class EntityChangeBlockListener extends AbstractListener implements Liste
             var activity = BukkitActivity.builder()
                 .action(action)
                 .location(event.getBlock().getLocation())
-                .cause(nameFromCause(event.getEntity()))
+                .cause(event.getEntity())
                 .build();
 
             recordingService.addToQueue(activity);
@@ -132,7 +132,7 @@ public class EntityChangeBlockListener extends AbstractListener implements Liste
         var activity = BukkitActivity.builder()
             .action(action)
             .location(event.getBlock().getLocation())
-            .cause(nameFromCause(event.getEntity()))
+            .cause(event.getEntity())
             .build();
 
         recordingService.addToQueue(activity);

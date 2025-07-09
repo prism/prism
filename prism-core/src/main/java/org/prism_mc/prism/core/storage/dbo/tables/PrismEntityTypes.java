@@ -30,7 +30,7 @@ import org.jooq.ForeignKey;
 import org.jooq.Identity;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row2;
+import org.jooq.Row3;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -77,6 +77,16 @@ public class PrismEntityTypes extends TableImpl<PrismEntityTypesRecord> {
     public final TableField<PrismEntityTypesRecord, String> ENTITY_TYPE = createField(
         DSL.name("entity_type"),
         SQLDataType.VARCHAR(45),
+        this,
+        ""
+    );
+
+    /**
+     * The column <code>prism_entity_types.translation_key</code>.
+     */
+    public final TableField<PrismEntityTypesRecord, String> TRANSLATION_KEY = createField(
+        DSL.name("translation_key"),
+        SQLDataType.VARCHAR(155),
         this,
         ""
     );
@@ -157,7 +167,7 @@ public class PrismEntityTypes extends TableImpl<PrismEntityTypesRecord> {
     }
 
     @Override
-    public Row2<UShort, String> fieldsRow() {
-        return (Row2) super.fieldsRow();
+    public Row3<UShort, String, String> fieldsRow() {
+        return (Row3) super.fieldsRow();
     }
 }

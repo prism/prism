@@ -67,7 +67,7 @@ public class HangingPlaceListener extends AbstractListener implements Listener {
         var builder = BukkitActivity.builder().action(action).location(event.getEntity().getLocation());
 
         if (event.getPlayer() != null) {
-            builder.player(event.getPlayer());
+            builder.cause(event.getPlayer());
         } else {
             builder.cause("unknown");
         }

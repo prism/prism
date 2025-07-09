@@ -64,6 +64,6 @@ public class EntityActionType extends ActionType {
             }
         }
 
-        return new BukkitEntityAction(this, type, readWriteNbt, actionData.descriptor(), metadata);
+        return new BukkitEntityAction(this, type, readWriteNbt, metadata);
     }
 }

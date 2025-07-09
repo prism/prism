@@ -96,11 +96,7 @@ public class PlayerQuitListener extends AbstractListener implements Listener {
         if (configurationService.prismConfig().actions().playerQuit()) {
             var action = new GenericBukkitAction(BukkitActionTypeRegistry.PLAYER_QUIT);
 
-            var activity = BukkitActivity.builder()
-                .action(action)
-                .location(player.getLocation())
-                .player(player)
-                .build();
+            var activity = BukkitActivity.builder().action(action).location(player.getLocation()).cause(player).build();
 
             recordingService.addToQueue(activity);
         }
@@ -108,9 +104,6 @@ public class PlayerQuitListener extends AbstractListener implements Listener {
         // Remove cached player data
         Long playerPk = cacheService.playerUuidPkMap().getIfPresent(event.getPlayer().getUniqueId());
         if (playerPk != null) {
-            // Remove player's PK -> cause PK from the cache first
-            cacheService.playerCausePkMap().invalidate(playerPk);
-
             // Remove the player's UUID -> PK from the cache
             cacheService.playerUuidPkMap().invalidate(event.getPlayer().getUniqueId());
         }

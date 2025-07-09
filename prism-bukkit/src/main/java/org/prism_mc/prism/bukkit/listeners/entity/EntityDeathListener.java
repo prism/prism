@@ -33,7 +33,9 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.projectiles.BlockProjectileSource;
+import org.prism_mc.prism.api.actions.Action;
 import org.prism_mc.prism.bukkit.actions.BukkitEntityAction;
+import org.prism_mc.prism.bukkit.actions.BukkitPlayerAction;
 import org.prism_mc.prism.bukkit.actions.types.BukkitActionTypeRegistry;
 import org.prism_mc.prism.bukkit.api.activities.BukkitActivity;
 import org.prism_mc.prism.bukkit.listeners.AbstractListener;
@@ -68,44 +70,46 @@ public class EntityDeathListener extends AbstractListener implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityDeath(final EntityDeathEvent event) {
-        // Ignore if this event is disabled
-        if (!configurationService.prismConfig().actions().entityKill() || event.getEntity() instanceof Player) {
-            return;
-        }
-
         final LivingEntity entity = event.getEntity();
 
+        Action action;
+        if (event.getEntity() instanceof Player player) {
+            if ((!configurationService.prismConfig().actions().playerDeath())) {
+                return;
+            }
+
+            action = new BukkitPlayerAction(BukkitActionTypeRegistry.PLAYER_DEATH, player);
+        } else {
+            if (!configurationService.prismConfig().actions().entityDeath()) {
+                return;
+            }
+
+            action = new BukkitEntityAction(BukkitActionTypeRegistry.ENTITY_DEATH, entity);
+        }
+
         // Resolve cause using last damage
-        Object cause = null;
+        Object causeObj = null;
         EntityDamageEvent damageEvent = entity.getLastDamageCause();
 
         if (damageEvent != null && !damageEvent.isCancelled()) {
             if (damageEvent instanceof EntityDamageByEntityEvent entityDamageByEntityEvent) {
-                cause = entityDamageByEntityEvent.getDamager();
+                causeObj = entityDamageByEntityEvent.getDamager();
 
-                if (cause instanceof Projectile projectile) {
-                    cause = projectile.getShooter();
+                if (causeObj instanceof Projectile projectile) {
+                    causeObj = projectile.getShooter();
 
-                    if (cause instanceof BlockProjectileSource blockProjectileSource) {
-                        cause = blockProjectileSource.getBlock();
+                    if (causeObj instanceof BlockProjectileSource blockProjectileSource) {
+                        causeObj = blockProjectileSource.getBlock();
                     }
                 }
             } else if (damageEvent instanceof EntityDamageByBlockEvent) {
-                cause = ((EntityDamageByBlockEvent) damageEvent).getDamager();
+                causeObj = ((EntityDamageByBlockEvent) damageEvent).getDamager();
             } else {
-                cause = nameFromCause(damageEvent.getCause());
+                causeObj = damageEvent.getCause();
             }
         }
 
-        var action = new BukkitEntityAction(BukkitActionTypeRegistry.ENTITY_KILL, entity);
-
-        var builder = BukkitActivity.builder().action(action).location(entity.getLocation());
-        if (cause instanceof Player player) {
-            builder.player(player);
-        } else if (cause != null) {
-            builder.cause(nameFromCause(cause));
-        }
-
+        var builder = BukkitActivity.builder().action(action).location(entity.getLocation()).cause(causeObj);
         recordingService.addToQueue(builder.build());
 
         // Log inventory drops
@@ -116,6 +120,15 @@ public class EntityDeathListener extends AbstractListener implements Listener {
                 event.getEntity().getLocation(),
                 event.getEntity()
             );
+        }
+
+        // Log drops from the player. Right now I don't know of any reason to track other entities
+        // since the only ones dropping non-loot stuff would be inventory holders.
+        // No need to check keepInventory settings because event.getDrops will be empty if it's true
+        if (entity instanceof Player) {
+            for (var item : event.getDrops()) {
+                recordItemDropActivity(event.getEntity().getLocation(), event.getEntity(), item);
+            }
         }
     }
 }

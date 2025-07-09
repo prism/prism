@@ -68,7 +68,7 @@ public class PlayerLeashEntityListener extends AbstractListener implements Liste
         var activity = BukkitActivity.builder()
             .action(action)
             .location(event.getEntity().getLocation())
-            .player(event.getPlayer())
+            .cause(event.getPlayer())
             .build();
 
         recordingService.addToQueue(activity);

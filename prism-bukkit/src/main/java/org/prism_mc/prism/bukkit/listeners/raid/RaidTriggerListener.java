@@ -68,7 +68,7 @@ public class RaidTriggerListener extends AbstractListener implements Listener {
         var activity = BukkitActivity.builder()
             .action(action)
             .location(event.getPlayer().getLocation())
-            .player(event.getPlayer())
+            .cause(event.getPlayer())
             .build();
 
         recordingService.addToQueue(activity);

@@ -23,7 +23,6 @@ package org.prism_mc.prism.bukkit.listeners.portal;
 import com.google.inject.Inject;
 import org.bukkit.Material;
 import org.bukkit.block.BlockState;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -71,10 +70,8 @@ public class PortalCreateListener extends AbstractListener implements Listener {
 
             var builder = BukkitActivity.builder().action(action).location(block.getLocation());
 
-            if (event.getEntity() instanceof Player player) {
-                builder.player(player);
-            } else if (event.getEntity() != null) {
-                builder.cause(nameFromCause(event.getEntity()));
+            if (event.getEntity() != null) {
+                builder.cause(event.getEntity());
             } else {
                 builder.cause("nature");
             }

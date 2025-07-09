@@ -20,7 +20,8 @@
 
 package org.prism_mc.prism.bukkit.actions;
 
-import java.util.Locale;
+import static org.prism_mc.prism.bukkit.api.activities.BukkitActivity.enumNameToString;
+
 import org.bukkit.Material;
 import org.prism_mc.prism.api.actions.MaterialAction;
 import org.prism_mc.prism.api.actions.types.ActionType;
@@ -43,7 +44,7 @@ public abstract class BukkitMaterialAction extends BukkitAction implements Mater
         this.material = material;
 
         if (this.descriptor == null) {
-            this.descriptor = material.toString().toLowerCase(Locale.ENGLISH).replace("_", " ");
+            this.descriptor = enumNameToString(material.name());
         }
     }
 
@@ -58,6 +59,6 @@ public abstract class BukkitMaterialAction extends BukkitAction implements Mater
 
     @Override
     public String serializeMaterial() {
-        return material.toString().toLowerCase(Locale.ENGLISH);
+        return enumNameToString(material.name());
     }
 }

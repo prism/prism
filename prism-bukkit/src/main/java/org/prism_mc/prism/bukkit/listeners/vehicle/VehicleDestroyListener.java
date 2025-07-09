@@ -72,7 +72,7 @@ public class VehicleDestroyListener extends AbstractListener implements Listener
         var builder = BukkitActivity.builder().action(action).location(location);
         if (event.getAttacker() != null) {
             if (event.getAttacker() instanceof Player player) {
-                builder.player(player);
+                builder.cause(player);
             } else {
                 builder.cause(event.getAttacker().toString());
             }
@@ -82,7 +82,7 @@ public class VehicleDestroyListener extends AbstractListener implements Listener
             Entity passenger = event.getVehicle().getPassengers().getFirst();
 
             if (passenger instanceof Player player) {
-                builder.player(player);
+                builder.cause(player);
             } else {
                 builder.cause(passenger.toString());
             }
@@ -91,11 +91,7 @@ public class VehicleDestroyListener extends AbstractListener implements Listener
         }
 
         if (event.getVehicle() instanceof ChestBoat chestBoat) {
-            recordItemDropFromInventory(
-                chestBoat.getInventory(),
-                location,
-                nameFromCause(event.getVehicle().getType())
-            );
+            recordItemDropFromInventory(chestBoat.getInventory(), location, event.getVehicle().getType());
         }
     }
 }

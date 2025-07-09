@@ -68,7 +68,7 @@ public class BlockDispenseListener extends AbstractListener implements Listener 
         final var activity = BukkitActivity.builder()
             .location(event.getBlock().getLocation())
             .action(action)
-            .cause(nameFromCause(event.getBlock()))
+            .cause(event.getBlock())
             .build();
 
         recordingService.addToQueue(activity);

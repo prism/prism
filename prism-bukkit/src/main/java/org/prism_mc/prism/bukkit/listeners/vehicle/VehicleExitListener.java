@@ -22,7 +22,6 @@ package org.prism_mc.prism.bukkit.listeners.vehicle;
 
 import com.google.inject.Inject;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -69,14 +68,7 @@ public class VehicleExitListener extends AbstractListener implements Listener {
         final Vehicle vehicle = event.getVehicle();
         final Entity entity = event.getExited();
         var action = new BukkitEntityAction(BukkitActionTypeRegistry.VEHICLE_EXIT, vehicle);
-
-        var builder = BukkitActivity.builder().action(action).location(vehicle.getLocation());
-        if (entity instanceof Player player) {
-            builder.player(player);
-        } else {
-            builder.cause(nameFromCause(entity));
-        }
-
+        var builder = BukkitActivity.builder().action(action).location(vehicle.getLocation()).cause(entity);
         recordingService.addToQueue(builder.build());
     }
 }

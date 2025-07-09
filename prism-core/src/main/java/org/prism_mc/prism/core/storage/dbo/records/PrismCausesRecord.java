@@ -24,15 +24,13 @@ import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAda
 
 import org.jooq.Field;
 import org.jooq.Record1;
-import org.jooq.Record3;
-import org.jooq.Row3;
+import org.jooq.Record2;
+import org.jooq.Row2;
 import org.jooq.impl.UpdatableRecordImpl;
 import org.jooq.types.UInteger;
 
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
-public class PrismCausesRecord
-    extends UpdatableRecordImpl<PrismCausesRecord>
-    implements Record3<UInteger, String, UInteger> {
+public class PrismCausesRecord extends UpdatableRecordImpl<PrismCausesRecord> implements Record2<UInteger, String> {
 
     private static final long serialVersionUID = 1L;
 
@@ -66,21 +64,6 @@ public class PrismCausesRecord
         return (String) get(1);
     }
 
-    /**
-     * Setter for <code>prism_causes.player_id</code>.
-     */
-    public PrismCausesRecord setPlayerId(UInteger value) {
-        set(2, value);
-        return this;
-    }
-
-    /**
-     * Getter for <code>prism_causes.player_id</code>.
-     */
-    public UInteger getPlayerId() {
-        return (UInteger) get(2);
-    }
-
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -95,13 +78,13 @@ public class PrismCausesRecord
     // -------------------------------------------------------------------------
 
     @Override
-    public Row3<UInteger, String, UInteger> fieldsRow() {
-        return (Row3) super.fieldsRow();
+    public Row2<UInteger, String> fieldsRow() {
+        return (Row2) super.fieldsRow();
     }
 
     @Override
-    public Row3<UInteger, String, UInteger> valuesRow() {
-        return (Row3) super.valuesRow();
+    public Row2<UInteger, String> valuesRow() {
+        return (Row2) super.valuesRow();
     }
 
     @Override
@@ -115,11 +98,6 @@ public class PrismCausesRecord
     }
 
     @Override
-    public Field<UInteger> field3() {
-        return PRISM_CAUSES.PLAYER_ID;
-    }
-
-    @Override
     public UInteger component1() {
         return getCauseId();
     }
@@ -127,11 +105,6 @@ public class PrismCausesRecord
     @Override
     public String component2() {
         return getCause();
-    }
-
-    @Override
-    public UInteger component3() {
-        return getPlayerId();
     }
 
     @Override
@@ -157,21 +130,9 @@ public class PrismCausesRecord
     }
 
     @Override
-    public UInteger value3() {
-        return getPlayerId();
-    }
-
-    @Override
-    public PrismCausesRecord value3(UInteger value) {
-        setPlayerId(value);
-        return this;
-    }
-
-    @Override
-    public PrismCausesRecord values(UInteger value1, String value2, UInteger value3) {
+    public PrismCausesRecord values(UInteger value1, String value2) {
         value1(value1);
         value2(value2);
-        value3(value3);
         return this;
     }
 
@@ -189,10 +150,9 @@ public class PrismCausesRecord
     /**
      * Create a detached, initialised PrismCausesRecord.
      */
-    public PrismCausesRecord(UInteger causeId, String cause, UInteger playerId) {
+    public PrismCausesRecord(UInteger causeId, String cause) {
         super(PRISM_CAUSES);
         setCauseId(causeId);
         setCause(cause);
-        setPlayerId(playerId);
     }
 }

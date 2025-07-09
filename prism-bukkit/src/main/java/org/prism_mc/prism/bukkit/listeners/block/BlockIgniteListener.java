@@ -70,13 +70,13 @@ public class BlockIgniteListener extends AbstractListener implements Listener {
 
         var builder = BukkitActivity.builder().action(action).location(event.getBlock().getLocation());
         if (event.getPlayer() != null) {
-            builder.player(event.getPlayer());
+            builder.cause(event.getPlayer());
         } else if (event.getIgnitingBlock() != null) {
-            builder.cause(nameFromCause(event.getIgnitingBlock()));
+            builder.cause(event.getIgnitingBlock());
         } else if (event.getIgnitingEntity() != null) {
-            builder.cause(nameFromCause(event.getIgnitingEntity()));
+            builder.cause(event.getIgnitingEntity());
         } else {
-            builder.cause(nameFromCause(event.getCause()));
+            builder.cause(event.getCause());
         }
 
         recordingService.addToQueue(builder.build());

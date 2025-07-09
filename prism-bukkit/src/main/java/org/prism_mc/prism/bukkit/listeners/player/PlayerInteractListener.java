@@ -31,7 +31,6 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.ChiseledBookshelf;
 import org.bukkit.block.Jukebox;
 import org.bukkit.block.Lectern;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
@@ -41,14 +40,9 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.prism_mc.prism.api.actions.Action;
-import org.prism_mc.prism.api.actions.EntityAction;
 import org.prism_mc.prism.api.services.wands.Wand;
 import org.prism_mc.prism.api.util.Coordinate;
 import org.prism_mc.prism.bukkit.actions.BukkitBlockAction;
-import org.prism_mc.prism.bukkit.actions.BukkitEntityAction;
-import org.prism_mc.prism.bukkit.actions.BukkitItemStackAction;
-import org.prism_mc.prism.bukkit.actions.GenericBukkitAction;
 import org.prism_mc.prism.bukkit.actions.types.BukkitActionTypeRegistry;
 import org.prism_mc.prism.bukkit.api.activities.BukkitActivity;
 import org.prism_mc.prism.bukkit.listeners.AbstractListener;
@@ -198,7 +192,7 @@ public class PlayerInteractListener extends AbstractListener implements Listener
 
             var action = new BukkitBlockAction(BukkitActionTypeRegistry.INVENTORY_OPEN, blockState);
 
-            var activity = BukkitActivity.builder().action(action).player(player).location(location).build();
+            var activity = BukkitActivity.builder().action(action).cause(player).location(location).build();
 
             recordingService.addToQueue(activity);
         } else if (TagLib.USABLE.isTagged(block.getType())) {
@@ -209,7 +203,7 @@ public class PlayerInteractListener extends AbstractListener implements Listener
 
             var action = new BukkitBlockAction(BukkitActionTypeRegistry.BLOCK_USE, blockState);
 
-            var activity = BukkitActivity.builder().action(action).player(player).location(location).build();
+            var activity = BukkitActivity.builder().action(action).cause(player).location(location).build();
 
             recordingService.addToQueue(activity);
         } else if (TagLib.USABLE_ITEMS.isTagged(heldItem.getType())) {

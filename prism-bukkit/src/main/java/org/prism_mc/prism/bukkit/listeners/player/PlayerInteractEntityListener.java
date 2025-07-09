@@ -81,7 +81,7 @@ public class PlayerInteractEntityListener extends AbstractListener implements Li
 
                 var activity = BukkitActivity.builder()
                     .action(action)
-                    .player(player)
+                    .cause(player)
                     .location(event.getRightClicked().getLocation())
                     .build();
 

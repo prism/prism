@@ -69,7 +69,7 @@ public class StructureGrowListener extends AbstractListener implements Listener 
 
             var builder = BukkitActivity.builder().action(action).location(block.getLocation());
             if (event.getPlayer() != null) {
-                builder.player(event.getPlayer()).build();
+                builder.cause(event.getPlayer()).build();
             } else {
                 builder.cause("nature");
             }

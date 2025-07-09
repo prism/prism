@@ -24,15 +24,15 @@ import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAda
 
 import org.jooq.Field;
 import org.jooq.Record1;
-import org.jooq.Record2;
-import org.jooq.Row2;
+import org.jooq.Record3;
+import org.jooq.Row3;
 import org.jooq.impl.UpdatableRecordImpl;
 import org.jooq.types.UShort;
 
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class PrismEntityTypesRecord
     extends UpdatableRecordImpl<PrismEntityTypesRecord>
-    implements Record2<UShort, String> {
+    implements Record3<UShort, String, String> {
 
     private static final long serialVersionUID = 1L;
 
@@ -66,6 +66,21 @@ public class PrismEntityTypesRecord
         return (String) get(1);
     }
 
+    /**
+     * Setter for <code>prism_entity_types.translation_key</code>.
+     */
+    public PrismEntityTypesRecord setTranslationKey(String value) {
+        set(2, value);
+        return this;
+    }
+
+    /**
+     * Getter for <code>prism_entity_types.translation_key</code>.
+     */
+    public String getTranslationKey() {
+        return (String) get(2);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -80,13 +95,13 @@ public class PrismEntityTypesRecord
     // -------------------------------------------------------------------------
 
     @Override
-    public Row2<UShort, String> fieldsRow() {
-        return (Row2) super.fieldsRow();
+    public Row3<UShort, String, String> fieldsRow() {
+        return (Row3) super.fieldsRow();
     }
 
     @Override
-    public Row2<UShort, String> valuesRow() {
-        return (Row2) super.valuesRow();
+    public Row3<UShort, String, String> valuesRow() {
+        return (Row3) super.valuesRow();
     }
 
     @Override
@@ -100,6 +115,11 @@ public class PrismEntityTypesRecord
     }
 
     @Override
+    public Field<String> field3() {
+        return PRISM_ENTITY_TYPES.TRANSLATION_KEY;
+    }
+
+    @Override
     public UShort component1() {
         return getEntityTypeId();
     }
@@ -107,6 +127,11 @@ public class PrismEntityTypesRecord
     @Override
     public String component2() {
         return getEntityType();
+    }
+
+    @Override
+    public String component3() {
+        return getTranslationKey();
     }
 
     @Override
@@ -132,9 +157,21 @@ public class PrismEntityTypesRecord
     }
 
     @Override
-    public PrismEntityTypesRecord values(UShort value1, String value2) {
+    public String value3() {
+        return getTranslationKey();
+    }
+
+    @Override
+    public PrismEntityTypesRecord value3(String value) {
+        setTranslationKey(value);
+        return this;
+    }
+
+    @Override
+    public PrismEntityTypesRecord values(UShort value1, String value2, String value3) {
         value1(value1);
         value2(value2);
+        value3(value3);
         return this;
     }
 
@@ -152,9 +189,10 @@ public class PrismEntityTypesRecord
     /**
      * Create a detached, initialised PrismEntityTypesRecord.
      */
-    public PrismEntityTypesRecord(UShort entityTypeId, String entityType) {
+    public PrismEntityTypesRecord(UShort entityTypeId, String entityType, String translationKey) {
         super(PRISM_ENTITY_TYPES);
         setEntityTypeId(entityTypeId);
         setEntityType(entityType);
+        setTranslationKey(translationKey);
     }
 }

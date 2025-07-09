@@ -68,7 +68,7 @@ public class PlayerJoinListener extends AbstractListener implements Listener {
 
         var action = new GenericBukkitAction(BukkitActionTypeRegistry.PLAYER_JOIN);
 
-        var activity = BukkitActivity.builder().action(action).location(player.getLocation()).player(player).build();
+        var activity = BukkitActivity.builder().action(action).location(player.getLocation()).cause(player).build();
 
         recordingService.addToQueue(activity);
     }

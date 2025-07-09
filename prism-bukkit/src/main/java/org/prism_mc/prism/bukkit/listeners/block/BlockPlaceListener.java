@@ -86,7 +86,7 @@ public class BlockPlaceListener extends AbstractListener implements Listener {
         var activity = BukkitActivity.builder()
             .action(action)
             .location(blockPlaced.getLocation())
-            .player(player)
+            .cause(player)
             .build();
 
         recordingService.addToQueue(activity);
