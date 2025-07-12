@@ -370,7 +370,9 @@ public class PrismBukkit implements Prism {
             commandManager.registerSuggestion(SuggestionKey.of("blocks"), (sender, context) -> {
                 List<String> suggestions = new ArrayList<>();
                 for (var material : Material.values()) {
-                    suggestions.add(material.name().toLowerCase(Locale.ROOT));
+                    if (material.isBlock()) {
+                        suggestions.add(material.name().toLowerCase(Locale.ENGLISH));
+                    }
                 }
 
                 return suggestions;
