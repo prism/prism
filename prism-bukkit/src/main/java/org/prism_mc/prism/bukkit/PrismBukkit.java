@@ -40,6 +40,7 @@ import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.Registry;
 import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
@@ -369,10 +370,8 @@ public class PrismBukkit implements Prism {
             // Register block types auto-suggest
             commandManager.registerSuggestion(SuggestionKey.of("blocks"), (sender, context) -> {
                 List<String> suggestions = new ArrayList<>();
-                for (var material : Material.values()) {
-                    if (material.isBlock()) {
-                        suggestions.add(material.name().toLowerCase(Locale.ENGLISH));
-                    }
+                for (var block : Registry.BLOCK) {
+                    suggestions.add(block.getKey().getKey());
                 }
 
                 return suggestions;
