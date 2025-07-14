@@ -160,6 +160,13 @@ public class HikariConfigFactories {
      */
     public static HikariConfig sqlite(StorageConfiguration storageConfiguration, File sqliteFile) {
         HikariConfig hikariConfig = createSharedConfig(storageConfiguration);
+        hikariConfig.setConnectionInitSql(
+            String.format(
+                "PRAGMA journal_mode=WAL; PRAGMA busy_timeout=%d;",
+                storageConfiguration.sqlite().busyTimeout()
+            )
+        );
+
         hikariConfig.setJdbcUrl(
             "jdbc:" + (storageConfiguration.spy() ? "p6spy:" : "") + "sqlite:file:" + sqliteFile.getAbsolutePath()
         );
