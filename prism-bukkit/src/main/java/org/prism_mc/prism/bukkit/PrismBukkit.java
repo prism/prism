@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -55,7 +54,7 @@ import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.bukkit.actions.types.BukkitActionTypeRegistry;
 import org.prism_mc.prism.bukkit.commands.AboutCommand;
 import org.prism_mc.prism.bukkit.commands.CacheCommand;
-import org.prism_mc.prism.bukkit.commands.ConfigCommand;
+import org.prism_mc.prism.bukkit.commands.ConfigsCommand;
 import org.prism_mc.prism.bukkit.commands.DrainCommand;
 import org.prism_mc.prism.bukkit.commands.ExtinguishCommand;
 import org.prism_mc.prism.bukkit.commands.LookupCommand;
@@ -520,7 +519,7 @@ public class PrismBukkit implements Prism {
 
             commandManager.registerCommand(injectorProvider.injector().getInstance(AboutCommand.class));
             commandManager.registerCommand(injectorProvider.injector().getInstance(CacheCommand.class));
-            commandManager.registerCommand(injectorProvider.injector().getInstance(ConfigCommand.class));
+            commandManager.registerCommand(injectorProvider.injector().getInstance(ConfigsCommand.class));
             commandManager.registerCommand(injectorProvider.injector().getInstance(DrainCommand.class));
             commandManager.registerCommand(injectorProvider.injector().getInstance(ExtinguishCommand.class));
             commandManager.registerCommand(injectorProvider.injector().getInstance(LookupCommand.class));

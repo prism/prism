@@ -34,7 +34,7 @@ import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 
 @Command(value = "prism", alias = { "pr" })
-public class ConfigCommand {
+public class ConfigsCommand {
 
     /**
      * The alert service.
@@ -79,7 +79,7 @@ public class ConfigCommand {
      * @param storageAdapter The storage adapter
      */
     @Inject
-    public ConfigCommand(
+    public ConfigsCommand(
         BukkitAlertService alertService,
         LoggingService loggingService,
         MessageService messageService,
@@ -97,68 +97,70 @@ public class ConfigCommand {
         this.filterService = filterService;
     }
 
-    @Command("config")
+    @Command("configs")
     @Permission("prism.admin")
-    public class ConfigSubCommand {
+    public class ConfigsSubCommand {
 
-        /**
-         * Reload the config.
-         *
-         * @param sender The command sender
-         */
-        @Command("reload")
-        @Permission("prism.admin")
-        public void onReloadConfig(final CommandSender sender) {
-            configurationService.loadConfigurations();
+        @Command("prism")
+        public class ConfigSubCommand {
 
-            filterService.loadFilters();
-            alertService.loadAlerts();
+            /**
+             * Reload the config.
+             *
+             * @param sender The command sender
+             */
+            @Command("reload")
+            @Permission("prism.admin")
+            public void onReloadConfig(final CommandSender sender) {
+                configurationService.loadConfigurations();
 
-            messageService.reloadedConfig(sender);
-        }
-    }
+                filterService.loadFilters();
+                alertService.loadAlerts();
 
-    @Command("locales")
-    @Permission("prism.admin")
-    public class LocalesSubCommand {
-
-        /**
-         * Reload the locale files.
-         *
-         * @param sender The command sender
-         */
-        @Command("reload")
-        @Permission("prism.admin")
-        public void onReloadLocales(final CommandSender sender) {
-            try {
-                translationService.reloadTranslations();
-
-                messageService.reloadedLocales(sender);
-            } catch (IOException e) {
-                messageService.errorReloadLocale(sender);
-                loggingService.handleException(e);
+                messageService.reloadedConfig(sender);
             }
         }
-    }
 
-    @Command("storage-config")
-    @Permission("prism.admin")
-    public class StorageConfigSubCommand {
+        @Command("locales")
+        public class LocalesSubCommand {
 
-        /**
-         * Run the command to write a hikari properties file.
-         *
-         * @param sender The command sender
-         */
-        @Command("write-hikari")
-        public void onHikariWrite(final CommandSender sender) {
-            try {
-                storageAdapter.writeHikariPropertiesFile();
+            /**
+             * Reload the locale files.
+             *
+             * @param sender The command sender
+             */
+            @Command("reload")
+            @Permission("prism.admin")
+            public void onReloadLocales(final CommandSender sender) {
+                try {
+                    translationService.reloadTranslations();
 
-                messageService.hikariFileWritten(sender);
-            } catch (IOException e) {
-                messageService.errorWriteHikari(sender);
-                loggingService.handleException(e);
+                    messageService.reloadedLocales(sender);
+                } catch (IOException e) {
+                    messageService.errorReloadLocale(sender);
+                    loggingService.handleException(e);
+                }
+            }
+        }
+
+        @Command("storage")
+        public class StorageConfigSubCommand {
+
+            /**
+             * Run the command to write a hikari properties file.
+             *
+             * @param sender The command sender
+             */
+            @Command("write-hikari")
+            public void onHikariWrite(final CommandSender sender) {
+                try {
+                    storageAdapter.writeHikariPropertiesFile();
+
+                    messageService.hikariFileWritten(sender);
+                } catch (IOException e) {
+                    messageService.errorWriteHikari(sender);
+                    loggingService.handleException(e);
+                }
             }
         }
     }
