@@ -71,6 +71,7 @@ public class ModificationConfiguration {
 
         entityBlacklist.add("creeper");
         entityBlacklist.add("tnt_minecart");
+        entityBlacklist.add("wither");
 
         removeBlocks.add("tnt");
         removeBlocks.add("fire");
