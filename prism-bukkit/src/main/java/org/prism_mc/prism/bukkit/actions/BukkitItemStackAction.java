@@ -116,10 +116,12 @@ public class BukkitItemStackAction extends BukkitMaterialAction implements ItemA
                     .serialize(LegacyComponentSerializer.legacySection().deserialize(meta.getItemName()))
             );
         } else if (meta instanceof SkullMeta skullMeta && skullMeta.hasOwner()) {
-            itemName = Component.translatable(
-                "block.minecraft.player_head.named",
-                Component.text(skullMeta.getOwningPlayer().getName())
-            );
+            Component name = Component.text("unknown");
+            if (skullMeta.getOwningPlayer() != null && skullMeta.getOwningPlayer().getName() != null) {
+                name = Component.text(skullMeta.getOwningPlayer().getName());
+            }
+
+            itemName = Component.translatable("block.minecraft.player_head.named", name);
         }
 
         complete.append(itemName);
