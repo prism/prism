@@ -30,8 +30,8 @@ import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
 import org.prism_mc.prism.api.services.modifications.ModificationResult;
 import org.prism_mc.prism.api.services.purges.PurgeCycleResult;
 import org.prism_mc.prism.api.services.wands.WandMode;
-import org.prism_mc.prism.bukkit.services.alerts.BlockAlertData;
 import org.prism_mc.prism.bukkit.services.alerts.BlockBreakAlertData;
+import org.prism_mc.prism.bukkit.services.alerts.ItemAlertData;
 
 public interface MessageService {
     @Message("prism.about")
@@ -44,7 +44,13 @@ public interface MessageService {
     void alertBlockBreakNightVision(CommandSender receiver, @Placeholder BlockBreakAlertData data);
 
     @Message("prism.alert-block-place")
-    void alertBlockPlace(CommandSender receiver, @Placeholder BlockAlertData data);
+    void alertBlockPlace(CommandSender receiver, @Placeholder ItemAlertData data);
+
+    @Message("prism.alert-item-use")
+    void alertItemUse(CommandSender receiver, @Placeholder ItemAlertData data);
+
+    @Message("prism.alerts-exceed-maximum")
+    void alertsExceedMaximum(CommandSender receiver, @Placeholder String player);
 
     @Message("prism.cache-list-entry")
     void cacheListEntry(

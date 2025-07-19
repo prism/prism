@@ -32,7 +32,13 @@ public class CacheConfiguration {
     @Comment("Enable stats recording. Ideally not used on live servers.")
     private boolean recordStats = false;
 
-    @Comment("Cache settings for alerted locations.")
+    @Comment("Cache settings for alerts.")
+    private CacheBuilderConfiguration alerts = new CacheBuilderConfiguration(
+        1000,
+        new DurationConfiguration(5, TimeUnit.MINUTES)
+    );
+
+    @Comment("Cache settings for alerted vein locations.")
     private CacheBuilderConfiguration alertedLocations = new CacheBuilderConfiguration(
         1000,
         new DurationConfiguration(5, TimeUnit.MINUTES)

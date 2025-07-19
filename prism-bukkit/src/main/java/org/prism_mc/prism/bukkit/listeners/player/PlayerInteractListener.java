@@ -36,6 +36,7 @@ import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryHolder;
@@ -46,6 +47,7 @@ import org.prism_mc.prism.bukkit.actions.BukkitBlockAction;
 import org.prism_mc.prism.bukkit.actions.types.BukkitActionTypeRegistry;
 import org.prism_mc.prism.bukkit.api.activities.BukkitActivity;
 import org.prism_mc.prism.bukkit.listeners.AbstractListener;
+import org.prism_mc.prism.bukkit.services.alerts.BukkitAlertService;
 import org.prism_mc.prism.bukkit.services.expectations.ExpectationService;
 import org.prism_mc.prism.bukkit.services.recording.BukkitRecordingService;
 import org.prism_mc.prism.bukkit.services.wands.WandService;
@@ -56,6 +58,11 @@ import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 public class PlayerInteractListener extends AbstractListener implements Listener {
 
     /**
+     * The alert service.
+     */
+    private final BukkitAlertService alertService;
+
+    /**
      * The wand service.
      */
     private final WandService wandService;
@@ -63,6 +70,7 @@ public class PlayerInteractListener extends AbstractListener implements Listener
     /**
      * Construct the listener.
      *
+     * @param alertService The alert service
      * @param configurationService The configuration service
      * @param expectationService The expectation service
      * @param recordingService The recording service
@@ -70,12 +78,14 @@ public class PlayerInteractListener extends AbstractListener implements Listener
      */
     @Inject
     public PlayerInteractListener(
+        BukkitAlertService alertService,
         ConfigurationService configurationService,
         ExpectationService expectationService,
         BukkitRecordingService recordingService,
         WandService wandService
     ) {
         super(configurationService, expectationService, recordingService);
+        this.alertService = alertService;
         this.wandService = wandService;
     }
 
@@ -143,6 +153,10 @@ public class PlayerInteractListener extends AbstractListener implements Listener
         final BlockState blockState = block.getState();
         final Location location = block.getLocation();
         final ItemStack heldItem = player.getInventory().getItemInMainHand();
+
+        if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
+            alertService.alertItemUse(event.getPlayer(), heldItem);
+        }
 
         if (
             event.getAction().equals(org.bukkit.event.block.Action.PHYSICAL) &&

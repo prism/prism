@@ -20,35 +20,28 @@
 
 package org.prism_mc.prism.loader.services.configuration.alerts;
 
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 import org.spongepowered.configurate.objectmapping.meta.Comment;
 
 @ConfigSerializable
 @Getter
-public class AlertsConfiguration {
+public class ItemUseAlertsConfiguration {
 
-    @Comment("Do not alert for players in creative.")
-    private boolean ignoreCreative = true;
-
-    @Comment("Hide alerts from a player if they both trigger and receive alerts.")
-    private boolean ignoreSelf = false;
-
-    @Comment("Set a maximum number of times a player can trigger a specific alert within a short period.")
-    private int maxAlertsPerEvent = 5;
+    @Comment("Enable or disable all alerts of this type.")
+    private boolean enabled = true;
 
     /**
-     * Block break alert configurations.
+     * Alert configurations.
      */
-    private BlockBreakAlertsConfiguration blockBreakAlerts = new BlockBreakAlertsConfiguration();
+    private List<AlertConfiguration> alerts = new ArrayList<>();
 
     /**
-     * Block place alert configurations.
+     * Constructor.
      */
-    private BlockPlaceAlertsConfiguration blockPlaceAlerts = new BlockPlaceAlertsConfiguration();
-
-    /**
-     * Item use alert configurations.
-     */
-    private ItemUseAlertsConfiguration itemUseAlerts = new ItemUseAlertsConfiguration();
+    public ItemUseAlertsConfiguration() {
+        alerts.add(new AlertConfiguration(List.of("flint_and_steel", "lava_bucket"), "#fc2150"));
+    }
 }

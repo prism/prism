@@ -38,6 +38,7 @@ import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.prism_mc.prism.bukkit.actions.types.BukkitActionTypeRegistry;
@@ -69,6 +70,11 @@ public class BukkitAlertService {
     private final List<BlockAlert> blockPlaceAlerts = new ArrayList<>();
 
     /**
+     * Cache all item use alerts.
+     */
+    private final List<ItemAlert> itemUseAlerts = new ArrayList<>();
+
+    /**
      * The configuration service.
      */
     private final ConfigurationService configurationService;
@@ -89,10 +95,12 @@ public class BukkitAlertService {
     private final MessageService messageService;
 
     /**
-     * Cache locations.
-     *
-     * <p>We essentially ignore the player for now,
-     * because all we care about is the location.</p>
+     * Cache alerts and their counts.
+     */
+    private final Cache<String, Integer> alerts;
+
+    /**
+     * Cache alerted vein locations
      */
     private final Cache<Location, Player> locations;
 
@@ -120,7 +128,29 @@ public class BukkitAlertService {
 
         CacheConfiguration cacheConfiguration = configurationService.prismConfig().cache();
 
-        var cacheBuilder = Caffeine.newBuilder()
+        var alertCacheBuilder = Caffeine.newBuilder()
+            .maximumSize(cacheConfiguration.alerts().maxSize())
+            .expireAfterAccess(
+                cacheConfiguration.alerts().expiresAfterAccess().duration(),
+                cacheConfiguration.alerts().expiresAfterAccess().timeUnit()
+            )
+            .evictionListener((key, value, cause) -> {
+                String msg = "Evicting alert from cache: Key: %s, Value: %s, Removal Cause: %s";
+                loggingService.debug(String.format(msg, key, value, cause));
+            })
+            .removalListener((key, value, cause) -> {
+                String msg = "Removing alert from cache: Key: %s, Value: %s, Removal Cause: %s";
+                loggingService.debug(String.format(msg, key, value, cause));
+            });
+
+        if (cacheConfiguration.recordStats()) {
+            alertCacheBuilder.recordStats();
+        }
+
+        alerts = alertCacheBuilder.build();
+        cacheService.caches().put("alerts", alerts);
+
+        var locationCacheBuilder = Caffeine.newBuilder()
             .maximumSize(cacheConfiguration.alertedLocations().maxSize())
             .expireAfterAccess(
                 cacheConfiguration.alertedLocations().expiresAfterAccess().duration(),
@@ -136,11 +166,11 @@ public class BukkitAlertService {
             });
 
         if (cacheConfiguration.recordStats()) {
-            cacheBuilder.recordStats();
+            locationCacheBuilder.recordStats();
         }
 
-        locations = cacheBuilder.build();
-        cacheService.caches().put("alertLocations", locations);
+        locations = locationCacheBuilder.build();
+        cacheService.caches().put("alerts", alerts);
 
         loadAlerts();
     }
@@ -152,7 +182,14 @@ public class BukkitAlertService {
      * @param player The player
      */
     public void alertBlockBreak(Block block, Player player) {
-        if (!shouldAlert(player, block.getLocation())) {
+        var alertKey = createAlertKey(player, "block-break", block.getType().name());
+
+        if (!shouldAlert(player, alertKey)) {
+            return;
+        }
+
+        // Location was part of a prior vein, ignore
+        if (locations.getIfPresent(block.getLocation()) != null) {
             return;
         }
 
@@ -233,7 +270,9 @@ public class BukkitAlertService {
      * @param player The player
      */
     public void alertBlockPlace(Block block, Player player) {
-        if (!shouldAlert(player, block.getLocation())) {
+        var alertKey = createAlertKey(player, "block-place", block.getType().name());
+
+        if (!shouldAlertWithMaximum(player, alertKey)) {
             return;
         }
 
@@ -245,19 +284,58 @@ public class BukkitAlertService {
 
         var blockState = block.getState();
         String blockTranslationKey = blockState.getType().getBlockTranslationKey();
-        locations.put(blockState.getLocation(), player);
+        addAlert(alertKey);
 
         TextColor color = TextColor.fromCSSHexString(alert.config().hexColor());
 
-        var data = new BlockAlertData(
+        var data = new ItemAlertData(
             player.getName(),
             blockTranslationKey,
             color,
             Key.key(blockState.getType().getKey().toString())
         );
 
-        for (CommandSender receiver : getReceivers(player)) {
-            messageService.alertBlockPlace(receiver, data);
+        if (!alertMeetsMaximum(player, alertKey)) {
+            for (CommandSender receiver : getReceivers(player)) {
+                messageService.alertBlockPlace(receiver, data);
+            }
+        }
+    }
+
+    /**
+     * Trigger any configured alerts for an item's use.
+     *
+     * @param player The player
+     * @param itemStack The item stack
+     */
+    public void alertItemUse(Player player, ItemStack itemStack) {
+        var alertKey = createAlertKey(player, "item-use", itemStack.getType().name());
+
+        if (!shouldAlertWithMaximum(player, alertKey)) {
+            return;
+        }
+
+        // Find the alert for this item type
+        var alert = getItemUseAlert(itemStack.getType());
+        if (alert == null) {
+            return;
+        }
+
+        addAlert(alertKey);
+
+        TextColor color = TextColor.fromCSSHexString(alert.config().hexColor());
+
+        var data = new ItemAlertData(
+            player.getName(),
+            itemStack.translationKey(),
+            color,
+            Key.key(itemStack.getType().getKey().toString())
+        );
+
+        if (!alertMeetsMaximum(player, alertKey)) {
+            for (CommandSender receiver : getReceivers(player)) {
+                messageService.alertItemUse(receiver, data);
+            }
         }
     }
 
@@ -279,10 +357,61 @@ public class BukkitAlertService {
                 blockPlaceAlerts.add(new BlockAlert(config, loadMaterialTags(config)));
             }
         }
+
+        if (configurationService.prismConfig().alerts().itemUseAlerts().enabled()) {
+            for (var config : configurationService.prismConfig().alerts().itemUseAlerts().alerts()) {
+                itemUseAlerts.add(new ItemAlert(config, loadMaterialTags(config)));
+            }
+        }
     }
 
     /**
-     * Get an alert for this material, if any.
+     * Adds or increments an alert.
+     *
+     * @param alertKey The alert key
+     */
+    protected void addAlert(String alertKey) {
+        Integer count = alerts.getIfPresent(alertKey);
+
+        alerts.put(alertKey, count == null ? 1 : count + 1);
+    }
+
+    /**
+     * Alert staff if this player/alert have hit the maximum.
+     *
+     * @param player Player
+     * @param alertKey Alert key
+     * @return True if the alert meets the maximum count
+     */
+    protected boolean alertMeetsMaximum(Player player, String alertKey) {
+        var count = alerts.getIfPresent(alertKey);
+
+        // Alert receivers that the user continues
+        if (count != null && count == configurationService.prismConfig().alerts().maxAlertsPerEvent()) {
+            for (CommandSender receiver : getReceivers(player)) {
+                messageService.alertsExceedMaximum(receiver, player.getName());
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Creates an alert key for cache use including the player, location, and base key.
+     *
+     * @param player Player
+     * @param alertType Alert type
+     * @param objectKey Base key
+     * @return Alert key
+     */
+    protected String createAlertKey(Player player, String alertType, String objectKey) {
+        return String.format("%s-%s-%s", player.getUniqueId(), alertType, objectKey);
+    }
+
+    /**
+     * Get a block break alert for this material, if any.
      *
      * @param material The material
      * @return The alert, if any
@@ -298,13 +427,29 @@ public class BukkitAlertService {
     }
 
     /**
-     * Get an alert for this material, if any.
+     * Get a block place alert for this material, if any.
      *
      * @param material The material
      * @return The alert, if any
      */
     protected BlockAlert getBlockPlaceAlert(Material material) {
         for (var alert : blockPlaceAlerts) {
+            if (alert.materialTag().isTagged(material)) {
+                return alert;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get an item use alert for this material, if any.
+     *
+     * @param material The material
+     * @return The alert, if any
+     */
+    protected ItemAlert getItemUseAlert(Material material) {
+        for (var alert : itemUseAlerts) {
             if (alert.materialTag().isTagged(material)) {
                 return alert;
             }
@@ -376,13 +521,13 @@ public class BukkitAlertService {
     }
 
     /**
-     * Check if we should alert for this location.
+     * Check if we should alert for this alert key.
      *
-     * @param player The player
-     * @param location The location
+     * @param player Player
+     * @param alertKey The alert key
      * @return True if the alert is valid
      */
-    protected boolean shouldAlert(Player player, Location location) {
+    protected boolean shouldAlert(Player player, String alertKey) {
         // Ignore creative
         if (
             configurationService.prismConfig().alerts().ignoreCreative() &&
@@ -396,12 +541,24 @@ public class BukkitAlertService {
             return false;
         }
 
-        // Check location for recent alerts
-        var lastTriggerer = locations.getIfPresent(location);
-        if (lastTriggerer != null) {
+        return true;
+    }
+
+    /**
+     * Check if we should alert for this alert key.
+     *
+     * @param player Player
+     * @param alertKey The alert key
+     * @return True if the alert is valid
+     */
+    protected boolean shouldAlertWithMaximum(Player player, String alertKey) {
+        if (!shouldAlert(player, alertKey)) {
             return false;
         }
 
-        return true;
+        // Check prior alert counts
+        var count = alerts.getIfPresent(alertKey);
+
+        return !(count != null && count >= configurationService.prismConfig().alerts().maxAlertsPerEvent());
     }
 }

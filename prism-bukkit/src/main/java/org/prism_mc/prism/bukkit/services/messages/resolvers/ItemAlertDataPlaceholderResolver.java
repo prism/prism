@@ -34,23 +34,22 @@ import net.kyori.moonshine.util.Either;
 import org.bukkit.command.CommandSender;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.Nullable;
-import org.prism_mc.prism.bukkit.services.alerts.BlockAlertData;
+import org.prism_mc.prism.bukkit.services.alerts.ItemAlertData;
 
 @Singleton
-public class BlockAlertDataPlaceholderResolver
-    implements IPlaceholderResolver<CommandSender, BlockAlertData, Component> {
+public class ItemAlertDataPlaceholderResolver implements IPlaceholderResolver<CommandSender, ItemAlertData, Component> {
 
     @Override
     public @NonNull Map<String, Either<ConclusionValue<? extends Component>, ContinuanceValue<?>>> resolve(
         final String placeholderName,
-        final BlockAlertData value,
+        final ItemAlertData value,
         final CommandSender receiver,
         final Type owner,
         final Method method,
         final @Nullable Object[] parameters
     ) {
         Component color = Component.text().color(value.color()).build();
-        Component blockName = block(value.blockTranslationKey(), value.itemKey());
+        Component objectName = item(value.translationKey(), value.itemKey());
         Component playerName = Component.text(value.playerName());
 
         return Map.of(
@@ -58,21 +57,21 @@ public class BlockAlertDataPlaceholderResolver
             Either.left(ConclusionValue.conclusionValue(color)),
             placeholderName + "_player",
             Either.left(ConclusionValue.conclusionValue(playerName)),
-            placeholderName + "_block",
-            Either.left(ConclusionValue.conclusionValue(blockName))
+            placeholderName + "_object",
+            Either.left(ConclusionValue.conclusionValue(objectName))
         );
     }
 
     /**
-     * Build the block component.
+     * Build the component.
      *
-     * @param blockTranslationKey The block translation key
+     * @param translationKey The translation key
      * @param itemKey The item key
      * @return The component
      */
-    protected Component block(String blockTranslationKey, Key itemKey) {
+    protected Component item(String translationKey, Key itemKey) {
         return Component.text()
-            .append(Component.translatable(blockTranslationKey))
+            .append(Component.translatable(translationKey))
             .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_ITEM, HoverEvent.ShowItem.showItem(itemKey, 1)))
             .build();
     }

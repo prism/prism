@@ -53,9 +53,9 @@ import org.prism_mc.prism.bukkit.PrismBukkit;
 import org.prism_mc.prism.bukkit.actions.types.BukkitActionTypeRegistry;
 import org.prism_mc.prism.bukkit.integrations.worldedit.WorldEditIntegration;
 import org.prism_mc.prism.bukkit.providers.TaskChainProvider;
-import org.prism_mc.prism.bukkit.services.alerts.BlockAlertData;
 import org.prism_mc.prism.bukkit.services.alerts.BlockBreakAlertData;
 import org.prism_mc.prism.bukkit.services.alerts.BukkitAlertService;
+import org.prism_mc.prism.bukkit.services.alerts.ItemAlertData;
 import org.prism_mc.prism.bukkit.services.expectations.ExpectationService;
 import org.prism_mc.prism.bukkit.services.filters.BukkitFilterService;
 import org.prism_mc.prism.bukkit.services.lookup.LookupService;
@@ -64,9 +64,9 @@ import org.prism_mc.prism.bukkit.services.messages.MessageSender;
 import org.prism_mc.prism.bukkit.services.messages.MessageService;
 import org.prism_mc.prism.bukkit.services.messages.ReceiverResolver;
 import org.prism_mc.prism.bukkit.services.messages.resolvers.ActivityPlaceholderResolver;
-import org.prism_mc.prism.bukkit.services.messages.resolvers.BlockAlertDataPlaceholderResolver;
 import org.prism_mc.prism.bukkit.services.messages.resolvers.BlockBreakAlertDataPlaceholderResolver;
 import org.prism_mc.prism.bukkit.services.messages.resolvers.IntegerPlaceholderResolver;
+import org.prism_mc.prism.bukkit.services.messages.resolvers.ItemAlertDataPlaceholderResolver;
 import org.prism_mc.prism.bukkit.services.messages.resolvers.LongPlaceholderResolver;
 import org.prism_mc.prism.bukkit.services.messages.resolvers.ModificationQueueResultPlaceholderResolver;
 import org.prism_mc.prism.bukkit.services.messages.resolvers.ModificationResultPlaceholderResolver;
@@ -218,7 +218,7 @@ public class PrismModule extends AbstractModule {
                     0
                 )
                 .weightedPlaceholderResolver(new TypeToken<>() {}, new PaginatedResultsPlaceholderResolver(), 0)
-                .weightedPlaceholderResolver(BlockAlertData.class, new BlockAlertDataPlaceholderResolver(), 0)
+                .weightedPlaceholderResolver(ItemAlertData.class, new ItemAlertDataPlaceholderResolver(), 0)
                 .weightedPlaceholderResolver(BlockBreakAlertData.class, new BlockBreakAlertDataPlaceholderResolver(), 0)
                 .weightedPlaceholderResolver(ModificationResult.class, new ModificationResultPlaceholderResolver(), 0)
                 .create(this.getClass().getClassLoader());

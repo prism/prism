@@ -20,7 +20,19 @@
 
 package org.prism_mc.prism.bukkit.services.alerts;
 
-import net.kyori.adventure.key.Key;
-import net.kyori.adventure.text.format.TextColor;
+import org.bukkit.Material;
+import org.bukkit.Tag;
+import org.prism_mc.prism.loader.services.configuration.alerts.AlertConfiguration;
 
-public record BlockAlertData(String playerName, String blockTranslationKey, TextColor color, Key itemKey) {}
+public class ItemAlert extends Alert<AlertConfiguration> {
+
+    /**
+     * Constructor.
+     *
+     * @param config The config
+     * @param materialTag The material tag
+     */
+    public ItemAlert(AlertConfiguration config, Tag<Material> materialTag) {
+        super(config, materialTag);
+    }
+}
