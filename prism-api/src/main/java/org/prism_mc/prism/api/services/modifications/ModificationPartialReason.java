@@ -25,4 +25,9 @@ public enum ModificationPartialReason {
      * The modification includes blacklisted content.
      */
     BLACKLISTED,
+
+    /**
+     * The modification could not be added because the target inventory is full.
+     */
+    FULL_INVENTORY,
 }

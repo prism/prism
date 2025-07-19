@@ -32,6 +32,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
@@ -43,6 +44,7 @@ import org.prism_mc.prism.api.actions.types.ActionResultType;
 import org.prism_mc.prism.api.actions.types.ActionType;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.containers.PlayerContainer;
+import org.prism_mc.prism.api.services.modifications.ModificationPartialReason;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueMode;
 import org.prism_mc.prism.api.services.modifications.ModificationResult;
 import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
@@ -213,25 +215,9 @@ public class BukkitItemStackAction extends BukkitMaterialAction implements ItemA
             if (activityContext.cause().container() instanceof PlayerContainer playerContainer) {
                 OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerContainer.uuid());
                 if (offlinePlayer.isOnline()) {
-                    // Give item back to player
-                    Player player = (Player) offlinePlayer;
-                    player.getInventory().addItem(itemStack.clone());
-
-                    ItemStackStateChange stateChange = new ItemStackStateChange(itemStack.clone(), null);
-
-                    return ModificationResult.builder()
-                        .activity(activityContext)
-                        .applied()
-                        .stateChange(stateChange)
-                        .build();
+                    return addItem(activityContext, ((Player) offlinePlayer).getInventory());
                 }
             }
-
-            return ModificationResult.builder()
-                .skipped()
-                .target(itemStack.translationKey())
-                .activity(activityContext)
-                .build();
         } else if (type().resultType().equals(ActionResultType.REMOVES)) {
             var world = Bukkit.getServer().getWorld(activityContext.world().key());
             var location = new Location(
@@ -242,15 +228,7 @@ public class BukkitItemStackAction extends BukkitMaterialAction implements ItemA
             );
 
             if (location.getBlock().getState() instanceof InventoryHolder holder) {
-                holder.getInventory().addItem(itemStack);
-
-                ItemStackStateChange stateChange = new ItemStackStateChange(itemStack.clone(), null);
-
-                return ModificationResult.builder()
-                    .activity(activityContext)
-                    .applied()
-                    .stateChange(stateChange)
-                    .build();
+                return addItem(activityContext, holder.getInventory());
             }
         }
 
@@ -273,6 +251,47 @@ public class BukkitItemStackAction extends BukkitMaterialAction implements ItemA
             .skipped()
             .target(itemStack.translationKey())
             .build();
+    }
+
+    /**
+     * Attempts to add an item to an inventory. If full, returns a partial result.
+     *
+     * @param activityContext Activity context
+     * @param inventory Inventory
+     * @return Modification result
+     */
+    private ModificationResult addItem(Activity activityContext, Inventory inventory) {
+        var remainderMap = inventory.addItem(itemStack.clone());
+
+        if (remainderMap.isEmpty()) {
+            ItemStackStateChange stateChange = new ItemStackStateChange(itemStack.clone(), null);
+
+            return ModificationResult.builder().activity(activityContext).applied().stateChange(stateChange).build();
+        } else {
+            var remainder = remainderMap.values().stream().findFirst();
+
+            // If no items delivered, mark this as skipped
+            if (remainder.get().getAmount() == itemStack.getAmount()) {
+                return ModificationResult.builder()
+                    .activity(activityContext)
+                    .skipped()
+                    .skipReason(ModificationSkipReason.FULL_INVENTORY)
+                    .build();
+            }
+
+            // If some items delivered, mark this as partial
+            var itemClone = itemStack.clone();
+            itemClone.setAmount(itemClone.getAmount() - remainder.get().getAmount());
+
+            ItemStackStateChange stateChange = new ItemStackStateChange(itemClone, null);
+
+            return ModificationResult.builder()
+                .activity(activityContext)
+                .partial()
+                .partialReason(ModificationPartialReason.FULL_INVENTORY)
+                .stateChange(stateChange)
+                .build();
+        }
     }
 
     @Override

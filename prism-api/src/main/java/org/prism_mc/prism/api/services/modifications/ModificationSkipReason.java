@@ -32,6 +32,11 @@ public enum ModificationSkipReason {
     BLACKLISTED,
 
     /**
+     * The action was skipped because the inventory is full.
+     */
+    FULL_INVENTORY,
+
+    /**
      * The rollback is not applicable due to specifics.
      */
     NOT_APPLICABLE,
