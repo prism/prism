@@ -234,7 +234,7 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
             resultBuilder.partial().target(blockContainer.translationKey());
         }
 
-        BlockData finalReplacedBlockData = null;
+        BlockData finalReplacedBlockData;
         if (replacedBlockContainer != null) {
             finalReplacedBlockData = replacedBlockContainer.blockData();
 
@@ -242,6 +242,8 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
                 finalReplacedBlockData = Bukkit.createBlockData(Material.AIR);
                 resultBuilder.partial().target(replacedBlockContainer.translationKey());
             }
+        } else {
+            finalReplacedBlockData = Bukkit.createBlockData(Material.AIR);
         }
 
         var location = location(activityContext.worldUuid(), activityContext.coordinate());
