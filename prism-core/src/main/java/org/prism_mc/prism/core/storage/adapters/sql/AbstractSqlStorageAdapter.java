@@ -691,7 +691,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .fetchInto(PrismActionsRecord.class);
 
         for (PrismActionsRecord actionsRecord : actions) {
-            byte actionId = actionsRecord.getActionId().byteValue();
+            int actionId = actionsRecord.getActionId().intValue();
             cacheService.actionKeyPkMap().put(actionsRecord.getAction(), actionId);
         }
 
@@ -713,7 +713,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .fetchInto(PrismWorldsRecord.class);
 
         for (PrismWorldsRecord worldsRecord : worlds) {
-            byte worldId = worldsRecord.getWorldId().byteValue();
+            int worldId = worldsRecord.getWorldId().intValue();
             UUID worldUuid = UUID.fromString(worldsRecord.getWorldUuid());
             cacheService.worldUuidPkMap().put(worldUuid, worldId);
         }

@@ -27,17 +27,17 @@ import org.jooq.Record1;
 import org.jooq.Record2;
 import org.jooq.Row2;
 import org.jooq.impl.UpdatableRecordImpl;
-import org.jooq.types.UByte;
+import org.jooq.types.UInteger;
 
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
-public class PrismActionsRecord extends UpdatableRecordImpl<PrismActionsRecord> implements Record2<UByte, String> {
+public class PrismActionsRecord extends UpdatableRecordImpl<PrismActionsRecord> implements Record2<UInteger, String> {
 
     private static final long serialVersionUID = 1L;
 
     /**
      * Setter for <code>prism_actions.action_id</code>.
      */
-    public PrismActionsRecord setActionId(UByte value) {
+    public PrismActionsRecord setActionId(UInteger value) {
         set(0, value);
         return this;
     }
@@ -45,8 +45,8 @@ public class PrismActionsRecord extends UpdatableRecordImpl<PrismActionsRecord> 
     /**
      * Getter for <code>prism_actions.action_id</code>.
      */
-    public UByte getActionId() {
-        return (UByte) get(0);
+    public UInteger getActionId() {
+        return (UInteger) get(0);
     }
 
     /**
@@ -69,7 +69,7 @@ public class PrismActionsRecord extends UpdatableRecordImpl<PrismActionsRecord> 
     // -------------------------------------------------------------------------
 
     @Override
-    public Record1<UByte> key() {
+    public Record1<UInteger> key() {
         return (Record1) super.key();
     }
 
@@ -78,17 +78,17 @@ public class PrismActionsRecord extends UpdatableRecordImpl<PrismActionsRecord> 
     // -------------------------------------------------------------------------
 
     @Override
-    public Row2<UByte, String> fieldsRow() {
+    public Row2<UInteger, String> fieldsRow() {
         return (Row2) super.fieldsRow();
     }
 
     @Override
-    public Row2<UByte, String> valuesRow() {
+    public Row2<UInteger, String> valuesRow() {
         return (Row2) super.valuesRow();
     }
 
     @Override
-    public Field<UByte> field1() {
+    public Field<UInteger> field1() {
         return PRISM_ACTIONS.ACTION_ID;
     }
 
@@ -98,7 +98,7 @@ public class PrismActionsRecord extends UpdatableRecordImpl<PrismActionsRecord> 
     }
 
     @Override
-    public UByte component1() {
+    public UInteger component1() {
         return getActionId();
     }
 
@@ -108,12 +108,12 @@ public class PrismActionsRecord extends UpdatableRecordImpl<PrismActionsRecord> 
     }
 
     @Override
-    public UByte value1() {
+    public UInteger value1() {
         return getActionId();
     }
 
     @Override
-    public PrismActionsRecord value1(UByte value) {
+    public PrismActionsRecord value1(UInteger value) {
         setActionId(value);
         return this;
     }
@@ -130,7 +130,7 @@ public class PrismActionsRecord extends UpdatableRecordImpl<PrismActionsRecord> 
     }
 
     @Override
-    public PrismActionsRecord values(UByte value1, String value2) {
+    public PrismActionsRecord values(UInteger value1, String value2) {
         value1(value1);
         value2(value2);
         return this;
@@ -150,7 +150,7 @@ public class PrismActionsRecord extends UpdatableRecordImpl<PrismActionsRecord> 
     /**
      * Create a detached, initialised PrismActionsRecord.
      */
-    public PrismActionsRecord(UByte actionId, String action) {
+    public PrismActionsRecord(UInteger actionId, String action) {
         super(PRISM_ACTIONS);
         setActionId(actionId);
         setAction(action);

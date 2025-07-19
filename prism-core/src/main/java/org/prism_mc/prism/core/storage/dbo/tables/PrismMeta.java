@@ -40,6 +40,7 @@ import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 import org.jooq.types.UByte;
+import org.jooq.types.UInteger;
 import org.prism_mc.prism.core.storage.dbo.Keys;
 import org.prism_mc.prism.core.storage.dbo.records.PrismMetaRecord;
 
@@ -64,9 +65,9 @@ public class PrismMeta extends TableImpl<PrismMetaRecord> {
     /**
      * The column <code>prism_meta.meta_id</code>.
      */
-    public final TableField<PrismMetaRecord, UByte> META_ID = createField(
+    public final TableField<PrismMetaRecord, UInteger> META_ID = createField(
         DSL.name("meta_id"),
-        SQLDataType.TINYINTUNSIGNED.nullable(false).identity(true),
+        SQLDataType.INTEGERUNSIGNED.nullable(false).identity(true),
         this,
         ""
     );

@@ -27,19 +27,20 @@ import org.jooq.Record1;
 import org.jooq.Record3;
 import org.jooq.Row3;
 import org.jooq.impl.UpdatableRecordImpl;
+import org.jooq.types.UInteger;
 import org.jooq.types.UShort;
 
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class PrismEntityTypesRecord
     extends UpdatableRecordImpl<PrismEntityTypesRecord>
-    implements Record3<UShort, String, String> {
+    implements Record3<UInteger, String, String> {
 
     private static final long serialVersionUID = 1L;
 
     /**
      * Setter for <code>prism_entity_types.entity_type_id</code>.
      */
-    public PrismEntityTypesRecord setEntityTypeId(UShort value) {
+    public PrismEntityTypesRecord setEntityTypeId(UInteger value) {
         set(0, value);
         return this;
     }
@@ -47,8 +48,8 @@ public class PrismEntityTypesRecord
     /**
      * Getter for <code>prism_entity_types.entity_type_id</code>.
      */
-    public UShort getEntityTypeId() {
-        return (UShort) get(0);
+    public UInteger getEntityTypeId() {
+        return (UInteger) get(0);
     }
 
     /**
@@ -95,17 +96,17 @@ public class PrismEntityTypesRecord
     // -------------------------------------------------------------------------
 
     @Override
-    public Row3<UShort, String, String> fieldsRow() {
+    public Row3<UInteger, String, String> fieldsRow() {
         return (Row3) super.fieldsRow();
     }
 
     @Override
-    public Row3<UShort, String, String> valuesRow() {
+    public Row3<UInteger, String, String> valuesRow() {
         return (Row3) super.valuesRow();
     }
 
     @Override
-    public Field<UShort> field1() {
+    public Field<UInteger> field1() {
         return PRISM_ENTITY_TYPES.ENTITY_TYPE_ID;
     }
 
@@ -120,7 +121,7 @@ public class PrismEntityTypesRecord
     }
 
     @Override
-    public UShort component1() {
+    public UInteger component1() {
         return getEntityTypeId();
     }
 
@@ -135,12 +136,12 @@ public class PrismEntityTypesRecord
     }
 
     @Override
-    public UShort value1() {
+    public UInteger value1() {
         return getEntityTypeId();
     }
 
     @Override
-    public PrismEntityTypesRecord value1(UShort value) {
+    public PrismEntityTypesRecord value1(UInteger value) {
         setEntityTypeId(value);
         return this;
     }
@@ -168,7 +169,7 @@ public class PrismEntityTypesRecord
     }
 
     @Override
-    public PrismEntityTypesRecord values(UShort value1, String value2, String value3) {
+    public PrismEntityTypesRecord values(UInteger value1, String value2, String value3) {
         value1(value1);
         value2(value2);
         value3(value3);
@@ -189,7 +190,7 @@ public class PrismEntityTypesRecord
     /**
      * Create a detached, initialised PrismEntityTypesRecord.
      */
-    public PrismEntityTypesRecord(UShort entityTypeId, String entityType, String translationKey) {
+    public PrismEntityTypesRecord(UInteger entityTypeId, String entityType, String translationKey) {
         super(PRISM_ENTITY_TYPES);
         setEntityTypeId(entityTypeId);
         setEntityType(entityType);

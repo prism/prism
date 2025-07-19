@@ -4,7 +4,7 @@ CREATE PROCEDURE %prefix%get_or_create_block
     IN `blockName` VARCHAR(55),
     IN `blockData` VARCHAR(255),
     IN `translationKey` VARCHAR(155),
-    OUT `blockId` SMALLINT
+    OUT `blockId` INT
 )
 BEGIN
     IF blockData IS NOT NULL THEN

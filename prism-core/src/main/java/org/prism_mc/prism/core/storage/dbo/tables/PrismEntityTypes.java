@@ -39,6 +39,7 @@ import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
+import org.jooq.types.UInteger;
 import org.jooq.types.UShort;
 import org.prism_mc.prism.core.storage.dbo.Keys;
 import org.prism_mc.prism.core.storage.dbo.records.PrismEntityTypesRecord;
@@ -64,9 +65,9 @@ public class PrismEntityTypes extends TableImpl<PrismEntityTypesRecord> {
     /**
      * The column <code>prism_entity_types.entity_type_id</code>.
      */
-    public final TableField<PrismEntityTypesRecord, UShort> ENTITY_TYPE_ID = createField(
+    public final TableField<PrismEntityTypesRecord, UInteger> ENTITY_TYPE_ID = createField(
         DSL.name("entity_type_id"),
-        SQLDataType.SMALLINTUNSIGNED.nullable(false).identity(true),
+        SQLDataType.INTEGERUNSIGNED.nullable(false).identity(true),
         this,
         ""
     );

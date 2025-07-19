@@ -27,17 +27,17 @@ import org.jooq.Record1;
 import org.jooq.Record3;
 import org.jooq.Row3;
 import org.jooq.impl.UpdatableRecordImpl;
-import org.jooq.types.UByte;
+import org.jooq.types.UInteger;
 
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
-public class PrismMetaRecord extends UpdatableRecordImpl<PrismMetaRecord> implements Record3<UByte, String, String> {
+public class PrismMetaRecord extends UpdatableRecordImpl<PrismMetaRecord> implements Record3<UInteger, String, String> {
 
     private static final long serialVersionUID = 1L;
 
     /**
      * Setter for <code>prism_meta.meta_id</code>.
      */
-    public PrismMetaRecord setMetaId(UByte value) {
+    public PrismMetaRecord setMetaId(UInteger value) {
         set(0, value);
         return this;
     }
@@ -45,8 +45,8 @@ public class PrismMetaRecord extends UpdatableRecordImpl<PrismMetaRecord> implem
     /**
      * Getter for <code>prism_meta.meta_id</code>.
      */
-    public UByte getMetaId() {
-        return (UByte) get(0);
+    public UInteger getMetaId() {
+        return (UInteger) get(0);
     }
 
     /**
@@ -84,7 +84,7 @@ public class PrismMetaRecord extends UpdatableRecordImpl<PrismMetaRecord> implem
     // -------------------------------------------------------------------------
 
     @Override
-    public Record1<UByte> key() {
+    public Record1<UInteger> key() {
         return (Record1) super.key();
     }
 
@@ -93,17 +93,17 @@ public class PrismMetaRecord extends UpdatableRecordImpl<PrismMetaRecord> implem
     // -------------------------------------------------------------------------
 
     @Override
-    public Row3<UByte, String, String> fieldsRow() {
+    public Row3<UInteger, String, String> fieldsRow() {
         return (Row3) super.fieldsRow();
     }
 
     @Override
-    public Row3<UByte, String, String> valuesRow() {
+    public Row3<UInteger, String, String> valuesRow() {
         return (Row3) super.valuesRow();
     }
 
     @Override
-    public Field<UByte> field1() {
+    public Field<UInteger> field1() {
         return PRISM_META.META_ID;
     }
 
@@ -118,7 +118,7 @@ public class PrismMetaRecord extends UpdatableRecordImpl<PrismMetaRecord> implem
     }
 
     @Override
-    public UByte component1() {
+    public UInteger component1() {
         return getMetaId();
     }
 
@@ -133,12 +133,12 @@ public class PrismMetaRecord extends UpdatableRecordImpl<PrismMetaRecord> implem
     }
 
     @Override
-    public UByte value1() {
+    public UInteger value1() {
         return getMetaId();
     }
 
     @Override
-    public PrismMetaRecord value1(UByte value) {
+    public PrismMetaRecord value1(UInteger value) {
         setMetaId(value);
         return this;
     }
@@ -166,7 +166,7 @@ public class PrismMetaRecord extends UpdatableRecordImpl<PrismMetaRecord> implem
     }
 
     @Override
-    public PrismMetaRecord values(UByte value1, String value2, String value3) {
+    public PrismMetaRecord values(UInteger value1, String value2, String value3) {
         value1(value1);
         value2(value2);
         value3(value3);
@@ -187,7 +187,7 @@ public class PrismMetaRecord extends UpdatableRecordImpl<PrismMetaRecord> implem
     /**
      * Create a detached, initialised PrismMetaRecord.
      */
-    public PrismMetaRecord(UByte metaId, String k, String v) {
+    public PrismMetaRecord(UInteger metaId, String k, String v) {
         super(PRISM_META);
         setMetaId(metaId);
         setK(k);

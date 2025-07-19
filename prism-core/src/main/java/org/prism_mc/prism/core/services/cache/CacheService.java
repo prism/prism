@@ -49,7 +49,7 @@ public class CacheService {
     /**
      * A cache of action keys to primary keys.
      */
-    private final Cache<String, Byte> actionKeyPkMap;
+    private final Cache<String, Integer> actionKeyPkMap;
 
     /**
      * A cache of blocks to primary keys.
@@ -79,7 +79,7 @@ public class CacheService {
     /**
      * A cache of world uuids to primary keys.
      */
-    private final Cache<UUID, Byte> worldUuidPkMap;
+    private final Cache<UUID, Integer> worldUuidPkMap;
 
     /**
      * Constructor.
@@ -92,7 +92,7 @@ public class CacheService {
         final CacheConfiguration cacheConfiguration = configurationService.prismConfig().cache();
 
         // Build the action key cache
-        Caffeine<String, Byte> actionBuilder = Caffeine.newBuilder()
+        Caffeine<String, Integer> actionBuilder = Caffeine.newBuilder()
             .maximumSize(cacheConfiguration.pkCacheActionKey().maxSize())
             .evictionListener((key, value, cause) -> {
                 String msg = "Evicting action key from PK cache: Key: {0}, Value: {1}, Removal Cause: {2}";
@@ -266,7 +266,7 @@ public class CacheService {
         primaryKeyCaches.put("playerUuidPkMap", playerUuidPkMap);
 
         // Create the world cache
-        Caffeine<UUID, Byte> worldBuilder = Caffeine.newBuilder()
+        Caffeine<UUID, Integer> worldBuilder = Caffeine.newBuilder()
             .maximumSize(cacheConfiguration.pkCacheWorld().maxSize())
             .evictionListener((key, value, cause) -> {
                 String msg = "Evicting player from PK cache: Key: {0}, Value: {1}, Removal Cause: {2}";

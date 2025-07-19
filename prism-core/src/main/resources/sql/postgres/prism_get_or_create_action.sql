@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION %prefix%get_or_create_action(actionkey VARCHAR(25))
-RETURNS SMALLINT AS $$
+RETURNS INTEGER AS $$
 DECLARE
-    actionid SMALLINT;
+    actionid INTEGER;
 BEGIN
     SELECT action_id INTO actionid FROM %prefix%actions WHERE action = actionkey;
     IF actionid IS NULL THEN

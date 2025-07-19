@@ -27,17 +27,20 @@ import org.jooq.Record1;
 import org.jooq.Record3;
 import org.jooq.Row3;
 import org.jooq.impl.UpdatableRecordImpl;
+import org.jooq.types.UInteger;
 import org.jooq.types.UShort;
 
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
-public class PrismItemsRecord extends UpdatableRecordImpl<PrismItemsRecord> implements Record3<UShort, String, String> {
+public class PrismItemsRecord
+    extends UpdatableRecordImpl<PrismItemsRecord>
+    implements Record3<UInteger, String, String> {
 
     private static final long serialVersionUID = 1L;
 
     /**
      * Setter for <code>prism_items.item_id</code>.
      */
-    public PrismItemsRecord setItemId(UShort value) {
+    public PrismItemsRecord setItemId(UInteger value) {
         set(0, value);
         return this;
     }
@@ -45,8 +48,8 @@ public class PrismItemsRecord extends UpdatableRecordImpl<PrismItemsRecord> impl
     /**
      * Getter for <code>prism_items.item_id</code>.
      */
-    public UShort getItemId() {
-        return (UShort) get(0);
+    public UInteger getItemId() {
+        return (UInteger) get(0);
     }
 
     /**
@@ -93,17 +96,17 @@ public class PrismItemsRecord extends UpdatableRecordImpl<PrismItemsRecord> impl
     // -------------------------------------------------------------------------
 
     @Override
-    public Row3<UShort, String, String> fieldsRow() {
+    public Row3<UInteger, String, String> fieldsRow() {
         return (Row3) super.fieldsRow();
     }
 
     @Override
-    public Row3<UShort, String, String> valuesRow() {
+    public Row3<UInteger, String, String> valuesRow() {
         return (Row3) super.valuesRow();
     }
 
     @Override
-    public Field<UShort> field1() {
+    public Field<UInteger> field1() {
         return PRISM_ITEMS.ITEM_ID;
     }
 
@@ -118,7 +121,7 @@ public class PrismItemsRecord extends UpdatableRecordImpl<PrismItemsRecord> impl
     }
 
     @Override
-    public UShort component1() {
+    public UInteger component1() {
         return getItemId();
     }
 
@@ -133,12 +136,12 @@ public class PrismItemsRecord extends UpdatableRecordImpl<PrismItemsRecord> impl
     }
 
     @Override
-    public UShort value1() {
+    public UInteger value1() {
         return getItemId();
     }
 
     @Override
-    public PrismItemsRecord value1(UShort value) {
+    public PrismItemsRecord value1(UInteger value) {
         setItemId(value);
         return this;
     }
@@ -166,7 +169,7 @@ public class PrismItemsRecord extends UpdatableRecordImpl<PrismItemsRecord> impl
     }
 
     @Override
-    public PrismItemsRecord values(UShort value1, String value2, String value3) {
+    public PrismItemsRecord values(UInteger value1, String value2, String value3) {
         value1(value1);
         value2(value2);
         value3(value3);
@@ -187,7 +190,7 @@ public class PrismItemsRecord extends UpdatableRecordImpl<PrismItemsRecord> impl
     /**
      * Create a detached, initialised PrismItemsRecord.
      */
-    public PrismItemsRecord(UShort itemId, String material, String data) {
+    public PrismItemsRecord(UInteger itemId, String material, String data) {
         super(PRISM_ITEMS);
         setItemId(itemId);
         setMaterial(material);

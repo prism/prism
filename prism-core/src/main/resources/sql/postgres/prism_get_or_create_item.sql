@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION %prefix%get_or_create_item(materialKey VARCHAR(45), itemData TEXT)
-RETURNS SMALLINT AS $$
+RETURNS INTEGER AS $$
 DECLARE
-    itemId SMALLINT;
+    itemId INTEGER;
 BEGIN
     SELECT item_id INTO itemId FROM
     %prefix%items WHERE material = materialKey AND data = itemData;

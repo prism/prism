@@ -39,7 +39,7 @@ import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
-import org.jooq.types.UByte;
+import org.jooq.types.UInteger;
 import org.prism_mc.prism.core.storage.dbo.Keys;
 import org.prism_mc.prism.core.storage.dbo.records.PrismWorldsRecord;
 
@@ -64,9 +64,9 @@ public class PrismWorlds extends TableImpl<PrismWorldsRecord> {
     /**
      * The column <code>prism_worlds.world_id</code>.
      */
-    public final TableField<PrismWorldsRecord, UByte> WORLD_ID = createField(
+    public final TableField<PrismWorldsRecord, UInteger> WORLD_ID = createField(
         DSL.name("world_id"),
-        SQLDataType.TINYINTUNSIGNED.nullable(false).identity(true),
+        SQLDataType.INTEGERUNSIGNED.nullable(false).identity(true),
         this,
         ""
     );
@@ -128,8 +128,8 @@ public class PrismWorlds extends TableImpl<PrismWorldsRecord> {
     }
 
     @Override
-    public Identity<PrismWorldsRecord, UByte> getIdentity() {
-        return (Identity<PrismWorldsRecord, UByte>) super.getIdentity();
+    public Identity<PrismWorldsRecord, UInteger> getIdentity() {
+        return (Identity<PrismWorldsRecord, UInteger>) super.getIdentity();
     }
 
     @Override
@@ -163,7 +163,7 @@ public class PrismWorlds extends TableImpl<PrismWorldsRecord> {
     }
 
     @Override
-    public Row3<UByte, String, String> fieldsRow() {
+    public Row3<UInteger, String, String> fieldsRow() {
         return (Row3) super.fieldsRow();
     }
 }

@@ -37,17 +37,17 @@ CREATE OR REPLACE FUNCTION %prefix%create_activity (
 )
 RETURNS VOID AS $$
 DECLARE
-    v_actionId SMALLINT;
-    v_affectedItemId SMALLINT;
+    v_actionId INTEGER;
+    v_affectedItemId INTEGER;
     v_affectedBlockId INTEGER;
     v_replacedBlockId INTEGER;
-    v_affectedEntityTypeId SMALLINT;
+    v_affectedEntityTypeId INTEGER;
     v_affectedPlayerId INTEGER;
     v_causeId INTEGER;
     v_causePlayerId INTEGER;
-    v_causeEntityTypeId SMALLINT;
+    v_causeEntityTypeId INTEGER;
     v_causeBlockId INTEGER;
-    v_worldId SMALLINT;
+    v_worldId INTEGER;
     v_activityId INTEGER;
 BEGIN
     -- Get or create action

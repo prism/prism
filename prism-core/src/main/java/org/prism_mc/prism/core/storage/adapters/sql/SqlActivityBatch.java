@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.jooq.DSLContext;
-import org.jooq.types.UByte;
 import org.jooq.types.UInteger;
 import org.jooq.types.UShort;
 import org.prism_mc.prism.api.actions.BlockAction;
@@ -114,11 +113,11 @@ public class SqlActivityBatch implements ActivityBatch {
         record.setZ(activity.coordinate().intZ());
 
         // Set the action relationship
-        record.setActionId(UByte.valueOf(getOrCreateActionId(activity.action().type().key())));
+        record.setActionId(UInteger.valueOf(getOrCreateActionId(activity.action().type().key())));
 
         // Set the entity relationship
         if (activity.action() instanceof EntityAction entityAction) {
-            var entityTypeId = UShort.valueOf(
+            var entityTypeId = UInteger.valueOf(
                 getOrCreateEntityTypeId(
                     entityAction.entityContainer().serializeEntityType(),
                     entityAction.entityContainer().translationKey()
@@ -130,7 +129,7 @@ public class SqlActivityBatch implements ActivityBatch {
         // Set the item relationship
         if (activity.action() instanceof ItemAction itemAction) {
             record.setItemId(
-                UShort.valueOf(getOrCreateItemId(itemAction.serializeMaterial(), itemAction.serializeItemData()))
+                UInteger.valueOf(getOrCreateItemId(itemAction.serializeMaterial(), itemAction.serializeItemData()))
             );
             record.setItemQuantity(UShort.valueOf(itemAction.quantity()));
         }
@@ -164,7 +163,7 @@ public class SqlActivityBatch implements ActivityBatch {
         }
 
         // Set the world relationship
-        record.setWorldId(UByte.valueOf(getOrCreateWorldId(activity.world().key(), activity.world().value())));
+        record.setWorldId(UInteger.valueOf(getOrCreateWorldId(activity.world().key(), activity.world().value())));
 
         // Set the affected player relationship
         if (activity.action() instanceof PlayerAction playerAction) {
@@ -193,7 +192,7 @@ public class SqlActivityBatch implements ActivityBatch {
             );
         } else if (activity.cause().container() instanceof EntityContainer entityContainer) {
             record.setCauseEntityTypeId(
-                UShort.valueOf(
+                UInteger.valueOf(
                     getOrCreateEntityTypeId(entityContainer.serializeEntityType(), entityContainer.translationKey())
                 )
             );
@@ -230,33 +229,33 @@ public class SqlActivityBatch implements ActivityBatch {
      * @return The primary key
      * @throws SQLException The database exception
      */
-    private byte getOrCreateActionId(String actionKey) throws SQLException {
-        Byte actionKeyPk = cacheService.actionKeyPkMap().getIfPresent(actionKey);
+    private int getOrCreateActionId(String actionKey) throws SQLException {
+        Integer actionKeyPk = cacheService.actionKeyPkMap().getIfPresent(actionKey);
         if (actionKeyPk != null) {
             return actionKeyPk;
         }
 
-        byte primaryKey;
+        int primaryKey;
 
         // Select any existing record
-        UByte bytePk = dslContext
+        UInteger intPk = dslContext
             .select(PRISM_ACTIONS.ACTION_ID)
             .from(PRISM_ACTIONS)
             .where(PRISM_ACTIONS.ACTION.equal(actionKey))
             .fetchOne(PRISM_ACTIONS.ACTION_ID);
 
-        if (bytePk != null) {
-            primaryKey = bytePk.byteValue();
+        if (intPk != null) {
+            primaryKey = intPk.intValue();
         } else {
             // Create the record
-            bytePk = dslContext
+            intPk = dslContext
                 .insertInto(PRISM_ACTIONS, PRISM_ACTIONS.ACTION)
                 .values(actionKey)
                 .returningResult(PRISM_ACTIONS.ACTION_ID)
                 .fetchOne(PRISM_ACTIONS.ACTION_ID);
 
-            if (bytePk != null) {
-                primaryKey = bytePk.byteValue();
+            if (intPk != null) {
+                primaryKey = intPk.intValue();
             } else {
                 throw new SQLException(
                     String.format("Failed to get or create an action record. Action: %s", actionKey)
@@ -385,24 +384,24 @@ public class SqlActivityBatch implements ActivityBatch {
         int primaryKey;
 
         // Select the existing record
-        UShort shortPk = dslContext
+        UInteger intPk = dslContext
             .select(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
             .from(PRISM_ENTITY_TYPES)
             .where(PRISM_ENTITY_TYPES.ENTITY_TYPE.equal(entityType))
             .fetchOne(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID);
 
-        if (shortPk != null) {
-            primaryKey = shortPk.intValue();
+        if (intPk != null) {
+            primaryKey = intPk.intValue();
         } else {
             // Create the record
-            shortPk = dslContext
+            intPk = dslContext
                 .insertInto(PRISM_ENTITY_TYPES, PRISM_ENTITY_TYPES.ENTITY_TYPE, PRISM_ENTITY_TYPES.TRANSLATION_KEY)
                 .values(entityType, translationKey)
                 .returningResult(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
                 .fetchOne(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID);
 
-            if (shortPk != null) {
-                primaryKey = shortPk.intValue();
+            if (intPk != null) {
+                primaryKey = intPk.intValue();
             } else {
                 throw new SQLException(
                     String.format("Failed to get or create a entity type record. Material: %s", entityType)
@@ -432,24 +431,24 @@ public class SqlActivityBatch implements ActivityBatch {
         int primaryKey;
 
         // Select the existing item
-        UShort shortPk = dslContext
+        UInteger intPk = dslContext
             .select(PRISM_ITEMS.ITEM_ID)
             .from(PRISM_ITEMS)
             .where(PRISM_ITEMS.MATERIAL.equal(material), PRISM_ITEMS.DATA.equal(data))
             .fetchOne(PRISM_ITEMS.ITEM_ID);
 
-        if (shortPk != null) {
-            primaryKey = shortPk.intValue();
+        if (intPk != null) {
+            primaryKey = intPk.intValue();
         } else {
             // Create the record
-            shortPk = dslContext
+            intPk = dslContext
                 .insertInto(PRISM_ITEMS, PRISM_ITEMS.MATERIAL, PRISM_ITEMS.DATA)
                 .values(material, data)
                 .returningResult(PRISM_ITEMS.ITEM_ID)
                 .fetchOne(PRISM_ITEMS.ITEM_ID);
 
-            if (shortPk != null) {
-                primaryKey = shortPk.intValue();
+            if (intPk != null) {
+                primaryKey = intPk.intValue();
             } else {
                 throw new SQLException(String.format("Failed to get or create an item record. Material: %s", material));
             }
@@ -516,35 +515,35 @@ public class SqlActivityBatch implements ActivityBatch {
      * @return The primary key
      * @throws SQLException The database exception
      */
-    private byte getOrCreateWorldId(UUID worldUuid, String worldName) throws SQLException {
-        Byte worldPk = cacheService.worldUuidPkMap().getIfPresent(worldUuid);
+    private int getOrCreateWorldId(UUID worldUuid, String worldName) throws SQLException {
+        Integer worldPk = cacheService.worldUuidPkMap().getIfPresent(worldUuid);
         if (worldPk != null) {
             return worldPk;
         }
 
-        byte primaryKey;
+        int primaryKey;
 
         // Select any existing record
         // Note: We check *then* insert instead of using on duplicate key because ODK would
         // generate a new auto-increment primary key and update it every time, leading to ballooning PKs
-        UByte bytePk = dslContext
+        UInteger intPk = dslContext
             .select(PRISM_WORLDS.WORLD_ID)
             .from(PRISM_WORLDS)
             .where(PRISM_WORLDS.WORLD_UUID.equal(worldUuid.toString()))
             .fetchOne(PRISM_WORLDS.WORLD_ID);
 
-        if (bytePk != null) {
-            primaryKey = bytePk.byteValue();
+        if (intPk != null) {
+            primaryKey = intPk.intValue();
         } else {
             // Create the record
-            bytePk = dslContext
+            intPk = dslContext
                 .insertInto(PRISM_WORLDS, PRISM_WORLDS.WORLD_UUID, PRISM_WORLDS.WORLD)
                 .values(worldUuid.toString(), worldName)
                 .returningResult(PRISM_WORLDS.WORLD_ID)
                 .fetchOne(PRISM_WORLDS.WORLD_ID);
 
-            if (bytePk != null) {
-                primaryKey = bytePk.byteValue();
+            if (intPk != null) {
+                primaryKey = intPk.intValue();
             } else {
                 throw new SQLException(String.format("Failed to get or create a world record. World: %s", worldUuid));
             }

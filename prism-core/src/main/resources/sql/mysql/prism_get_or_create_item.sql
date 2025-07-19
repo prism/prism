@@ -1,5 +1,5 @@
 CREATE PROCEDURE %prefix%get_or_create_item
-(IN `materialKey` VARCHAR(45), IN `data` TEXT, OUT `itemId` SMALLINT)
+(IN `materialKey` VARCHAR(45), IN `data` TEXT, OUT `itemId` INT)
 BEGIN
     SELECT item_id INTO `itemId` FROM
         %prefix%items WHERE material = `materialKey` AND data = `data`;

@@ -27,19 +27,19 @@ import org.jooq.Record1;
 import org.jooq.Record3;
 import org.jooq.Row3;
 import org.jooq.impl.UpdatableRecordImpl;
-import org.jooq.types.UByte;
+import org.jooq.types.UInteger;
 
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class PrismWorldsRecord
     extends UpdatableRecordImpl<PrismWorldsRecord>
-    implements Record3<UByte, String, String> {
+    implements Record3<UInteger, String, String> {
 
     private static final long serialVersionUID = 1L;
 
     /**
      * Setter for <code>prism_worlds.world_id</code>.
      */
-    public PrismWorldsRecord setWorldId(UByte value) {
+    public PrismWorldsRecord setWorldId(UInteger value) {
         set(0, value);
         return this;
     }
@@ -47,8 +47,8 @@ public class PrismWorldsRecord
     /**
      * Getter for <code>prism_worlds.world_id</code>.
      */
-    public UByte getWorldId() {
-        return (UByte) get(0);
+    public UInteger getWorldId() {
+        return (UInteger) get(0);
     }
 
     /**
@@ -86,7 +86,7 @@ public class PrismWorldsRecord
     // -------------------------------------------------------------------------
 
     @Override
-    public Record1<UByte> key() {
+    public Record1<UInteger> key() {
         return (Record1) super.key();
     }
 
@@ -95,17 +95,17 @@ public class PrismWorldsRecord
     // -------------------------------------------------------------------------
 
     @Override
-    public Row3<UByte, String, String> fieldsRow() {
+    public Row3<UInteger, String, String> fieldsRow() {
         return (Row3) super.fieldsRow();
     }
 
     @Override
-    public Row3<UByte, String, String> valuesRow() {
+    public Row3<UInteger, String, String> valuesRow() {
         return (Row3) super.valuesRow();
     }
 
     @Override
-    public Field<UByte> field1() {
+    public Field<UInteger> field1() {
         return PRISM_WORLDS.WORLD_ID;
     }
 
@@ -120,7 +120,7 @@ public class PrismWorldsRecord
     }
 
     @Override
-    public UByte component1() {
+    public UInteger component1() {
         return getWorldId();
     }
 
@@ -135,12 +135,12 @@ public class PrismWorldsRecord
     }
 
     @Override
-    public UByte value1() {
+    public UInteger value1() {
         return getWorldId();
     }
 
     @Override
-    public PrismWorldsRecord value1(UByte value) {
+    public PrismWorldsRecord value1(UInteger value) {
         setWorldId(value);
         return this;
     }
@@ -168,7 +168,7 @@ public class PrismWorldsRecord
     }
 
     @Override
-    public PrismWorldsRecord values(UByte value1, String value2, String value3) {
+    public PrismWorldsRecord values(UInteger value1, String value2, String value3) {
         value1(value1);
         value2(value2);
         value3(value3);
@@ -189,7 +189,7 @@ public class PrismWorldsRecord
     /**
      * Create a detached, initialised PrismWorldsRecord.
      */
-    public PrismWorldsRecord(UByte worldId, String world, String worldUuid) {
+    public PrismWorldsRecord(UInteger worldId, String world, String worldUuid) {
         super(PRISM_WORLDS);
         setWorldId(worldId);
         setWorld(world);

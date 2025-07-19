@@ -39,7 +39,7 @@ import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
-import org.jooq.types.UByte;
+import org.jooq.types.UInteger;
 import org.prism_mc.prism.core.storage.dbo.Keys;
 import org.prism_mc.prism.core.storage.dbo.records.PrismActionsRecord;
 
@@ -64,9 +64,9 @@ public class PrismActions extends TableImpl<PrismActionsRecord> {
     /**
      * The column <code>prism_actions.action_id</code>.
      */
-    public final TableField<PrismActionsRecord, UByte> ACTION_ID = createField(
+    public final TableField<PrismActionsRecord, UInteger> ACTION_ID = createField(
         DSL.name("action_id"),
-        SQLDataType.TINYINTUNSIGNED.nullable(false).identity(true),
+        SQLDataType.INTEGERUNSIGNED.nullable(false).identity(true),
         this,
         ""
     );
@@ -118,8 +118,8 @@ public class PrismActions extends TableImpl<PrismActionsRecord> {
     }
 
     @Override
-    public Identity<PrismActionsRecord, UByte> getIdentity() {
-        return (Identity<PrismActionsRecord, UByte>) super.getIdentity();
+    public Identity<PrismActionsRecord, UInteger> getIdentity() {
+        return (Identity<PrismActionsRecord, UInteger>) super.getIdentity();
     }
 
     @Override
@@ -153,7 +153,7 @@ public class PrismActions extends TableImpl<PrismActionsRecord> {
     }
 
     @Override
-    public Row2<UByte, String> fieldsRow() {
+    public Row2<UInteger, String> fieldsRow() {
         return (Row2) super.fieldsRow();
     }
 }

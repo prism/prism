@@ -40,7 +40,6 @@ import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
-import org.jooq.types.UByte;
 import org.jooq.types.UInteger;
 import org.jooq.types.UShort;
 import org.prism_mc.prism.core.storage.dbo.Indexes;
@@ -88,9 +87,9 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
     /**
      * The column <code>prism_activities.world_id</code>.
      */
-    public final TableField<PrismActivitiesRecord, UByte> WORLD_ID = createField(
+    public final TableField<PrismActivitiesRecord, UInteger> WORLD_ID = createField(
         DSL.name("world_id"),
-        SQLDataType.TINYINTUNSIGNED.nullable(false),
+        SQLDataType.INTEGERUNSIGNED.nullable(false),
         this,
         ""
     );
@@ -128,9 +127,9 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
     /**
      * The column <code>prism_activities.action_id</code>.
      */
-    public final TableField<PrismActivitiesRecord, UByte> ACTION_ID = createField(
+    public final TableField<PrismActivitiesRecord, UInteger> ACTION_ID = createField(
         DSL.name("action_id"),
-        SQLDataType.TINYINTUNSIGNED.nullable(false),
+        SQLDataType.INTEGERUNSIGNED.nullable(false),
         this,
         ""
     );
@@ -138,9 +137,9 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
     /**
      * The column <code>prism_activities.item_id</code>.
      */
-    public final TableField<PrismActivitiesRecord, UShort> AFFECTED_ITEM_ID = createField(
+    public final TableField<PrismActivitiesRecord, UInteger> AFFECTED_ITEM_ID = createField(
         DSL.name("affected_item_id"),
-        SQLDataType.SMALLINTUNSIGNED,
+        SQLDataType.INTEGERUNSIGNED,
         this,
         ""
     );
@@ -178,9 +177,9 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
     /**
      * The column <code>prism_activities.entity_type_id</code>.
      */
-    public final TableField<PrismActivitiesRecord, UShort> AFFECTED_ENTITY_TYPE_ID = createField(
+    public final TableField<PrismActivitiesRecord, UInteger> AFFECTED_ENTITY_TYPE_ID = createField(
         DSL.name("affected_entity_type_id"),
-        SQLDataType.SMALLINTUNSIGNED,
+        SQLDataType.INTEGERUNSIGNED,
         this,
         ""
     );
@@ -218,9 +217,9 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
     /**
      * The column <code>prism_causes.cause_entity_type_id</code>.
      */
-    public final TableField<PrismActivitiesRecord, UShort> CAUSE_ENTITY_TYPE_ID = createField(
+    public final TableField<PrismActivitiesRecord, UInteger> CAUSE_ENTITY_TYPE_ID = createField(
         DSL.name("cause_entity_type_id"),
-        SQLDataType.SMALLINTUNSIGNED,
+        SQLDataType.INTEGERUNSIGNED,
         this,
         ""
     );
@@ -470,20 +469,20 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
     public Row22<
         UInteger,
         UInteger,
-        UByte,
+        UInteger,
         Integer,
         Integer,
         Integer,
-        UByte,
-        UShort,
-        UShort,
         UInteger,
         UInteger,
         UShort,
         UInteger,
         UInteger,
         UInteger,
-        UShort,
+        UInteger,
+        UInteger,
+        UInteger,
+        UInteger,
         UInteger,
         String,
         String,

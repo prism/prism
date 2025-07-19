@@ -1,5 +1,5 @@
 CREATE PROCEDURE %prefix%get_or_create_world
-    (IN `worldName` VARCHAR(255), IN `uuid` CHAR(36), OUT `worldId` TINYINT)
+    (IN `worldName` VARCHAR(255), IN `uuid` CHAR(36), OUT `worldId` INT)
 BEGIN
     SELECT world_id INTO `worldId` FROM
     %prefix%worlds WHERE world_uuid = `uuid`;

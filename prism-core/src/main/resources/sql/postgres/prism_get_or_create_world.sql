@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION %prefix%get_or_create_world(worldName VARCHAR(255), uuid CHAR(36))
-RETURNS SMALLINT AS $$
+RETURNS INTEGER AS $$
 DECLARE
-    worldId SMALLINT;
+    worldId INTEGER;
 BEGIN
     SELECT world_id INTO worldId FROM %prefix%worlds WHERE world_uuid = uuid;
 

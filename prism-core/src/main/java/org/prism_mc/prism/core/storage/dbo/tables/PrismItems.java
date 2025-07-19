@@ -37,6 +37,7 @@ import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
+import org.jooq.types.UInteger;
 import org.jooq.types.UShort;
 import org.prism_mc.prism.core.storage.dbo.Keys;
 import org.prism_mc.prism.core.storage.dbo.records.PrismItemsRecord;
@@ -62,9 +63,9 @@ public class PrismItems extends TableImpl<PrismItemsRecord> {
     /**
      * The column <code>prism_items.item_id</code>.
      */
-    public final TableField<PrismItemsRecord, UShort> ITEM_ID = createField(
+    public final TableField<PrismItemsRecord, UInteger> ITEM_ID = createField(
         DSL.name("item_id"),
-        SQLDataType.SMALLINTUNSIGNED.nullable(false).identity(true),
+        SQLDataType.INTEGERUNSIGNED.nullable(false).identity(true),
         this,
         ""
     );

@@ -27,7 +27,6 @@ import org.jooq.Record1;
 import org.jooq.Record22;
 import org.jooq.Row22;
 import org.jooq.impl.UpdatableRecordImpl;
-import org.jooq.types.UByte;
 import org.jooq.types.UInteger;
 import org.jooq.types.UShort;
 
@@ -38,20 +37,20 @@ public class PrismActivitiesRecord
         Record22<
             UInteger,
             UInteger,
-            UByte,
+            UInteger,
             Integer,
             Integer,
             Integer,
-            UByte,
-            UShort,
-            UShort,
             UInteger,
             UInteger,
             UShort,
             UInteger,
             UInteger,
             UInteger,
-            UShort,
+            UInteger,
+            UInteger,
+            UInteger,
+            UInteger,
             UInteger,
             String,
             String,
@@ -95,7 +94,7 @@ public class PrismActivitiesRecord
     /**
      * Setter for <code>prism_activities.world_id</code>.
      */
-    public PrismActivitiesRecord setWorldId(UByte value) {
+    public PrismActivitiesRecord setWorldId(UInteger value) {
         set(2, value);
         return this;
     }
@@ -103,8 +102,8 @@ public class PrismActivitiesRecord
     /**
      * Getter for <code>prism_activities.world_id</code>.
      */
-    public UByte getWorldId() {
-        return (UByte) get(2);
+    public UInteger getWorldId() {
+        return (UInteger) get(2);
     }
 
     /**
@@ -155,7 +154,7 @@ public class PrismActivitiesRecord
     /**
      * Setter for <code>prism_activities.action_id</code>.
      */
-    public PrismActivitiesRecord setActionId(UByte value) {
+    public PrismActivitiesRecord setActionId(UInteger value) {
         set(6, value);
         return this;
     }
@@ -163,14 +162,14 @@ public class PrismActivitiesRecord
     /**
      * Getter for <code>prism_activities.action_id</code>.
      */
-    public UByte getActionId() {
-        return (UByte) get(6);
+    public UInteger getActionId() {
+        return (UInteger) get(6);
     }
 
     /**
      * Setter for <code>prism_activities.item_id</code>.
      */
-    public PrismActivitiesRecord setItemId(UShort value) {
+    public PrismActivitiesRecord setItemId(UInteger value) {
         set(7, value);
         return this;
     }
@@ -178,8 +177,8 @@ public class PrismActivitiesRecord
     /**
      * Getter for <code>prism_activities.item_id</code>.
      */
-    public UShort getItemId() {
-        return (UShort) get(7);
+    public UInteger getItemId() {
+        return (UInteger) get(7);
     }
 
     /**
@@ -230,7 +229,7 @@ public class PrismActivitiesRecord
     /**
      * Setter for <code>prism_activities.entity_type_id</code>.
      */
-    public PrismActivitiesRecord setEntityTypeId(UShort value) {
+    public PrismActivitiesRecord setEntityTypeId(UInteger value) {
         set(11, value);
         return this;
     }
@@ -238,8 +237,8 @@ public class PrismActivitiesRecord
     /**
      * Getter for <code>prism_activities.entity_type_id</code>.
      */
-    public UShort getEntityTypeId() {
-        return (UShort) get(11);
+    public UInteger getEntityTypeId() {
+        return (UInteger) get(11);
     }
 
     /**
@@ -290,7 +289,7 @@ public class PrismActivitiesRecord
     /**
      * Setter for <code>prism_activities.cause_entity_type_id</code>.
      */
-    public PrismActivitiesRecord setCauseEntityTypeId(UShort value) {
+    public PrismActivitiesRecord setCauseEntityTypeId(UInteger value) {
         set(15, value);
         return this;
     }
@@ -298,8 +297,8 @@ public class PrismActivitiesRecord
     /**
      * Getter for <code>prism_activities.cause_entity_type_id</code>.
      */
-    public UShort getCauseEntityTypeId() {
-        return (UShort) get(15);
+    public UInteger getCauseEntityTypeId() {
+        return (UInteger) get(15);
     }
 
     /**
@@ -409,20 +408,20 @@ public class PrismActivitiesRecord
     public Row22<
         UInteger,
         UInteger,
-        UByte,
+        UInteger,
         Integer,
         Integer,
         Integer,
-        UByte,
-        UShort,
-        UShort,
         UInteger,
         UInteger,
         UShort,
         UInteger,
         UInteger,
         UInteger,
-        UShort,
+        UInteger,
+        UInteger,
+        UInteger,
+        UInteger,
         UInteger,
         String,
         String,
@@ -437,20 +436,20 @@ public class PrismActivitiesRecord
     public Row22<
         UInteger,
         UInteger,
-        UByte,
+        UInteger,
         Integer,
         Integer,
         Integer,
-        UByte,
-        UShort,
-        UShort,
         UInteger,
         UInteger,
         UShort,
         UInteger,
         UInteger,
         UInteger,
-        UShort,
+        UInteger,
+        UInteger,
+        UInteger,
+        UInteger,
         UInteger,
         String,
         String,
@@ -472,7 +471,7 @@ public class PrismActivitiesRecord
     }
 
     @Override
-    public Field<UByte> field3() {
+    public Field<UInteger> field3() {
         return PRISM_ACTIVITIES.WORLD_ID;
     }
 
@@ -492,12 +491,12 @@ public class PrismActivitiesRecord
     }
 
     @Override
-    public Field<UByte> field7() {
+    public Field<UInteger> field7() {
         return PRISM_ACTIVITIES.ACTION_ID;
     }
 
     @Override
-    public Field<UShort> field8() {
+    public Field<UInteger> field8() {
         return PRISM_ACTIVITIES.AFFECTED_ITEM_ID;
     }
 
@@ -517,7 +516,7 @@ public class PrismActivitiesRecord
     }
 
     @Override
-    public Field<UShort> field12() {
+    public Field<UInteger> field12() {
         return PRISM_ACTIVITIES.AFFECTED_ENTITY_TYPE_ID;
     }
 
@@ -537,7 +536,7 @@ public class PrismActivitiesRecord
     }
 
     @Override
-    public Field<UShort> field16() {
+    public Field<UInteger> field16() {
         return PRISM_ACTIVITIES.CAUSE_ENTITY_TYPE_ID;
     }
 
@@ -582,7 +581,7 @@ public class PrismActivitiesRecord
     }
 
     @Override
-    public UByte component3() {
+    public UInteger component3() {
         return getWorldId();
     }
 
@@ -602,12 +601,12 @@ public class PrismActivitiesRecord
     }
 
     @Override
-    public UByte component7() {
+    public UInteger component7() {
         return getActionId();
     }
 
     @Override
-    public UShort component8() {
+    public UInteger component8() {
         return getItemId();
     }
 
@@ -627,7 +626,7 @@ public class PrismActivitiesRecord
     }
 
     @Override
-    public UShort component12() {
+    public UInteger component12() {
         return getEntityTypeId();
     }
 
@@ -647,7 +646,7 @@ public class PrismActivitiesRecord
     }
 
     @Override
-    public UShort component16() {
+    public UInteger component16() {
         return getCauseEntityTypeId();
     }
 
@@ -704,12 +703,12 @@ public class PrismActivitiesRecord
     }
 
     @Override
-    public UByte value3() {
+    public UInteger value3() {
         return getWorldId();
     }
 
     @Override
-    public PrismActivitiesRecord value3(UByte value) {
+    public PrismActivitiesRecord value3(UInteger value) {
         setWorldId(value);
         return this;
     }
@@ -748,23 +747,23 @@ public class PrismActivitiesRecord
     }
 
     @Override
-    public UByte value7() {
+    public UInteger value7() {
         return getActionId();
     }
 
     @Override
-    public PrismActivitiesRecord value7(UByte value) {
+    public PrismActivitiesRecord value7(UInteger value) {
         setActionId(value);
         return this;
     }
 
     @Override
-    public UShort value8() {
+    public UInteger value8() {
         return getItemId();
     }
 
     @Override
-    public PrismActivitiesRecord value8(UShort value) {
+    public PrismActivitiesRecord value8(UInteger value) {
         setItemId(value);
         return this;
     }
@@ -803,12 +802,12 @@ public class PrismActivitiesRecord
     }
 
     @Override
-    public UShort value12() {
+    public UInteger value12() {
         return getEntityTypeId();
     }
 
     @Override
-    public PrismActivitiesRecord value12(UShort value) {
+    public PrismActivitiesRecord value12(UInteger value) {
         setEntityTypeId(value);
         return this;
     }
@@ -847,12 +846,12 @@ public class PrismActivitiesRecord
     }
 
     @Override
-    public UShort value16() {
+    public UInteger value16() {
         return getCauseEntityTypeId();
     }
 
     @Override
-    public PrismActivitiesRecord value16(UShort value) {
+    public PrismActivitiesRecord value16(UInteger value) {
         setCauseEntityTypeId(value);
         return this;
     }
@@ -927,20 +926,20 @@ public class PrismActivitiesRecord
     public PrismActivitiesRecord values(
         UInteger value1,
         UInteger value2,
-        UByte value3,
+        UInteger value3,
         Integer value4,
         Integer value5,
         Integer value6,
-        UByte value7,
-        UShort value8,
+        UInteger value7,
+        UInteger value8,
         UShort value9,
         UInteger value10,
         UInteger value11,
-        UShort value12,
+        UInteger value12,
         UInteger value13,
         UInteger value14,
         UInteger value15,
-        UShort value16,
+        UInteger value16,
         UInteger value17,
         String value18,
         String value19,
@@ -990,20 +989,20 @@ public class PrismActivitiesRecord
     public PrismActivitiesRecord(
         UInteger activityId,
         UInteger timestamp,
-        UByte worldId,
+        UInteger worldId,
         Integer x,
         Integer y,
         Integer z,
-        UByte actionId,
-        UShort itemId,
+        UInteger actionId,
+        UInteger itemId,
         UShort itemQuantity,
         UInteger blockId,
         UInteger replacedBlockId,
-        UShort entityTypeId,
+        UInteger entityTypeId,
         UInteger affectedPlayerId,
         UInteger causeId,
         UInteger causePlayerId,
-        UShort causeEntityTypeId,
+        UInteger causeEntityTypeId,
         UInteger causeBlockId,
         String descriptor,
         String metadata,
