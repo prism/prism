@@ -196,8 +196,9 @@ public class BukkitItemStackAction extends BukkitMaterialAction implements ItemA
         // Ignore non-player item rollbacks because they should always be serialized as contents
         // of a broken inventory holder, killed entity, etc.
         if (
-            activityContext.cause() == null ||
-            !(activityContext.cause().container() instanceof PlayerContainer playerContainer)
+            (type().equals(BukkitActionTypeRegistry.ITEM_REMOVE) ||
+                type().equals(BukkitActionTypeRegistry.ITEM_INSERT)) &&
+            (activityContext.cause() == null || !(activityContext.cause().container() instanceof PlayerContainer))
         ) {
             return ModificationResult.builder()
                 .activity(activityContext)
@@ -207,17 +208,30 @@ public class BukkitItemStackAction extends BukkitMaterialAction implements ItemA
                 .build();
         }
 
-        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerContainer.uuid());
-
         // The only time we give items back to a player's personal inventory is when they dropped it
-        if (type().equals(BukkitActionTypeRegistry.ITEM_DROP) && offlinePlayer.isOnline()) {
-            // Give item back to player
-            Player player = (Player) offlinePlayer;
-            player.getInventory().addItem(itemStack.clone());
+        if (type().equals(BukkitActionTypeRegistry.ITEM_DROP)) {
+            if (activityContext.cause().container() instanceof PlayerContainer playerContainer) {
+                OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerContainer.uuid());
+                if (offlinePlayer.isOnline()) {
+                    // Give item back to player
+                    Player player = (Player) offlinePlayer;
+                    player.getInventory().addItem(itemStack.clone());
 
-            ItemStackStateChange stateChange = new ItemStackStateChange(itemStack.clone(), null);
+                    ItemStackStateChange stateChange = new ItemStackStateChange(itemStack.clone(), null);
 
-            return ModificationResult.builder().activity(activityContext).applied().stateChange(stateChange).build();
+                    return ModificationResult.builder()
+                        .activity(activityContext)
+                        .applied()
+                        .stateChange(stateChange)
+                        .build();
+                }
+            }
+
+            return ModificationResult.builder()
+                .skipped()
+                .target(itemStack.translationKey())
+                .activity(activityContext)
+                .build();
         } else if (type().resultType().equals(ActionResultType.REMOVES)) {
             var world = Bukkit.getServer().getWorld(activityContext.world().key());
             var location = new Location(

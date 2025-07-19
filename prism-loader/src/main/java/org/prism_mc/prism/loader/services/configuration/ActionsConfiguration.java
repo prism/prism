@@ -138,6 +138,22 @@ public class ActionsConfiguration {
 
     @Comment(
         """
+        hopper-insert is when a hopper inserts an item into an inventory.
+        We *strongly* recommend using robust inventory/land protection plugins instead of enabling this
+        action because hoppers move one item at a time and can lead to MAJOR database spam, especially in farms."""
+    )
+    private boolean hopperInsert = false;
+
+    @Comment(
+        """
+        hopper-remove is when a hopper removes an item from an inventory.
+        We *strongly* recommend using robust inventory/land protection plugins instead of enabling this
+        action because hoppers move one item at a time and can lead to MAJOR database spam, especially in farms."""
+    )
+    private boolean hopperRemove = false;
+
+    @Comment(
+        """
         inventory-open is when a player opens an inventory (chest, furnace, etc).
         Item inserts or removes are tracked separately."""
     )

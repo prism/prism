@@ -96,6 +96,7 @@ import org.prism_mc.prism.bukkit.listeners.hanging.HangingBreakListener;
 import org.prism_mc.prism.bukkit.listeners.hanging.HangingPlaceListener;
 import org.prism_mc.prism.bukkit.listeners.inventory.InventoryClickListener;
 import org.prism_mc.prism.bukkit.listeners.inventory.InventoryDragListener;
+import org.prism_mc.prism.bukkit.listeners.inventory.InventoryMoveItemListener;
 import org.prism_mc.prism.bukkit.listeners.leaves.LeavesDecayListener;
 import org.prism_mc.prism.bukkit.listeners.player.PlayerArmorStandManipulateListener;
 import org.prism_mc.prism.bukkit.listeners.player.PlayerBedEnterListener;
@@ -282,6 +283,7 @@ public class PrismBukkit implements Prism {
             registerEvent(HangingPlaceListener.class);
             registerEvent(InventoryClickListener.class);
             registerEvent(InventoryDragListener.class);
+            registerEvent(InventoryMoveItemListener.class);
             registerEvent(LeavesDecayListener.class);
             registerEvent(PlayerArmorStandManipulateListener.class);
             registerEvent(PlayerBedEnterListener.class);

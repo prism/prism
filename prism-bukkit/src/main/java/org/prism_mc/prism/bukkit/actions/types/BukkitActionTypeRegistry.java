@@ -82,10 +82,12 @@ public class BukkitActionTypeRegistry extends AbstractActionTypeRegistry {
         ActionResultType.CREATES,
         true
     );
+    public static final ActionType HOPPER_INSERT = new ItemActionType("hopper-insert", ActionResultType.CREATES, false);
+    public static final ActionType HOPPER_REMOVE = new ItemActionType("hopper-remove", ActionResultType.REMOVES, true);
     public static final ActionType INVENTORY_OPEN = new BlockActionType("inventory-open", ActionResultType.NONE, false);
     public static final ActionType ITEM_DISPENSE = new ItemActionType("item-dispense", ActionResultType.NONE, false);
     public static final ActionType ITEM_DROP = new ItemActionType("item-drop", ActionResultType.REMOVES, true);
-    public static final ActionType ITEM_INSERT = new ItemActionType("item-insert", ActionResultType.CREATES, true);
+    public static final ActionType ITEM_INSERT = new ItemActionType("item-insert", ActionResultType.CREATES, false);
     public static final ActionType ITEM_PICKUP = new ItemActionType("item-pickup", ActionResultType.NONE, false);
     public static final ActionType ITEM_REMOVE = new ItemActionType("item-remove", ActionResultType.REMOVES, true);
     public static final ActionType ITEM_ROTATE = new ItemActionType("item-rotate", ActionResultType.NONE, false);
@@ -168,6 +170,8 @@ public class BukkitActionTypeRegistry extends AbstractActionTypeRegistry {
         registerAction(FLUID_FLOW);
         registerAction(HANGING_BREAK);
         registerAction(HANGING_PLACE);
+        registerAction(HOPPER_INSERT);
+        registerAction(HOPPER_REMOVE);
         registerAction(INVENTORY_OPEN);
         registerAction(ITEM_DISPENSE);
         registerAction(ITEM_DROP);

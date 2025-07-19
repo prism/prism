@@ -272,62 +272,62 @@ public class AbstractListener {
      * Record an item insert activity.
      *
      * @param location The location
-     * @param player The player
+     * @param cause The cause
      * @param itemStack The item stack
      * @param amount The amount
      */
-    protected void recordItemInsertActivity(Location location, Player player, ItemStack itemStack, int amount) {
+    protected void recordItemInsertActivity(Location location, Object cause, ItemStack itemStack, int amount) {
         if (!configurationService.prismConfig().actions().itemInsert()) {
             return;
         }
 
-        recordItemActivity(BukkitActionTypeRegistry.ITEM_INSERT, location, player, itemStack, amount);
+        recordItemActivity(BukkitActionTypeRegistry.ITEM_INSERT, location, cause, itemStack, amount);
     }
 
     /**
      * Record an item insert activity.
      *
      * @param location The location
-     * @param player The player
+     * @param cause The cause
      * @param itemStack The item stack
      */
-    protected void recordItemInsertActivity(Location location, Player player, ItemStack itemStack) {
+    protected void recordItemInsertActivity(Location location, Object cause, ItemStack itemStack) {
         if (!configurationService.prismConfig().actions().itemInsert()) {
             return;
         }
 
-        recordItemActivity(BukkitActionTypeRegistry.ITEM_INSERT, location, player, itemStack, null);
+        recordItemActivity(BukkitActionTypeRegistry.ITEM_INSERT, location, cause, itemStack, null);
     }
 
     /**
      * Record an item remove activity.
      *
      * @param location The location
-     * @param player The player
+     * @param cause The cause
      * @param itemStack The item stack
      */
-    protected void recordItemRemoveActivity(Location location, Player player, ItemStack itemStack) {
+    protected void recordItemRemoveActivity(Location location, Object cause, ItemStack itemStack) {
         if (!configurationService.prismConfig().actions().itemRemove()) {
             return;
         }
 
-        recordItemActivity(BukkitActionTypeRegistry.ITEM_REMOVE, location, player, itemStack, null);
+        recordItemActivity(BukkitActionTypeRegistry.ITEM_REMOVE, location, cause, itemStack, null);
     }
 
     /**
      * Record an item remove activity.
      *
      * @param location The location
-     * @param player The player
+     * @param cause The cause
      * @param itemStack The item stack
      * @param amount The amount
      */
-    protected void recordItemRemoveActivity(Location location, Player player, ItemStack itemStack, int amount) {
+    protected void recordItemRemoveActivity(Location location, Object cause, ItemStack itemStack, int amount) {
         if (!configurationService.prismConfig().actions().itemRemove()) {
             return;
         }
 
-        recordItemActivity(BukkitActionTypeRegistry.ITEM_REMOVE, location, player, itemStack, amount);
+        recordItemActivity(BukkitActionTypeRegistry.ITEM_REMOVE, location, cause, itemStack, amount);
     }
 
     /**
@@ -354,7 +354,7 @@ public class AbstractListener {
      * @param itemStack The item stack
      * @param amount The amount
      */
-    private void recordItemActivity(
+    protected void recordItemActivity(
         ActionType actionType,
         Location location,
         Object cause,
