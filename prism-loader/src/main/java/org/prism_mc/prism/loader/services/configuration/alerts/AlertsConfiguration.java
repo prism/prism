@@ -29,10 +29,10 @@ import org.spongepowered.configurate.objectmapping.meta.Comment;
 public class AlertsConfiguration {
 
     @Comment("Do not alert for players in creative.")
-    private final boolean ignoreCreative = true;
+    private boolean ignoreCreative = true;
 
     @Comment("Hide alerts from a player if they both trigger and receive alerts.")
-    private final boolean ignoreSelf = false;
+    private boolean ignoreSelf = false;
 
     /**
      * Block break alert configurations.

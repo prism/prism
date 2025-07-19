@@ -34,10 +34,10 @@ public class BlockBreakAlertsConfiguration {
     private boolean enabled = true;
 
     @Comment("Set the maximum light level that triggers the alert.")
-    private final int maxLightLevel = 100;
+    private int maxLightLevel = 100;
 
     @Comment("Set the minimum light level that triggers the alert.")
-    private final int minLightLevel = 0;
+    private int minLightLevel = 0;
 
     /**
      * Alert configurations.
