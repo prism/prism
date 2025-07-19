@@ -307,7 +307,7 @@ public class AbstractListener {
      * @param itemStack The item stack
      */
     protected void recordItemRemoveActivity(Location location, Player player, ItemStack itemStack) {
-        if (!configurationService.prismConfig().actions().itemInsert()) {
+        if (!configurationService.prismConfig().actions().itemRemove()) {
             return;
         }
 
@@ -323,7 +323,7 @@ public class AbstractListener {
      * @param amount The amount
      */
     protected void recordItemRemoveActivity(Location location, Player player, ItemStack itemStack, int amount) {
-        if (!configurationService.prismConfig().actions().itemInsert()) {
+        if (!configurationService.prismConfig().actions().itemRemove()) {
             return;
         }
 
