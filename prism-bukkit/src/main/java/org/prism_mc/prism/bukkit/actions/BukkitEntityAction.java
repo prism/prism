@@ -39,6 +39,7 @@ import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueMode;
 import org.prism_mc.prism.api.services.modifications.ModificationResult;
 import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
+import org.prism_mc.prism.api.services.modifications.ModificationSkipReason;
 import org.prism_mc.prism.api.util.Coordinate;
 import org.prism_mc.prism.bukkit.PrismBukkit;
 import org.prism_mc.prism.bukkit.api.containers.BukkitEntityContainer;
@@ -143,6 +144,7 @@ public class BukkitEntityAction extends BukkitAction implements EntityAction {
             return ModificationResult.builder()
                 .activity(activityContext)
                 .skipped()
+                .skipReason(ModificationSkipReason.BLACKLISTED)
                 .target(entityContainer.translationKey())
                 .build();
         }

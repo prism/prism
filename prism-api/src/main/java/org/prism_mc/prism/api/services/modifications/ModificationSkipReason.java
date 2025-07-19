@@ -27,6 +27,11 @@ public enum ModificationSkipReason {
     ALREADY_SET,
 
     /**
+     * The action is completely blacklisted.
+     */
+    BLACKLISTED,
+
+    /**
      * The rollback is not applicable due to specifics.
      */
     NOT_APPLICABLE,
