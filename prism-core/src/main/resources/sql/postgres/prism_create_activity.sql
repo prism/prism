@@ -7,7 +7,7 @@ CREATE OR REPLACE FUNCTION %prefix%create_activity (
     p_z INTEGER,
     p_action VARCHAR(25),
     p_affectedItemMaterial VARCHAR(45),
-    p_affectedItemQuantity SMALLINT,
+    p_affectedItemQuantity INTEGER,
     p_affectedItemData TEXT,
     p_affectedBlockNamespace VARCHAR(55),
     p_affectedBlockName VARCHAR(55),
