@@ -31,10 +31,10 @@ public class PostgresDataSourceConfiguration extends SqlDataSourceConfiguration 
     @Comment(
         """
         Set the schema for prism tables/functions to use.
-        The default is "public", but we recommend creating a schema "prism" for all prism entities.
+        We recommend creating a "prism" schema for all prism entities.
         https://neon.tech/postgresql/postgresql-administration/postgresql-create-schema"""
     )
-    public String schema = "public";
+    public String schema = "prism";
 
     @Comment(
         """
