@@ -70,7 +70,7 @@ import org.prism_mc.prism.bukkit.services.messages.resolvers.ItemAlertDataPlaceh
 import org.prism_mc.prism.bukkit.services.messages.resolvers.LongPlaceholderResolver;
 import org.prism_mc.prism.bukkit.services.messages.resolvers.ModificationQueueResultPlaceholderResolver;
 import org.prism_mc.prism.bukkit.services.messages.resolvers.ModificationResultPlaceholderResolver;
-import org.prism_mc.prism.bukkit.services.messages.resolvers.PaginatedResultsPlaceholderResolver;
+import org.prism_mc.prism.bukkit.services.messages.resolvers.PaginationResultPlaceholderResolver;
 import org.prism_mc.prism.bukkit.services.messages.resolvers.PurgeCycleResultPlaceholderResolver;
 import org.prism_mc.prism.bukkit.services.messages.resolvers.StringPlaceholderResolver;
 import org.prism_mc.prism.bukkit.services.messages.resolvers.WandModePlaceholderResolver;
@@ -78,6 +78,7 @@ import org.prism_mc.prism.bukkit.services.modifications.BukkitModificationQueueS
 import org.prism_mc.prism.bukkit.services.modifications.BukkitRestore;
 import org.prism_mc.prism.bukkit.services.modifications.BukkitRollback;
 import org.prism_mc.prism.bukkit.services.nbt.NbtService;
+import org.prism_mc.prism.bukkit.services.pagination.PaginationService;
 import org.prism_mc.prism.bukkit.services.purge.BukkitPurgeQueue;
 import org.prism_mc.prism.bukkit.services.purge.PurgeService;
 import org.prism_mc.prism.bukkit.services.recording.BukkitRecordingService;
@@ -217,7 +218,7 @@ public class PrismModule extends AbstractModule {
                     modificationQueueResultPlaceholderResolver,
                     0
                 )
-                .weightedPlaceholderResolver(new TypeToken<>() {}, new PaginatedResultsPlaceholderResolver(), 0)
+                .weightedPlaceholderResolver(new TypeToken<>() {}, new PaginationResultPlaceholderResolver(), 0)
                 .weightedPlaceholderResolver(ItemAlertData.class, new ItemAlertDataPlaceholderResolver(), 0)
                 .weightedPlaceholderResolver(BlockBreakAlertData.class, new BlockBreakAlertDataPlaceholderResolver(), 0)
                 .weightedPlaceholderResolver(ModificationResult.class, new ModificationResultPlaceholderResolver(), 0)
@@ -266,6 +267,9 @@ public class PrismModule extends AbstractModule {
 
         // Service - Nbt
         bind(NbtService.class).in(Singleton.class);
+
+        // Service - Pagination
+        bind(PaginationService.class).in(Singleton.class);
 
         install(new FactoryModuleBuilder().implement(Restore.class, BukkitRestore.class).build(RestoreFactory.class));
 

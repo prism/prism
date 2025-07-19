@@ -31,15 +31,15 @@ import net.kyori.moonshine.util.Either;
 import org.bukkit.command.CommandSender;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.Nullable;
-import org.prism_mc.prism.api.PaginatedResults;
+import org.prism_mc.prism.api.services.pagination.PaginationResult;
 
-public class PaginatedResultsPlaceholderResolver
-    implements IPlaceholderResolver<CommandSender, PaginatedResults<?>, Component> {
+public class PaginationResultPlaceholderResolver
+    implements IPlaceholderResolver<CommandSender, PaginationResult<?>, Component> {
 
     @Override
     public @NonNull Map<String, Either<ConclusionValue<? extends Component>, ContinuanceValue<?>>> resolve(
         final String placeholderName,
-        final PaginatedResults<?> value,
+        final PaginationResult<?> value,
         final CommandSender receiver,
         final Type owner,
         final Method method,

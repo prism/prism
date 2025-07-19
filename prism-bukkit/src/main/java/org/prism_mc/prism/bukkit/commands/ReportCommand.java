@@ -28,12 +28,17 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueService;
-import org.prism_mc.prism.api.services.modifications.ModificationResult;
 import org.prism_mc.prism.api.services.modifications.ModificationResultStatus;
+import org.prism_mc.prism.api.services.pagination.ListPaginationResult;
+import org.prism_mc.prism.api.services.pagination.PaginationHandler;
 import org.prism_mc.prism.bukkit.services.messages.MessageService;
+import org.prism_mc.prism.bukkit.services.pagination.PaginationService;
+import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 
 @Command(value = "prism", alias = { "pr" })
 public class ReportCommand {
+
+    private final ConfigurationService configurationService;
 
     /**
      * The message service.
@@ -46,15 +51,29 @@ public class ReportCommand {
     private final ModificationQueueService modificationQueueService;
 
     /**
+     * The pagination service.
+     */
+    private final PaginationService paginationService;
+
+    /**
      * Construct the command.
      *
+     * @param configurationService The configuration service
      * @param messageService The message service
      * @param modificationQueueService The modification queue service
+     * @param paginationService The pagination service
      */
     @Inject
-    public ReportCommand(MessageService messageService, ModificationQueueService modificationQueueService) {
+    public ReportCommand(
+        ConfigurationService configurationService,
+        MessageService messageService,
+        ModificationQueueService modificationQueueService,
+        PaginationService paginationService
+    ) {
+        this.configurationService = configurationService;
         this.messageService = messageService;
         this.modificationQueueService = modificationQueueService;
+        this.paginationService = paginationService;
     }
 
     @Command("report")
@@ -111,13 +130,23 @@ public class ReportCommand {
                 .filter(result -> result.status().equals(ModificationResultStatus.PARTIAL))
                 .toList();
 
-            if (!partialResults.isEmpty()) {
-                for (ModificationResult result : partialResults) {
-                    messageService.modificationsReportPartialActivity(sender, result.activity(), result);
-                }
-            } else {
-                messageService.noResults(sender);
-            }
+            var paginationResult = new ListPaginationResult<>(
+                partialResults,
+                configurationService.prismConfig().defaults().perPage()
+            );
+
+            var paginationHandler = new PaginationHandler<>(
+                paginationResult,
+                page -> {
+                    paginationResult.currentPage(page);
+                    paginationService.show(sender);
+                },
+                (result -> {
+                        messageService.modificationsReportSkippedActivity(sender, result.activity(), result);
+                    })
+            );
+
+            paginationService.show(sender, paginationHandler);
         }
 
         /**
@@ -144,13 +173,23 @@ public class ReportCommand {
                 .filter(result -> result.status().equals(ModificationResultStatus.SKIPPED))
                 .toList();
 
-            if (!skippedResults.isEmpty()) {
-                for (ModificationResult result : skippedResults) {
-                    messageService.modificationsReportSkippedActivity(sender, result.activity(), result);
-                }
-            } else {
-                messageService.noResults(sender);
-            }
+            var paginationResult = new ListPaginationResult<>(
+                skippedResults,
+                configurationService.prismConfig().defaults().perPage()
+            );
+
+            var paginationHandler = new PaginationHandler<>(
+                paginationResult,
+                page -> {
+                    paginationResult.currentPage(page);
+                    paginationService.show(sender);
+                },
+                (result -> {
+                        messageService.modificationsReportSkippedActivity(sender, result.activity(), result);
+                    })
+            );
+
+            paginationService.show(sender, paginationHandler);
         }
     }
 }

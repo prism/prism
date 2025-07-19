@@ -22,10 +22,10 @@ package org.prism_mc.prism.api.storage;
 
 import java.io.IOException;
 import java.util.List;
-import org.prism_mc.prism.api.PaginatedResults;
 import org.prism_mc.prism.api.activities.AbstractActivity;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
+import org.prism_mc.prism.api.services.pagination.PartialListPaginationResult;
 import org.prism_mc.prism.api.util.Pair;
 
 public interface StorageAdapter {
@@ -83,7 +83,7 @@ public interface StorageAdapter {
      * @return Paginated list of activities
      * @throws Exception Storage layer exception
      */
-    PaginatedResults<AbstractActivity> queryActivitiesPaginated(ActivityQuery query) throws Exception;
+    PartialListPaginationResult<AbstractActivity> queryActivitiesPaginated(ActivityQuery query) throws Exception;
 
     /**
      * Check whether this storage system is enabled and ready.

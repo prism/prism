@@ -24,10 +24,10 @@ import net.kyori.moonshine.annotation.Message;
 import net.kyori.moonshine.annotation.Placeholder;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.prism_mc.prism.api.PaginatedResults;
 import org.prism_mc.prism.api.activities.AbstractActivity;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
 import org.prism_mc.prism.api.services.modifications.ModificationResult;
+import org.prism_mc.prism.api.services.pagination.PaginationResult;
 import org.prism_mc.prism.api.services.purges.PurgeCycleResult;
 import org.prism_mc.prism.api.services.wands.WandMode;
 import org.prism_mc.prism.bukkit.services.alerts.BlockBreakAlertData;
@@ -81,8 +81,8 @@ public interface MessageService {
     @Message("prism.error.no-blocks-removed")
     void errorNoBlocksRemoved(CommandSender receiver);
 
-    @Message("prism.error.no-last-query")
-    void errorNoLastQuery(CommandSender receiver);
+    @Message("prism.error.nothing-to-paginate")
+    void errorNothingToPaginate(CommandSender receiver);
 
     @Message("prism.error.non-item-action")
     void errorNonItemAction(CommandSender receiver);
@@ -246,7 +246,7 @@ public interface MessageService {
     void noResults(CommandSender receiver);
 
     @Message("prism.pagination-header")
-    void paginationHeader(CommandSender receiver, @Placeholder PaginatedResults<?> pagination);
+    void paginationHeader(CommandSender receiver, @Placeholder PaginationResult<?> pagination);
 
     @Message("prism.preview-applied")
     void previewApplied(CommandSender receiver);

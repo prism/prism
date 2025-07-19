@@ -23,25 +23,12 @@ package org.prism_mc.prism.bukkit.commands;
 import com.google.inject.Inject;
 import dev.triumphteam.cmd.bukkit.annotation.Permission;
 import dev.triumphteam.cmd.core.annotations.Command;
-import java.util.Optional;
 import org.bukkit.command.CommandSender;
-import org.prism_mc.prism.api.activities.ActivityQuery;
-import org.prism_mc.prism.bukkit.services.lookup.LookupService;
 import org.prism_mc.prism.bukkit.services.messages.MessageService;
-import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
+import org.prism_mc.prism.bukkit.services.pagination.PaginationService;
 
 @Command(value = "prism", alias = { "pr" })
 public class PageCommand {
-
-    /**
-     * The configuration service.
-     */
-    private final ConfigurationService configurationService;
-
-    /**
-     * The lookup service.
-     */
-    private final LookupService lookupService;
 
     /**
      * The message service.
@@ -49,19 +36,20 @@ public class PageCommand {
     private final MessageService messageService;
 
     /**
+     * The pagination service.
+     */
+    private final PaginationService paginationService;
+
+    /**
      * Construct the page command.
      *
-     * @param lookupService The lookup service
+     * @param messageService The message service
+     * @param paginationService The pagination service
      */
     @Inject
-    public PageCommand(
-        ConfigurationService configurationService,
-        LookupService lookupService,
-        MessageService messageService
-    ) {
-        this.configurationService = configurationService;
-        this.lookupService = lookupService;
+    public PageCommand(MessageService messageService, PaginationService paginationService) {
         this.messageService = messageService;
+        this.paginationService = paginationService;
     }
 
     /**
@@ -73,20 +61,18 @@ public class PageCommand {
     @Command(value = "page")
     @Permission("prism.lookup")
     public void onPage(CommandSender sender, Integer page) {
-        Optional<ActivityQuery> optionalQuery = lookupService.lastQuery(sender);
-        if (optionalQuery.isEmpty()) {
-            messageService.errorNoLastQuery(sender);
+        var paginationHandler = paginationService.cache().getIfPresent(sender);
+
+        if (paginationHandler == null) {
+            messageService.errorNothingToPaginate(sender);
             return;
         }
 
-        if (page < 1) {
+        if (page < 1 || page > paginationHandler.paginationResult().totalPages()) {
             messageService.errorInvalidPage(sender);
             return;
         }
 
-        int offset = configurationService.prismConfig().defaults().perPage() * (page - 1);
-
-        final ActivityQuery query = optionalQuery.get().toBuilder().offset(offset).build();
-        lookupService.lookup(sender, query);
+        paginationHandler.showPage(page);
     }
 }

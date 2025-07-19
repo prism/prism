@@ -54,7 +54,6 @@ import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.jooq.types.UShort;
-import org.prism_mc.prism.api.PaginatedResults;
 import org.prism_mc.prism.api.actions.ActionData;
 import org.prism_mc.prism.api.actions.types.ActionTypeRegistry;
 import org.prism_mc.prism.api.activities.AbstractActivity;
@@ -65,6 +64,7 @@ import org.prism_mc.prism.api.activities.GroupedActivity;
 import org.prism_mc.prism.api.containers.PlayerContainer;
 import org.prism_mc.prism.api.containers.StringContainer;
 import org.prism_mc.prism.api.containers.TranslatableContainer;
+import org.prism_mc.prism.api.services.pagination.PartialListPaginationResult;
 import org.prism_mc.prism.api.storage.ActivityBatch;
 import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.api.util.Coordinate;
@@ -743,7 +743,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
     }
 
     @Override
-    public PaginatedResults<AbstractActivity> queryActivitiesPaginated(ActivityQuery query) throws Exception {
+    public PartialListPaginationResult<AbstractActivity> queryActivitiesPaginated(ActivityQuery query) {
         Result<org.jooq.Record> result = queryBuilder.queryActivities(query);
 
         int totalResults = result.size();
@@ -753,7 +753,12 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
 
         int currentPage = (query.offset() / query.limit()) + 1;
 
-        return new PaginatedResults<>(activityMapper(result, query), query.limit(), totalResults, currentPage);
+        return new PartialListPaginationResult<>(
+            activityMapper(result, query),
+            totalResults,
+            query.limit(),
+            currentPage
+        );
     }
 
     /**
