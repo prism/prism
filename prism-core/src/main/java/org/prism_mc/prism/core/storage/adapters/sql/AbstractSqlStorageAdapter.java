@@ -657,23 +657,25 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                 .execute();
         }
 
+        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_WORLDID.getName())) {
+            dslContext
+                .createIndex(Indexes.PRISM_ACTIVITIES_WORLDID)
+                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.WORLD_ID)
+                .execute();
+        }
+
+        // Create a composite index for world, coordinate, and timestamp since most lookups use all three
         if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_COORDINATE.getName())) {
             dslContext
                 .createIndex(Indexes.PRISM_ACTIVITIES_COORDINATE)
                 .on(
                     PRISM_ACTIVITIES,
+                    PRISM_ACTIVITIES.WORLD_ID,
                     PRISM_ACTIVITIES.X,
                     PRISM_ACTIVITIES.Y,
                     PRISM_ACTIVITIES.Z,
                     PRISM_ACTIVITIES.TIMESTAMP
                 )
-                .execute();
-        }
-
-        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_WORLDID.getName())) {
-            dslContext
-                .createIndex(Indexes.PRISM_ACTIVITIES_WORLDID)
-                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.WORLD_ID)
                 .execute();
         }
     }
