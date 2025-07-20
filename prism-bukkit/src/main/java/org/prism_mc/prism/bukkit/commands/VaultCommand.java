@@ -269,7 +269,7 @@ public class VaultCommand {
         if (gui.getCurrentPageNum() > 1) {
             var prevItem = new ItemStack(Material.PAPER);
             var prevItemMeta = prevItem.getItemMeta();
-            prevItemMeta.displayName(next);
+            prevItemMeta.displayName(prev);
             prevItem.setItemMeta(prevItemMeta);
 
             gui.setItem(
