@@ -82,7 +82,7 @@ public final class ModificationResult {
          * @return The builder
          */
         public ModificationResultBuilder errored() {
-            status(ModificationResultStatus.ERRORED);
+            status(ModificationResultStatus.SKIPPED).skipReason(ModificationSkipReason.ERRORED);
             return this;
         }
 

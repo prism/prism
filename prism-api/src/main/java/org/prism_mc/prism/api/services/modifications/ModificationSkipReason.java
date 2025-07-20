@@ -32,6 +32,11 @@ public enum ModificationSkipReason {
     BLACKLISTED,
 
     /**
+     * An error occurred.
+     */
+    ERRORED,
+
+    /**
      * The action was skipped because the inventory is full.
      */
     FULL_INVENTORY,
