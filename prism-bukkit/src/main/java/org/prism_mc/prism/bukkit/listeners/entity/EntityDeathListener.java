@@ -21,6 +21,7 @@
 package org.prism_mc.prism.bukkit.listeners.entity;
 
 import com.google.inject.Inject;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -122,10 +123,9 @@ public class EntityDeathListener extends AbstractListener implements Listener {
             );
         }
 
-        // Log drops from the player. Right now I don't know of any reason to track other entities
-        // since the only ones dropping non-loot stuff would be inventory holders.
+        // Log drops from specific entities. We can ignore most as they're only dropping loot.
         // No need to check keepInventory settings because event.getDrops will be empty if it's true
-        if (entity instanceof Player) {
+        if (entity instanceof Player || entity instanceof ArmorStand) {
             for (var item : event.getDrops()) {
                 recordItemDropActivity(event.getEntity().getLocation(), event.getEntity(), item);
             }
