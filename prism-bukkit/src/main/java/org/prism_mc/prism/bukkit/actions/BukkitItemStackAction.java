@@ -195,24 +195,10 @@ public class BukkitItemStackAction extends BukkitMaterialAction implements ItemA
         Activity activityContext,
         ModificationQueueMode mode
     ) {
-        // Ignore non-player item rollbacks because they should always be serialized as contents
-        // of a broken inventory holder, killed entity, etc.
-        if (
-            (type().equals(BukkitActionTypeRegistry.ITEM_REMOVE) ||
-                type().equals(BukkitActionTypeRegistry.ITEM_INSERT)) &&
-            (activityContext.cause() == null || !(activityContext.cause().container() instanceof PlayerContainer))
-        ) {
-            return ModificationResult.builder()
-                .activity(activityContext)
-                .skipped()
-                .target(itemStack.translationKey())
-                .skipReason(ModificationSkipReason.NOT_APPLICABLE)
-                .build();
-        }
-
-        // The only time we give items back to a player's personal inventory is when they dropped it
+        // We ignore item-drop from any non-player source because they only drop items on break, which
+        // means their inventories should already be serialized on block-break and this would be redundant
         if (type().equals(BukkitActionTypeRegistry.ITEM_DROP)) {
-            if (activityContext.cause().container() instanceof PlayerContainer playerContainer) {
+            if (activityContext.cause() != null && activityContext.cause().container() instanceof PlayerContainer playerContainer) {
                 OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerContainer.uuid());
                 if (offlinePlayer.isOnline()) {
                     return addItem(activityContext, ((Player) offlinePlayer).getInventory());
