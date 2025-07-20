@@ -23,6 +23,7 @@ package org.prism_mc.prism.bukkit.api.activities;
 import lombok.experimental.SuperBuilder;
 import org.bukkit.Location;
 import org.prism_mc.prism.api.activities.ActivityQuery;
+import org.prism_mc.prism.api.util.Coordinate;
 
 @SuperBuilder(toBuilder = true)
 public class BukkitActivityQuery extends ActivityQuery {
@@ -41,6 +42,18 @@ public class BukkitActivityQuery extends ActivityQuery {
         public B location(Location location) {
             this.worldUuid(location.getWorld().getUID());
             this.coordinate(location.getX(), location.getY(), location.getZ());
+            return self();
+        }
+
+        /**
+         * Set the reference coordinate from a Location.
+         *
+         * @param location The location
+         * @return The builder
+         */
+        public B referenceLocation(Location location) {
+            this.worldUuid(location.getWorld().getUID());
+            this.referenceCoordinate(new Coordinate(location.getX(), location.getY(), location.getZ()));
             return self();
         }
     }

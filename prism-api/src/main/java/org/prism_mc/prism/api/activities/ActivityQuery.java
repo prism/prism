@@ -158,9 +158,9 @@ public class ActivityQuery {
     private Collection<String> causePlayerNames;
 
     /**
-     * A generic query string for searching text.
+     * A generic query string for searching the descriptor.
      */
-    private String query;
+    private String descriptor;
 
     /**
      * The reference coordinate.

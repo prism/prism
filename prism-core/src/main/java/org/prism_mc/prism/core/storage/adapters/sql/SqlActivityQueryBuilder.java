@@ -527,8 +527,8 @@ public class SqlActivityQueryBuilder {
         }
 
         // Query
-        if (query.query() != null) {
-            conditions.add(PRISM_ACTIVITIES.DESCRIPTOR.likeIgnoreCase(String.format("%%%s%%", query.query())));
+        if (query.descriptor() != null) {
+            conditions.add(PRISM_ACTIVITIES.DESCRIPTOR.likeIgnoreCase(String.format("%%%s%%", query.descriptor())));
         }
 
         // Reversed

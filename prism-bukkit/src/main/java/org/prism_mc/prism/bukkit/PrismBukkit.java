@@ -518,7 +518,7 @@ public class PrismBukkit implements Prism {
                 Argument.listOf(OfflinePlayer.class).name("p").build(),
                 Argument.listOf(OfflinePlayer.class).name("pc").build(),
                 Argument.listOf(OfflinePlayer.class).name("pa").build(),
-                Argument.forString().name("q").build()
+                Argument.forString().name("descriptor").build()
             );
 
             commandManager.registerCommand(injectorProvider.injector().getInstance(AboutCommand.class));
