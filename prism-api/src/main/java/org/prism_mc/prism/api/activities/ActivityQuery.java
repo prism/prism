@@ -336,7 +336,7 @@ public class ActivityQuery {
         public B rollback() {
             this.lookup(false);
             this.grouped(false);
-            this.sort(Sort.ASCENDING);
+            this.sort(Sort.DESCENDING);
 
             return self();
         }

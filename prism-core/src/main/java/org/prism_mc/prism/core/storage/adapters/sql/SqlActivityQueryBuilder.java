@@ -296,7 +296,9 @@ public class SqlActivityQueryBuilder {
             } else {
                 queryBuilder.addOrderBy(PRISM_ACTIVITIES.TIMESTAMP.desc());
             }
+        }
 
+        if (query.modification()) {
             // Most rollbacks "build up" but some hanging blocks need to be "built down" or they just break.
             // In order to do this, we tell hanging blocks to sort *after* everything else,
             // then we sort everything by `y asc` and sort these hanging blocks by `y desc`.
@@ -307,7 +309,6 @@ public class SqlActivityQueryBuilder {
             queryBuilder.addOrderBy(
                 DSL.decode().when(PRISM_BLOCKS.NAME.in("cave_vines_plant", "weeping_vines_plant"), 1).else_(-1).asc()
             );
-
             queryBuilder.addOrderBy(
                 DSL.decode().when(PRISM_BLOCKS.NAME.in("vine", "pointed_dripstone"), 1).else_(-1).asc()
             );
