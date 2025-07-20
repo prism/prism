@@ -31,7 +31,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.Tag;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -51,6 +54,7 @@ import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
 import org.prism_mc.prism.api.services.modifications.ModificationSkipReason;
 import org.prism_mc.prism.bukkit.actions.types.BukkitActionTypeRegistry;
 import org.prism_mc.prism.bukkit.services.modifications.state.ItemStackStateChange;
+import org.prism_mc.prism.bukkit.utils.TagLib;
 
 public class BukkitItemStackAction extends BukkitMaterialAction implements ItemAction {
 
@@ -218,6 +222,28 @@ public class BukkitItemStackAction extends BukkitMaterialAction implements ItemA
 
             if (location.getBlock().getState() instanceof InventoryHolder holder) {
                 return addItem(activityContext, holder.getInventory());
+            }
+
+            // Attempt armor stand rollback
+            if (TagLib.ALL_ARMOR.isTagged(itemStack.getType())) {
+                var armorStand = location.getNearbyEntitiesByType(ArmorStand.class, 1).stream().findFirst();
+                if (armorStand.isPresent()) {
+                    if (Tag.ITEMS_HEAD_ARMOR.isTagged(itemStack.getType())) {
+                        armorStand.get().setItem(EquipmentSlot.HEAD, itemStack);
+                    } else if (Tag.ITEMS_CHEST_ARMOR.isTagged(itemStack.getType())) {
+                        armorStand.get().setItem(EquipmentSlot.CHEST, itemStack);
+                    } else if (Tag.ITEMS_LEG_ARMOR.isTagged(itemStack.getType())) {
+                        armorStand.get().setItem(EquipmentSlot.LEGS, itemStack);
+                    } else if (Tag.ITEMS_FOOT_ARMOR.isTagged(itemStack.getType())) {
+                        armorStand.get().setItem(EquipmentSlot.FEET, itemStack);
+                    }
+
+                    return ModificationResult.builder()
+                        .activity(activityContext)
+                        .applied()
+                        .stateChange(new ItemStackStateChange(itemStack.clone(), null))
+                        .build();
+                }
             }
         }
 
