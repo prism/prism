@@ -198,7 +198,10 @@ public class BukkitItemStackAction extends BukkitMaterialAction implements ItemA
         // We ignore item-drop from any non-player source because they only drop items on break, which
         // means their inventories should already be serialized on block-break and this would be redundant
         if (type().equals(BukkitActionTypeRegistry.ITEM_DROP)) {
-            if (activityContext.cause() != null && activityContext.cause().container() instanceof PlayerContainer playerContainer) {
+            if (
+                activityContext.cause() != null &&
+                activityContext.cause().container() instanceof PlayerContainer playerContainer
+            ) {
                 OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerContainer.uuid());
                 if (offlinePlayer.isOnline()) {
                     return addItem(activityContext, ((Player) offlinePlayer).getInventory());
