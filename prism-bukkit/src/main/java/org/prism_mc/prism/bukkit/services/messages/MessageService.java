@@ -99,14 +99,20 @@ public interface MessageService {
     @Message("prism.error.param-bounds-invalid-format")
     void errorParamBoundsInvalid(CommandSender receiver);
 
-    @Message("prism.error.param-console-bounds")
-    void errorParamConsoleBounds(CommandSender receiver);
+    @Message("prism.error.param-bounds-no-world")
+    void errorParamBoundsNoWorld(CommandSender receiver);
+
+    @Message("prism.error.param-conflict")
+    void errorParamConflict(CommandSender receiver, @Placeholder String param1, @Placeholder String param2);
 
     @Message("prism.error.param-console-in")
     void errorParamConsoleIn(CommandSender receiver);
 
     @Message("prism.error.param-console-radius")
     void errorParamConsoleRadius(CommandSender receiver);
+
+    @Message("prism.error.param-invalid")
+    void errorParamInvalid(CommandSender receiver, @Placeholder String param);
 
     @Message("prism.error.param-invalid-block-tag")
     void errorParamInvalidBlockTag(CommandSender receiver);
@@ -120,11 +126,11 @@ public interface MessageService {
     @Message("prism.error.param-invalid-namespace")
     void errorParamInvalidNamespace(CommandSender receiver);
 
+    @Message("prism.error.param-invalid-time")
+    void errorParamInvalidTime(CommandSender receiver);
+
     @Message("prism.error.param-invalid-world")
     void errorParamInvalidWorld(CommandSender receiver);
-
-    @Message("prism.error.param-r-and-in")
-    void errorParamRadiusAndIn(CommandSender receiver);
 
     @Message("prism.error.player-only")
     void errorPlayerOnly(CommandSender receiver);
