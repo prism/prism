@@ -281,7 +281,7 @@ public class MysqlStorageAdapter extends AbstractSqlStorageAdapter {
         int patchVersion = 0;
         var segments = databaseMetaData.getDatabaseProductVersion().split("\\.");
         if (segments.length == 3) {
-            patchVersion = Integer.parseInt(segments[2]);
+            patchVersion = Integer.parseInt(segments[2].replaceAll("\\D", ""));
         }
 
         if (majorVersion < 8 || (majorVersion == 8 && patchVersion < 20)) {
