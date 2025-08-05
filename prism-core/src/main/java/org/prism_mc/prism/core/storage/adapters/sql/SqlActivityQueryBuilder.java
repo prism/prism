@@ -513,13 +513,16 @@ public class SqlActivityQueryBuilder {
             conditions.add(PRISM_ITEMS.MATERIAL.in(query.affectedMaterials()));
         }
 
-        // Affected Players
-        if (!query.affectedPlayerNames().isEmpty()) {
+        // Players
+        if (!query.affectedPlayerNames().isEmpty() && !query.causePlayerNames().isEmpty()) {
+            conditions.add(
+                AFFECTED_PLAYERS.PLAYER.in(query.affectedPlayerNames()).or(
+                    PRISM_PLAYERS.PLAYER.in(query.causePlayerNames())
+                )
+            );
+        } else if (!query.affectedPlayerNames().isEmpty()) {
             conditions.add(AFFECTED_PLAYERS.PLAYER.in(query.affectedPlayerNames()));
-        }
-
-        // Cause Players
-        if (!query.causePlayerNames().isEmpty()) {
+        } else if (!query.causePlayerNames().isEmpty()) {
             conditions.add(PRISM_PLAYERS.PLAYER.in(query.causePlayerNames()));
         }
 
