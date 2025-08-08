@@ -107,18 +107,21 @@ public class InventoryClickListener extends AbstractListener implements Listener
         // We don't care about most actions that occur in the player's inventory
         if (!clickedTopInventory) {
             if (event.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY)) {
-                int quantityAccepted = ItemUtils.inventoryAcceptsQuantity(
-                    event.getInventory(),
-                    slotItem.getType(),
-                    slotItem.getType().getMaxStackSize()
-                );
-                if (quantityAccepted > 0) {
-                    recordItemInsertActivity(
-                        location,
-                        player,
-                        slotItem,
-                        Integer.min(quantityAccepted, slotItem.getAmount())
+                if (slotItem != null) {
+                    int quantityAccepted = ItemUtils.inventoryAcceptsQuantity(
+                        event.getInventory(),
+                        slotItem.getType(),
+                        slotItem.getType().getMaxStackSize()
                     );
+
+                    if (quantityAccepted > 0) {
+                        recordItemInsertActivity(
+                            location,
+                            player,
+                            slotItem,
+                            Integer.min(quantityAccepted, slotItem.getAmount())
+                        );
+                    }
                 }
 
                 return;
@@ -168,22 +171,26 @@ public class InventoryClickListener extends AbstractListener implements Listener
                 recordItemRemoveActivity(location, player, slotItem);
             }
             case MOVE_TO_OTHER_INVENTORY -> {
-                int quantityAccepted = ItemUtils.inventoryAcceptsQuantity(
-                    player.getInventory(),
-                    slotItem.getType(),
-                    slotItem.getType().getMaxStackSize()
-                );
-                if (quantityAccepted > 0) {
-                    recordItemRemoveActivity(
-                        location,
-                        player,
-                        slotItem,
-                        Integer.min(quantityAccepted, slotItem.getAmount())
+                if (slotItem != null) {
+                    int quantityAccepted = ItemUtils.inventoryAcceptsQuantity(
+                        player.getInventory(),
+                        slotItem.getType(),
+                        slotItem.getType().getMaxStackSize()
                     );
+                    if (quantityAccepted > 0) {
+                        recordItemRemoveActivity(
+                            location,
+                            player,
+                            slotItem,
+                            Integer.min(quantityAccepted, slotItem.getAmount())
+                        );
+                    }
                 }
             }
             case PICKUP_HALF -> {
-                recordItemRemoveActivity(location, player, slotItem, slotItem.getAmount() / 2);
+                if (slotItem != null) {
+                    recordItemRemoveActivity(location, player, slotItem, slotItem.getAmount() / 2);
+                }
             }
             case PICKUP_ONE -> {
                 recordItemRemoveActivity(location, player, slotItem, 1);
@@ -195,7 +202,14 @@ public class InventoryClickListener extends AbstractListener implements Listener
                 recordItemInsertActivity(location, player, heldItem, 1);
             }
             case PLACE_SOME -> {
-                recordItemInsertActivity(location, player, heldItem, heldItem.getMaxStackSize() - slotItem.getAmount());
+                if (slotItem != null) {
+                    recordItemInsertActivity(
+                        location,
+                        player,
+                        heldItem,
+                        heldItem.getMaxStackSize() - slotItem.getAmount()
+                    );
+                }
             }
             case SWAP_WITH_CURSOR -> {
                 recordItemRemoveActivity(location, player, slotItem);
