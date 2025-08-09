@@ -81,6 +81,7 @@ import org.prism_mc.prism.bukkit.services.nbt.NbtService;
 import org.prism_mc.prism.bukkit.services.pagination.PaginationService;
 import org.prism_mc.prism.bukkit.services.purge.BukkitPurgeQueue;
 import org.prism_mc.prism.bukkit.services.purge.PurgeService;
+import org.prism_mc.prism.bukkit.services.query.QueryService;
 import org.prism_mc.prism.bukkit.services.recording.BukkitRecordingService;
 import org.prism_mc.prism.bukkit.services.scheduling.SchedulingService;
 import org.prism_mc.prism.bukkit.services.translation.BukkitTranslationService;
@@ -262,6 +263,11 @@ public class PrismModule extends AbstractModule {
         // Service - Lookup
         bind(LookupService.class).in(Singleton.class);
 
+        // Service - Messages
+        bind(MessageRenderer.class).in(Singleton.class);
+        bind(MessageSender.class).in(Singleton.class);
+        bind(ActivityPlaceholderResolver.class).in(Singleton.class);
+
         // Service - Modifications
         bind(ModificationQueueService.class).to(BukkitModificationQueueService.class).in(Singleton.class);
 
@@ -286,16 +292,14 @@ public class PrismModule extends AbstractModule {
                 .build(PurgeQueueFactory.class)
         );
 
+        // Service - Query
+        bind(QueryService.class).in(Singleton.class);
+
         // Service - Recording
         bind(RecordingService.class).to(BukkitRecordingService.class).in(Singleton.class);
 
         // Service - Scheduling
         bind(SchedulingService.class).in(Singleton.class);
-
-        // Service - Messages
-        bind(MessageRenderer.class).in(Singleton.class);
-        bind(MessageSender.class).in(Singleton.class);
-        bind(ActivityPlaceholderResolver.class).in(Singleton.class);
 
         // Service - Translation
         bind(BukkitTranslationService.class).in(Singleton.class);
