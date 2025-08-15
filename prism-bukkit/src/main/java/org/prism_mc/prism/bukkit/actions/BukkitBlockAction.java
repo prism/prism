@@ -41,6 +41,7 @@ import org.bukkit.block.data.type.TrapDoor;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 import org.prism_mc.prism.api.actions.BlockAction;
+import org.prism_mc.prism.api.actions.metadata.Metadata;
 import org.prism_mc.prism.api.actions.types.ActionResultType;
 import org.prism_mc.prism.api.actions.types.ActionType;
 import org.prism_mc.prism.api.activities.Activity;
@@ -74,6 +75,24 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
      */
     public BukkitBlockAction(ActionType type, BlockState blockState) {
         this(type, blockState, null);
+    }
+
+    /**
+     * Construct a block state action.
+     *
+     * @param type The action type
+     * @param blockState The block state
+     * @param replacedBlockState The replaced block state
+     * @param metadata The metadata
+     */
+    public BukkitBlockAction(
+        ActionType type,
+        BlockState blockState,
+        @Nullable BlockState replacedBlockState,
+        Metadata metadata
+    ) {
+        this(type, blockState, replacedBlockState);
+        this.metadata = metadata;
     }
 
     /**
@@ -159,6 +178,7 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
      * @param replacedBlockData The replaced block data
      * @param translationKey The translation key
      * @param replacedBlockTranslationKey The replaced block translation key
+     * @param metadata The metadata
      */
     public BukkitBlockAction(
         ActionType type,
@@ -170,11 +190,13 @@ public class BukkitBlockAction extends BukkitAction implements BlockAction {
         String replacedBlockName,
         BlockData replacedBlockData,
         String translationKey,
-        String replacedBlockTranslationKey
+        String replacedBlockTranslationKey,
+        Metadata metadata
     ) {
         super(type);
         this.blockContainer = new BukkitBlockContainer(blockNamespace, blockName, blockData, translationKey);
         this.readWriteNbt = teData;
+        this.metadata = metadata;
 
         if (replacedBlockData != null) {
             this.replacedBlockContainer = new BukkitBlockContainer(

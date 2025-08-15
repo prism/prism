@@ -20,6 +20,9 @@
 
 package org.prism_mc.prism.bukkit.actions.types;
 
+import static org.prism_mc.prism.bukkit.actions.BukkitAction.ObjectMapper;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import javax.annotation.Nullable;
@@ -27,6 +30,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.block.data.BlockData;
 import org.prism_mc.prism.api.actions.Action;
 import org.prism_mc.prism.api.actions.ActionData;
+import org.prism_mc.prism.api.actions.metadata.Metadata;
 import org.prism_mc.prism.api.actions.types.ActionResultType;
 import org.prism_mc.prism.api.actions.types.ActionType;
 import org.prism_mc.prism.bukkit.actions.BukkitBlockAction;
@@ -66,6 +70,15 @@ public class BlockActionType extends ActionType {
             );
         }
 
+        Metadata metadata = null;
+        if (actionData.metadata() != null) {
+            try {
+                metadata = ObjectMapper.readValue(actionData.metadata(), Metadata.class);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         return new BukkitBlockAction(
             this,
             actionData.blockNamespace(),
@@ -76,7 +89,8 @@ public class BlockActionType extends ActionType {
             actionData.replacedBlockName(),
             replacedBlockData,
             actionData.translationKey(),
-            actionData.replacedBlockTranslationKey()
+            actionData.replacedBlockTranslationKey(),
+            metadata
         );
     }
 

@@ -30,6 +30,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.SignChangeEvent;
+import org.prism_mc.prism.api.actions.metadata.Metadata;
 import org.prism_mc.prism.bukkit.actions.BukkitBlockAction;
 import org.prism_mc.prism.bukkit.actions.types.BukkitActionTypeRegistry;
 import org.prism_mc.prism.bukkit.api.activities.BukkitActivity;
@@ -83,18 +84,25 @@ public class SignChangeListener extends AbstractListener implements Listener {
         }
 
         try {
-            var lines = objectMapper.writeValueAsString(
-                event.lines().stream().map(line -> PlainTextComponentSerializer.plainText().serialize(line)).toArray()
-            );
-
+            var lines = event
+                .lines()
+                .stream()
+                .map(line -> PlainTextComponentSerializer.plainText().serialize(line))
+                .toArray(String[]::new);
             final Player player = event.getPlayer();
 
-            var action = new BukkitBlockAction(BukkitActionTypeRegistry.SIGN_EDIT, event.getBlock().getState(), null);
+            var signMetadata = Metadata.builder().signText(lines).build();
+            var action = new BukkitBlockAction(
+                BukkitActionTypeRegistry.SIGN_EDIT,
+                event.getBlock().getState(),
+                null,
+                signMetadata
+            );
             var side = event.getSide().equals(Side.FRONT) ? "front_text" : "back_text";
 
             // Because the block state doesn't have the new lines from a sign change event,
             // we need to fake it by merging in the text so it gets recorded.
-            action.mergeCompound(String.format("{%s:{messages:[%s]}}", side, lines));
+            action.mergeCompound(String.format("{%s:{messages:[%s]}}", side, objectMapper.writeValueAsString(lines)));
 
             var activity = BukkitActivity.builder()
                 .action(action)

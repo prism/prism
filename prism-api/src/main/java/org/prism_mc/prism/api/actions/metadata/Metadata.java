@@ -34,6 +34,10 @@ import lombok.Singular;
 public class Metadata {
 
     private enum MetadataKey {
+        SIGN_LINE_1,
+        SIGN_LINE_2,
+        SIGN_LINE_3,
+        SIGN_LINE_4,
         USING,
     }
 
@@ -42,6 +46,29 @@ public class Metadata {
     public Map<String, String> data;
 
     public static class MetadataBuilder {
+
+        /**
+         * Set the sign text metadata.
+         *
+         * @param lines The lines
+         * @return The builder
+         */
+        public MetadataBuilder signText(String[] lines) {
+            if (lines.length > 0) {
+                entry(MetadataKey.SIGN_LINE_1.toString().toLowerCase(Locale.ENGLISH), lines[0]);
+            }
+            if (lines.length > 1) {
+                entry(MetadataKey.SIGN_LINE_2.toString().toLowerCase(Locale.ENGLISH), lines[1]);
+            }
+            if (lines.length > 2) {
+                entry(MetadataKey.SIGN_LINE_3.toString().toLowerCase(Locale.ENGLISH), lines[2]);
+            }
+            if (lines.length > 3) {
+                entry(MetadataKey.SIGN_LINE_4.toString().toLowerCase(Locale.ENGLISH), lines[3]);
+            }
+
+            return this;
+        }
 
         /**
          * Set the using metadata.
