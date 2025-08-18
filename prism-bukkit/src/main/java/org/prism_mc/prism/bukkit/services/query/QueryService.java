@@ -91,6 +91,9 @@ public class QueryService {
         this.messageService = messageService;
         this.idParameterParser = new IdParameterParser(messageService, configurationService.prismConfig().defaults());
 
+        // World parser must be first
+        parsers.add(new WorldParameterParser(messageService, configurationService.prismConfig().defaults()));
+
         parsers.add(
             new ActionParameterParser(messageService, configurationService.prismConfig().defaults(), actionRegistry)
         );
@@ -116,7 +119,6 @@ public class QueryService {
         parsers.add(new RadiusQueryArgumentParser(messageService, configurationService.prismConfig().defaults()));
         parsers.add(new ReversedParameterParser(messageService, configurationService.prismConfig().defaults()));
         parsers.add(new SinceParameterParser(messageService, configurationService.prismConfig().defaults()));
-        parsers.add(new WorldParameterParser(messageService, configurationService.prismConfig().defaults()));
     }
 
     /**

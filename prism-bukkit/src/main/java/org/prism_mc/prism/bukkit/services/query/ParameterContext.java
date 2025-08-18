@@ -63,12 +63,14 @@ public class ParameterContext {
      * @param newWorld The world
      */
     public void setWorld(World newWorld) {
-        this.referenceLocation = new Location(
-            newWorld,
-            referenceLocation.x(),
-            referenceLocation.y(),
-            referenceLocation.z()
-        );
+        if (referenceLocation != null) {
+            this.referenceLocation = new Location(
+                newWorld,
+                referenceLocation.x(),
+                referenceLocation.y(),
+                referenceLocation.z()
+            );
+        }
         this.world = newWorld;
     }
 }
