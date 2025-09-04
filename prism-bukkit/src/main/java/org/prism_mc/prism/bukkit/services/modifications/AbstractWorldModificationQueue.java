@@ -308,7 +308,11 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                                         result = applyModification(activity);
                                     } catch (Throwable t) {
                                         result = ModificationResult.builder().activity(activity).errored().build();
-                                        loggingService.handleThrowable(t);
+
+                                        loggingService.handleThrowable(
+                                            String.format("A modification error occurred. %s", activity),
+                                            t
+                                        );
                                     }
                                 }
 

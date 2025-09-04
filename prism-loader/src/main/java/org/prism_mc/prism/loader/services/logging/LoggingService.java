@@ -92,10 +92,11 @@ public class LoggingService {
     /**
      * Handle thrown errors/exceptions.
      *
-     * @param t The thrown error/exception
+     * @param message The message
+     * @param throwable The thrown error/exception
      */
-    public void handleThrowable(Throwable t) {
-        logger.log(Level.SEVERE, "An error occurred", t);
+    public void handleThrowable(String message, Throwable throwable) {
+        logger.log(Level.SEVERE, message, throwable);
     }
 
     /**
