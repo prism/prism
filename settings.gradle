@@ -5,5 +5,5 @@ pluginManagement {
 }
 
 rootProject.name = 'prism'
-include 'prism-api', 'prism-bukkit-api', 'prism-loader', 'prism-core', 'prism-bukkit', 'prism-bukkit-loader'
+include 'prism-api', 'prism-paper-api', 'prism-loader', 'prism-core', 'prism-paper', 'prism-paper-loader'
 

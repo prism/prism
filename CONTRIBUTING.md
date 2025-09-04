@@ -9,7 +9,7 @@ Prism is broken out into several modules:
 The API:
 
 - `prism-api` - The Prism interfaces and core classes that may be of used to 3rd party API users.
-- `prism-bukkit-api` - The bukkit-specific Prism API classes.
+- `prism-paper-api` - The paper-specific Prism API classes.
 
 The core:
 
@@ -18,15 +18,15 @@ The core:
 The loaders:
 
 - `prism-loader` - The core code shared by all loader plugins.
-- `prism-bukkit-loader` - Minimal code for a "loader" plugin that bootstraps prism on bukkit.
+- `prism-paper-loader` - Minimal code for a "loader" plugin that bootstraps prism on paper.
 
-The Bukkit Plugin:
+The Paper Plugin:
 
-- `prism-bukkit` - The core code for the bukkit-based platform version of Prism.
+- `prism-paper` - The core code for the paper-based platform version of Prism.
 
 This approach was chosen to allow future development of prism for other platforms.
 
-A lot of `services` and related code inside the bukkit module will be eventually moved to core.
+A lot of `services` and related code inside the paper module will be eventually moved to core.
 
 ## Setup Databases
 
@@ -39,7 +39,7 @@ start/stop/destroy/etc each service as needed.
 
 ## Setup Server
 
-Install the required and any relevant plugins into `prism-bukkit-loader/run/plugins`
+Install the required and any relevant plugins into `prism-paper-loader/run/plugins`
 
 1. Required: [NBT-API](https://modrinth.com/plugin/nbtapi)
 2. Optional: [LuckPerms](https://luckperms.net/) - For testing permissions
@@ -47,13 +47,13 @@ Install the required and any relevant plugins into `prism-bukkit-loader/run/plug
 
 ## Development
 
-Configure IntelliJ to run the `prism-bukkit-loader - runServer` task. It will build the plugin and run the server with it. 
+Configure IntelliJ to run the `prism-paper-loader - runServer` task. It will build the plugin and run the server with it. 
 
-Or, use gradle: `./gradlew -p prism-bukkit-loader runServer`.
+Or, use gradle: `./gradlew -p prism-paper-loader runServer`.
 
 The version of the paper server used can be set via `paper-server-version` in `gradle.properties`.
 
-Server files and plugin configs will be inside `prism-bukkit-loader/run`.
+Server files and plugin configs will be inside `prism-paper-loader/run`.
 
 ## Pull Requests
 

@@ -1,0 +1,55 @@
+plugins {
+    id 'prism.java-conventions'
+    id 'com.gradleup.shadow' version '9.0.0-beta11'
+    id 'xyz.jpenilla.run-paper' version '2.3.1'
+    id 'xyz.jpenilla.resource-factory-bukkit-convention' version '1.2.0'
+}
+
+dependencies {
+    compileOnly project.property('deps.log4j-api')
+    compileOnly project.property('deps.paper-api')
+
+    implementation(project.property('deps.triumph-gui')) {
+        exclude(group: "net.kyori")
+    }
+
+    implementation project(':prism-loader')
+}
+
+shadowJar {
+    archiveFileName = "prism-paper-${project.ext.fullVersion}.jar"
+
+    from {
+        project(':prism-paper').tasks.shadowJar.archiveFile
+    }
+
+    relocate 'com.typesafe', 'org.prism_mc.prism.libs.typesafe'
+    relocate 'com.fasterxml.jackson', 'org.prism_mc.prism.libs.jackson'
+    relocate 'dev.triumphteam', 'org.prism_mc.prism.libs.triumphteam'
+    relocate 'org.objectweb.asm', 'org.prism_mc.prism.libs.asm'
+
+    // Relocate configurate and all transitive deps
+    relocate 'net.kyori.option', 'org.prism_mc.prism.libs.kyori.option'
+    relocate 'io.leangen.geantyref', 'org.prism_mc.prism.libs.geantyref'
+    relocate 'org.spongepowered.configurate', 'org.prism_mc.prism.libs.configurate'
+}
+
+artifacts {
+    archives shadowJar
+}
+
+runServer {
+    minecraftVersion(project.property('paper-server-version'))
+}
+
+bukkitPluginYaml {
+    name.set('prism')
+    version.set(project.property('version'))
+    main.set('org.prism_mc.prism.paper.loader.PrismPaperPluginLoader')
+    apiVersion.set(project.property('paper-api-version'))
+    website.set(project.property('website'))
+    authors.add("viveleroi")
+    depend.add("NBTAPI")
+    softDepend.add("WorldEdit")
+    load.set(xyz.jpenilla.resourcefactory.bukkit.BukkitPluginYaml.PluginLoadOrder.STARTUP)
+}

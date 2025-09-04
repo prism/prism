@@ -21,7 +21,18 @@ repositories {
     maven { url = 'https://repo.codemc.org/repository/maven-public/' }
 
     // Paper
-    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+    // Paper artifacts are appearing in aikar's repo so we need to restrict them
+    exclusiveContent {
+        forRepository {
+            maven {
+                url "https://repo.papermc.io/repository/maven-public/"
+            }
+        }
+        filter {
+            includeGroup "com.mojang"
+            includeGroup "io.papermc"
+        }
+    }
 
     // Sonatype (kyori)
     maven { url = 'https://oss.sonatype.org/content/repositories/snapshots/' }
