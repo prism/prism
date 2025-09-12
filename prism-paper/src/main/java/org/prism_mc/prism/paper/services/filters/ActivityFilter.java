@@ -28,6 +28,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
 import org.jetbrains.annotations.NotNull;
 import org.prism_mc.prism.api.activities.Activity;
+import org.prism_mc.prism.api.containers.StringContainer;
 import org.prism_mc.prism.api.services.filters.FilterBehavior;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 import org.prism_mc.prism.paper.actions.PaperEntityAction;
@@ -295,7 +296,10 @@ public class ActivityFilter {
             return ConditionResult.NOT_APPLICABLE;
         }
 
-        if (causes.contains(activity.cause())) {
+        if (
+            activity.cause().container() instanceof StringContainer stringContainer &&
+            causes.contains(stringContainer.value())
+        ) {
             return ConditionResult.MATCHED;
         }
 
