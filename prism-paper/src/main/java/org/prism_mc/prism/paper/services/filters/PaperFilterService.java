@@ -211,13 +211,15 @@ public class PaperFilterService implements FilterService {
 
         // Game modes
         List<GameMode> gameModes = new ArrayList<>();
-        for (var gameModeString : config.player().gameModes()) {
-            try {
-                gameModes.add(GameMode.valueOf(gameModeString.toUpperCase(Locale.ENGLISH)));
+        if (config.player() != null) {
+            for (var gameModeString : config.player().gameModes()) {
+                try {
+                    gameModes.add(GameMode.valueOf(gameModeString.toUpperCase(Locale.ENGLISH)));
 
-                conditionExists = true;
-            } catch (IllegalArgumentException e) {
-                loggingService.warn("Filter error in {0}: Invalid game mode {1}", filterName, gameModeString);
+                    conditionExists = true;
+                } catch (IllegalArgumentException e) {
+                    loggingService.warn("Filter error in {0}: Invalid game mode {1}", filterName, gameModeString);
+                }
             }
         }
 
