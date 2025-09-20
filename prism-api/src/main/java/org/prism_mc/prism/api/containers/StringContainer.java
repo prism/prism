@@ -29,4 +29,9 @@ public class StringContainer implements Container {
      * The value.
      */
     private final String value;
+
+    @Override
+    public String toString() {
+        return String.format("StringContainer{value=%s}", value);
+    }
 }

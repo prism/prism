@@ -36,4 +36,9 @@ public class Cause {
     public Cause(Container container) {
         this.container = container;
     }
+
+    @Override
+    public String toString() {
+        return String.format("Cause{container=%s}", container);
+    }
 }

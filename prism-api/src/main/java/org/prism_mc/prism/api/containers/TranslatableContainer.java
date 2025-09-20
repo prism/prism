@@ -29,4 +29,9 @@ public class TranslatableContainer implements Container {
      * The translation key.
      */
     protected final String translationKey;
+
+    @Override
+    public String toString() {
+        return String.format("TranslatableContainer{translationKey=%s}", translationKey);
+    }
 }
