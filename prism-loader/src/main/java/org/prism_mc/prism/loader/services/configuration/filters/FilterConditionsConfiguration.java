@@ -34,34 +34,34 @@ public class FilterConditionsConfiguration {
     private List<String> actions;
 
     /**
-     * Block tags.
+     * Affected Blocks.
      */
-    private List<String> blockTags;
+    private MaterialTagFilterConditionConfiguration affectedBlock;
 
     /**
-     * Causes.
+     * Cause Blocks.
      */
-    private List<String> causes;
+    private MaterialTagFilterConditionConfiguration causeBlock;
 
     /**
-     * Entity Types.
+     * Named causes.
      */
-    private List<String> entityTypes;
+    private List<String> namedCauses;
 
     /**
-     * Entity Type Tags.
+     * Affected Entity Types.
      */
-    private List<String> entityTypesTags;
+    private EntityTypeFilterConditionConfiguration affectedEntityType;
 
     /**
-     * Item tags.
+     * Cause Entity Types.
      */
-    private List<String> itemTags;
+    private EntityTypeFilterConditionConfiguration causeEntityType;
 
     /**
-     * Materials.
+     * Items.
      */
-    private List<String> materials;
+    private MaterialTagFilterConditionConfiguration item;
 
     /**
      * Permissions.
@@ -69,9 +69,9 @@ public class FilterConditionsConfiguration {
     private List<String> permissions;
 
     /**
-     * Player conditions.
+     * Cause Player conditions.
      */
-    private FilterPlayerConditionsConfiguration player;
+    private FilterPlayerConditionsConfiguration causePlayer;
 
     /**
      * Worlds.

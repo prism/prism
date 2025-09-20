@@ -31,15 +31,18 @@ import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.containers.StringContainer;
 import org.prism_mc.prism.api.services.filters.FilterBehavior;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
+import org.prism_mc.prism.paper.actions.PaperBlockAction;
 import org.prism_mc.prism.paper.actions.PaperEntityAction;
 import org.prism_mc.prism.paper.actions.PaperMaterialAction;
+import org.prism_mc.prism.paper.api.containers.PaperBlockContainer;
+import org.prism_mc.prism.paper.api.containers.PaperEntityContainer;
 import org.prism_mc.prism.paper.api.containers.PaperPlayerContainer;
 import org.prism_mc.prism.paper.utils.CustomTag;
 
 public class ActivityFilter {
 
     /**
-     * The name.
+     * The filter name.
      */
     private final String name;
 
@@ -56,12 +59,27 @@ public class ActivityFilter {
     /**
      * Causes.
      */
-    private final List<String> causes;
+    private final List<String> namedCauses;
 
     /**
-     * The entity type tag (entity types, entity types tags).
+     * The affected block tags.
      */
-    private final CustomTag<EntityType> entityTypeTag;
+    private final CustomTag<Material> affectedBlockTags;
+
+    /**
+     * The cause block tags.
+     */
+    private final CustomTag<Material> causeBlockTags;
+
+    /**
+     * The affected entity type tag (entity types, entity types tags).
+     */
+    private final CustomTag<EntityType> affectedEntityTypeTags;
+
+    /**
+     * The cause entity type tag (entity types, entity types tags).
+     */
+    private final CustomTag<EntityType> causeEntityTypeTags;
 
     /**
      * The player's game mode(s).
@@ -69,9 +87,9 @@ public class ActivityFilter {
     private final List<GameMode> gameModes;
 
     /**
-     * The material tags (materials, block-tags, item-tags).
+     * The item tags.
      */
-    private final CustomTag<Material> materialTag;
+    private final CustomTag<Material> itemTags;
 
     /**
      * All permissions.
@@ -89,10 +107,13 @@ public class ActivityFilter {
      * @param name The filter name
      * @param behavior The behavior
      * @param actions The actions
-     * @param causes The causes
-     * @param entityTypeTag The entity type tag
+     * @param namedCauses The namedCauses
+     * @param affectedBlockTags The affected block tags
+     * @param causeBlockTags The cause block tags
+     * @param affectedEntityTypeTags The affected entity type tags
+     * @param causeEntityTypeTags The cause entity type tags
      * @param gameModes The game modes
-     * @param materialTag The material tag
+     * @param itemTags The item tags
      * @param permissions The permissions
      * @param worldNames The world names
      */
@@ -100,20 +121,26 @@ public class ActivityFilter {
         @NotNull String name,
         @NotNull FilterBehavior behavior,
         @NotNull List<String> actions,
-        @NotNull List<String> causes,
-        @NotNull CustomTag<EntityType> entityTypeTag,
+        @NotNull List<String> namedCauses,
+        @NotNull CustomTag<Material> affectedBlockTags,
+        @NotNull CustomTag<Material> causeBlockTags,
+        @NotNull CustomTag<EntityType> affectedEntityTypeTags,
+        @NotNull CustomTag<EntityType> causeEntityTypeTags,
         @NotNull List<GameMode> gameModes,
-        @NotNull CustomTag<Material> materialTag,
+        @NotNull CustomTag<Material> itemTags,
         @NotNull List<String> permissions,
         @NotNull List<String> worldNames
     ) {
         this.name = name;
         this.actions = actions;
         this.behavior = behavior;
-        this.causes = causes;
-        this.entityTypeTag = entityTypeTag;
+        this.namedCauses = namedCauses;
+        this.affectedBlockTags = affectedBlockTags;
+        this.causeBlockTags = causeBlockTags;
+        this.affectedEntityTypeTags = affectedEntityTypeTags;
+        this.causeEntityTypeTags = causeEntityTypeTags;
+        this.itemTags = itemTags;
         this.gameModes = gameModes;
-        this.materialTag = materialTag;
         this.permissions = permissions;
         this.worldNames = worldNames;
     }
@@ -136,43 +163,61 @@ public class ActivityFilter {
 
         var actionResult = actionsMatch(activity);
         results.add(actionResult);
-        if (debug) {
+        if (debug && !actions.isEmpty()) {
             loggingService.debug("Action result: {0}", actionResult);
         }
 
-        var causeResult = causesMatch(activity);
-        results.add(causeResult);
-        if (debug) {
-            loggingService.debug("Cause result: {0}", causeResult);
+        var namedCauseResult = namedCausesMatch(activity);
+        results.add(namedCauseResult);
+        if (debug && !namedCauses.isEmpty()) {
+            loggingService.debug("Named Cause result: {0}", namedCauseResult);
         }
 
-        var entityTypeResult = entityTypesMatched(activity);
-        results.add(entityTypeResult);
-        if (debug) {
-            loggingService.debug("Entity type result: {0}", entityTypeResult);
+        var affectedBlockResult = affectedBlocksMatched(activity);
+        results.add(affectedBlockResult);
+        if (debug && !affectedBlockTags.isEmpty()) {
+            loggingService.debug("Affected Blocks result: {0}", affectedBlockResult);
+        }
+
+        var causeBlockResult = causeBlocksMatched(activity);
+        results.add(causeBlockResult);
+        if (debug && !causeBlockTags.isEmpty()) {
+            loggingService.debug("Cause Blocks result: {0}", causeBlockResult);
+        }
+
+        var affectedEntityTypeResult = affectedEntityTypesMatched(activity);
+        results.add(affectedEntityTypeResult);
+        if (debug && !affectedEntityTypeTags.isEmpty()) {
+            loggingService.debug("Affected Entity Type result: {0}", affectedEntityTypeResult);
+        }
+
+        var causeEntityTypeResult = causeEntityTypesMatched(activity);
+        results.add(causeEntityTypeResult);
+        if (debug && !causeEntityTypeTags.isEmpty()) {
+            loggingService.debug("Cause Entity Type result: {0}", causeEntityTypeResult);
         }
 
         var gameModeResult = gameModesMatched(activity);
         results.add(gameModeResult);
-        if (debug) {
+        if (debug && !gameModes.isEmpty()) {
             loggingService.debug("Game mode result: {0}", gameModeResult);
         }
 
-        var materialsResult = materialsMatched(activity);
-        results.add(materialsResult);
-        if (debug) {
-            loggingService.debug("Materials result: {0}", materialsResult);
+        var itemsResult = itemsMatched(activity);
+        results.add(itemsResult);
+        if (debug && !itemTags.isEmpty()) {
+            loggingService.debug("Items result: {0}", itemsResult);
         }
 
         var permissionResult = permissionsMatch(activity);
         results.add(permissionResult);
-        if (debug) {
+        if (debug && !permissions.isEmpty()) {
             loggingService.debug("Permission result: {0}", permissionResult);
         }
 
         var worldsResult = worldsMatch(activity);
         results.add(worldsResult);
-        if (debug) {
+        if (debug && !worldNames.isEmpty()) {
             loggingService.debug("Worlds result: {0}", worldsResult);
         }
 
@@ -284,26 +329,74 @@ public class ActivityFilter {
     }
 
     /**
-     * Check if any causes match the activity action.
+     * Check if any named causes match the activity action.
      *
      * <p>If none listed, the filter will match all.</p>
      *
      * @param activity The activity
      * @return ConditionResult
      */
-    private ConditionResult causesMatch(Activity activity) {
-        if (causes.isEmpty()) {
+    private ConditionResult namedCausesMatch(Activity activity) {
+        if (namedCauses.isEmpty()) {
             return ConditionResult.NOT_APPLICABLE;
         }
 
         if (
             activity.cause().container() instanceof StringContainer stringContainer &&
-            causes.contains(stringContainer.value())
+            namedCauses.contains(stringContainer.value())
         ) {
             return ConditionResult.MATCHED;
         }
 
         return ConditionResult.NOT_MATCHED;
+    }
+
+    /**
+     * Check if any affected blocks match the activity action.
+     *
+     * <p>If none listed, the filter will match all. Ignores non-material actions.</p>
+     *
+     * @param activity The activity
+     * @return ConditionResult
+     */
+    private ConditionResult affectedBlocksMatched(Activity activity) {
+        if (affectedBlockTags.isEmpty()) {
+            return ConditionResult.NOT_APPLICABLE;
+        }
+
+        if (activity.action() instanceof PaperBlockAction blockAction) {
+            if (affectedBlockTags.isTagged(blockAction.blockContainer().blockData().getMaterial())) {
+                return ConditionResult.MATCHED;
+            }
+
+            return ConditionResult.NOT_MATCHED;
+        } else {
+            return ConditionResult.NOT_APPLICABLE;
+        }
+    }
+
+    /**
+     * Check if any cause blocks match the activity action.
+     *
+     * <p>If none listed, the filter will match all. Ignores non-material actions.</p>
+     *
+     * @param activity The activity
+     * @return ConditionResult
+     */
+    private ConditionResult causeBlocksMatched(Activity activity) {
+        if (causeBlockTags.isEmpty()) {
+            return ConditionResult.NOT_APPLICABLE;
+        }
+
+        if (activity.cause().container() instanceof PaperBlockContainer blockContainer) {
+            if (causeBlockTags.isTagged(blockContainer.blockData().getMaterial())) {
+                return ConditionResult.MATCHED;
+            }
+
+            return ConditionResult.NOT_MATCHED;
+        } else {
+            return ConditionResult.NOT_APPLICABLE;
+        }
     }
 
     /**
@@ -314,13 +407,37 @@ public class ActivityFilter {
      * @param activity The activity
      * @return ConditionResult
      */
-    private ConditionResult entityTypesMatched(Activity activity) {
-        if (entityTypeTag.isEmpty()) {
+    private ConditionResult affectedEntityTypesMatched(Activity activity) {
+        if (affectedEntityTypeTags.isEmpty()) {
             return ConditionResult.NOT_APPLICABLE;
         }
 
         if (activity.action() instanceof PaperEntityAction entityAction) {
-            if (entityTypeTag.isTagged(entityAction.entityContainer().entityType())) {
+            if (affectedEntityTypeTags.isTagged(entityAction.entityContainer().entityType())) {
+                return ConditionResult.MATCHED;
+            }
+
+            return ConditionResult.NOT_MATCHED;
+        } else {
+            return ConditionResult.NOT_APPLICABLE;
+        }
+    }
+
+    /**
+     * Check if any entity types match the activity action.
+     *
+     * <p>If none listed, the filter will match all. Ignores non-entity actions.</p>
+     *
+     * @param activity The activity
+     * @return ConditionResult
+     */
+    private ConditionResult causeEntityTypesMatched(Activity activity) {
+        if (causeEntityTypeTags.isEmpty()) {
+            return ConditionResult.NOT_APPLICABLE;
+        }
+
+        if (activity.cause().container() instanceof PaperEntityContainer entityContainer) {
+            if (causeEntityTypeTags.isTagged(entityContainer.entityType())) {
                 return ConditionResult.MATCHED;
             }
 
@@ -362,13 +479,13 @@ public class ActivityFilter {
      * @param activity The activity
      * @return ConditionResult
      */
-    private ConditionResult materialsMatched(Activity activity) {
-        if (materialTag.isEmpty()) {
+    private ConditionResult itemsMatched(Activity activity) {
+        if (itemTags.isEmpty()) {
             return ConditionResult.NOT_APPLICABLE;
         }
 
         if (activity.action() instanceof PaperMaterialAction materialAction) {
-            if (materialTag.isTagged(materialAction.material())) {
+            if (itemTags.isTagged(materialAction.material())) {
                 return ConditionResult.MATCHED;
             }
 

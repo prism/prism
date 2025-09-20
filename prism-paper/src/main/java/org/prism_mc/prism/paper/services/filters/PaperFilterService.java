@@ -34,8 +34,10 @@ import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.services.filters.FilterBehavior;
 import org.prism_mc.prism.api.services.filters.FilterService;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
+import org.prism_mc.prism.loader.services.configuration.filters.EntityTypeFilterConditionConfiguration;
 import org.prism_mc.prism.loader.services.configuration.filters.FilterConditionsConfiguration;
 import org.prism_mc.prism.loader.services.configuration.filters.FilterConfiguration;
+import org.prism_mc.prism.loader.services.configuration.filters.MaterialTagFilterConditionConfiguration;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 import org.prism_mc.prism.paper.utils.CustomTag;
 import org.prism_mc.prism.paper.utils.ListUtils;
@@ -122,97 +124,35 @@ public class PaperFilterService implements FilterService {
             conditionExists = true;
         }
 
-        var entityTypeTags = new CustomTag<>(EntityType.class);
-
-        // Entity Types
-        if (!ListUtils.isNullOrEmpty(config.entityTypes())) {
-            for (String entityTypeKey : config.entityTypes()) {
-                try {
-                    EntityType entityType = EntityType.valueOf(entityTypeKey.toUpperCase(Locale.ENGLISH));
-                    entityTypeTags.append(entityType);
-                } catch (IllegalArgumentException e) {
-                    loggingService.warn("Filter error in {0}: No entity type matching {1}", filterName, entityTypeKey);
-                }
-            }
-
+        var affectedBlockTags = loadMaterialTags(filterName, "blocks", config.affectedBlock());
+        if (!affectedBlockTags.isEmpty()) {
             conditionExists = true;
         }
 
-        // Entity type tags
-        if (!ListUtils.isNullOrEmpty(config.entityTypesTags())) {
-            for (String entityTypeTag : config.entityTypesTags()) {
-                var namespacedKey = NamespacedKey.fromString(entityTypeTag);
-                if (namespacedKey != null) {
-                    var tag = Bukkit.getTag("entity_types", namespacedKey, EntityType.class);
-                    if (tag != null) {
-                        conditionExists = true;
-                        entityTypeTags.append(tag);
-
-                        continue;
-                    }
-                }
-
-                loggingService.warn("Filter error in {0}: Invalid entity type tag {1}", filterName, entityTypeTag);
-            }
-        }
-
-        CustomTag<Material> materialTags = new CustomTag<>(Material.class);
-
-        // Materials
-        if (!ListUtils.isNullOrEmpty(config.materials())) {
-            for (String materialKey : config.materials()) {
-                try {
-                    Material material = Material.valueOf(materialKey.toUpperCase(Locale.ENGLISH));
-                    materialTags.append(material);
-                } catch (IllegalArgumentException e) {
-                    loggingService.warn("Filter error in {0}: No material matching {1}", filterName, materialKey);
-                }
-            }
-
+        var causeBlockTags = loadMaterialTags(filterName, "blocks", config.causeBlock());
+        if (!causeBlockTags.isEmpty()) {
             conditionExists = true;
         }
 
-        // Block material tags
-        if (!ListUtils.isNullOrEmpty(config.blockTags())) {
-            for (String blockTag : config.blockTags()) {
-                var namespacedKey = NamespacedKey.fromString(blockTag);
-                if (namespacedKey != null) {
-                    var tag = Bukkit.getTag("blocks", namespacedKey, Material.class);
-                    if (tag != null) {
-                        conditionExists = true;
-                        materialTags.append(tag);
-
-                        continue;
-                    }
-                }
-
-                loggingService.warn("Filter error in {0}: Invalid block tag {1}", filterName, blockTag);
-            }
+        var affectedEntityTypeTags = loadEntityTypeTags(filterName, config.affectedEntityType());
+        if (!affectedEntityTypeTags.isEmpty()) {
+            conditionExists = true;
         }
 
-        // Item material tags
-        if (!ListUtils.isNullOrEmpty(config.itemTags())) {
-            for (String itemTag : config.itemTags()) {
-                var namespacedKey = NamespacedKey.fromString(itemTag);
-                if (namespacedKey != null) {
-                    var tag = Bukkit.getTag("items", namespacedKey, Material.class);
+        var causeEntityTypeTags = loadEntityTypeTags(filterName, config.causeEntityType());
+        if (!causeEntityTypeTags.isEmpty()) {
+            conditionExists = true;
+        }
 
-                    if (tag != null) {
-                        conditionExists = true;
-                        materialTags.append(tag);
-
-                        continue;
-                    }
-                }
-
-                loggingService.warn("Filter error in {0}: Invalid item tag {1}", filterName, itemTag);
-            }
+        var itemTags = loadMaterialTags(filterName, "items", config.item());
+        if (!itemTags.isEmpty()) {
+            conditionExists = true;
         }
 
         // Game modes
         List<GameMode> gameModes = new ArrayList<>();
-        if (config.player() != null) {
-            for (var gameModeString : config.player().gameModes()) {
+        if (config.causePlayer() != null) {
+            for (var gameModeString : config.causePlayer().gameModes()) {
                 try {
                     gameModes.add(GameMode.valueOf(gameModeString.toUpperCase(Locale.ENGLISH)));
 
@@ -228,10 +168,13 @@ public class PaperFilterService implements FilterService {
                 filterName,
                 behavior,
                 ListUtils.isNullOrEmpty(config.actions()) ? new ArrayList<>() : config.actions(),
-                ListUtils.isNullOrEmpty(config.causes()) ? new ArrayList<>() : config.causes(),
-                entityTypeTags,
+                ListUtils.isNullOrEmpty(config.namedCauses()) ? new ArrayList<>() : config.namedCauses(),
+                affectedBlockTags,
+                causeBlockTags,
+                affectedEntityTypeTags,
+                causeEntityTypeTags,
                 gameModes,
-                materialTags,
+                itemTags,
                 ListUtils.isNullOrEmpty(config.permissions()) ? new ArrayList<>() : config.permissions(),
                 ListUtils.isNullOrEmpty(worldNames) ? new ArrayList<>() : worldNames
             );
@@ -271,5 +214,98 @@ public class PaperFilterService implements FilterService {
 
         // If "ALLOW" filters exist, we have to deny this by default, otherwise we can allow.
         return allowFilters.isEmpty();
+    }
+
+    /**
+     * Load cause entity type tags.
+     *
+     * @param filterName Filter name
+     * @param config Filter config
+     * @return Tags
+     */
+    private CustomTag<EntityType> loadEntityTypeTags(String filterName, EntityTypeFilterConditionConfiguration config) {
+        var tags = new CustomTag<>(EntityType.class);
+
+        if (config != null) {
+            if (!ListUtils.isNullOrEmpty(config.entityTypes)) {
+                for (var entityTypeKey : config.entityTypes) {
+                    try {
+                        EntityType entityType = EntityType.valueOf(entityTypeKey.toUpperCase(Locale.ENGLISH));
+                        tags.append(entityType);
+                    } catch (IllegalArgumentException e) {
+                        loggingService.warn(
+                            "Filter error in {0}: No entity type matching {1}",
+                            filterName,
+                            entityTypeKey
+                        );
+                    }
+                }
+            }
+
+            if (!ListUtils.isNullOrEmpty(config.tags)) {
+                for (String entityTypeTag : config.tags) {
+                    var namespacedKey = NamespacedKey.fromString(entityTypeTag);
+                    if (namespacedKey != null) {
+                        var tag = Bukkit.getTag("entity_types", namespacedKey, EntityType.class);
+                        if (tag != null) {
+                            tags.append(tag);
+
+                            continue;
+                        }
+                    }
+
+                    loggingService.warn("Filter error in {0}: Invalid entity type tag {1}", filterName, entityTypeTag);
+                }
+            }
+        }
+
+        return tags;
+    }
+
+    /**
+     * Load material tags.
+     *
+     * @param filterName Filter name
+     * @param config Filter config
+     * @return Tags
+     */
+    private CustomTag<Material> loadMaterialTags(
+        String filterName,
+        String tagKey,
+        MaterialTagFilterConditionConfiguration config
+    ) {
+        CustomTag<Material> tags = new CustomTag<>(Material.class);
+
+        if (config != null) {
+            if (!ListUtils.isNullOrEmpty(config.materials)) {
+                for (String materialKey : config.materials) {
+                    try {
+                        Material material = Material.valueOf(materialKey.toUpperCase(Locale.ENGLISH));
+                        tags.append(material);
+                    } catch (IllegalArgumentException e) {
+                        loggingService.warn("Filter error in {0}: No material matching {1}", filterName, materialKey);
+                    }
+                }
+            }
+
+            if (!ListUtils.isNullOrEmpty(config.tags)) {
+                for (String itemTag : config.tags) {
+                    var namespacedKey = NamespacedKey.fromString(itemTag);
+                    if (namespacedKey != null) {
+                        var tag = Bukkit.getTag(tagKey, namespacedKey, Material.class);
+
+                        if (tag != null) {
+                            tags.append(tag);
+
+                            continue;
+                        }
+                    }
+
+                    loggingService.warn("Filter error in {0}: Invalid tag {1}", filterName, itemTag);
+                }
+            }
+        }
+
+        return tags;
     }
 }
