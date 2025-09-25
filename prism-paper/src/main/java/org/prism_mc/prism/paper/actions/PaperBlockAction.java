@@ -405,8 +405,8 @@ public class PaperBlockAction extends PaperAction implements BlockAction {
     protected StateChange<BlockState> setBlock(
         Block block,
         Location location,
-        BlockData newBlockData,
-        BlockData oldBlockData,
+        @Nullable BlockData newBlockData,
+        @Nullable BlockData oldBlockData,
         ReadWriteNBT readWriteNbt,
         Object owner,
         ModificationQueueMode mode
@@ -422,6 +422,10 @@ public class PaperBlockAction extends PaperAction implements BlockAction {
             } else if (oldBlockData instanceof Bed bed) {
                 setBedHead(block, bed);
             }
+        }
+
+        if (newBlockData == null) {
+            newBlockData = Bukkit.createBlockData(Material.AIR);
         }
 
         // Send block change or change world
