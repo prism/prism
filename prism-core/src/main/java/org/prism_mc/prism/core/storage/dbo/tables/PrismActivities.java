@@ -239,7 +239,7 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
      */
     public final TableField<PrismActivitiesRecord, String> DESCRIPTOR = createField(
         DSL.name("descriptor"),
-        SQLDataType.VARCHAR(256),
+        SQLDataType.VARCHAR(255),
         this,
         ""
     );

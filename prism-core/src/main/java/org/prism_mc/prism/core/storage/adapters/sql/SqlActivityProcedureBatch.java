@@ -36,6 +36,7 @@ import org.prism_mc.prism.api.containers.EntityContainer;
 import org.prism_mc.prism.api.containers.PlayerContainer;
 import org.prism_mc.prism.api.containers.StringContainer;
 import org.prism_mc.prism.api.storage.ActivityBatch;
+import org.prism_mc.prism.api.util.TextUtils;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 
 public class SqlActivityProcedureBatch implements ActivityBatch {
@@ -247,7 +248,7 @@ public class SqlActivityProcedureBatch implements ActivityBatch {
 
         // Descriptor
         if (activity.action().descriptor() != null) {
-            statement.setString(descriptorIndex, activity.action().descriptor());
+            statement.setString(descriptorIndex, TextUtils.truncateWithEllipsis(activity.action().descriptor(), 255));
         } else {
             statement.setNull(descriptorIndex, Types.VARCHAR);
         }

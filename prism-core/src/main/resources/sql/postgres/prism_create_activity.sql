@@ -32,7 +32,7 @@ CREATE OR REPLACE FUNCTION %prefix%create_activity (
     p_causeTranslationKey VARCHAR(155),
     p_serializerVersion INTEGER,
     p_serializedData TEXT,
-    p_descriptor VARCHAR(256),
+    p_descriptor VARCHAR(255),
     p_metadata VARCHAR(255)
 )
 RETURNS VOID AS $$

@@ -32,7 +32,7 @@ CREATE PROCEDURE %prefix%create_activity (
     IN `p_causeBlockTranslationKey` VARCHAR(155),
     IN `p_serializerVersion` SMALLINT,
     IN `p_serializedData` TEXT,
-    IN `p_descriptor` VARCHAR(256),
+    IN `p_descriptor` VARCHAR(255),
     IN `p_metadata` VARCHAR(255)
 )
 BEGIN

@@ -47,6 +47,7 @@ import org.prism_mc.prism.api.containers.EntityContainer;
 import org.prism_mc.prism.api.containers.PlayerContainer;
 import org.prism_mc.prism.api.containers.StringContainer;
 import org.prism_mc.prism.api.storage.ActivityBatch;
+import org.prism_mc.prism.api.util.TextUtils;
 import org.prism_mc.prism.core.services.cache.CacheService;
 import org.prism_mc.prism.core.storage.dbo.records.PrismActivitiesRecord;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
@@ -201,7 +202,7 @@ public class SqlActivityBatch implements ActivityBatch {
         }
 
         // Set the descriptor
-        record.setDescriptor(activity.action().descriptor());
+        record.setDescriptor(TextUtils.truncateWithEllipsis(activity.action().descriptor(), 255));
 
         // Serialize the metadata
         if (activity.action().metadata() != null) {
