@@ -107,7 +107,7 @@ public class InventoryClickListener extends AbstractListener implements Listener
         // We don't care about most actions that occur in the player's inventory
         if (!clickedTopInventory) {
             if (event.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY)) {
-                if (slotItem != null) {
+                if (ItemUtils.isValidItem(slotItem)) {
                     int quantityAccepted = ItemUtils.inventoryAcceptsQuantity(
                         event.getInventory(),
                         slotItem.getType(),
@@ -171,7 +171,7 @@ public class InventoryClickListener extends AbstractListener implements Listener
                 recordItemRemoveActivity(location, player, slotItem);
             }
             case MOVE_TO_OTHER_INVENTORY -> {
-                if (slotItem != null) {
+                if (ItemUtils.isValidItem(slotItem)) {
                     int quantityAccepted = ItemUtils.inventoryAcceptsQuantity(
                         player.getInventory(),
                         slotItem.getType(),
@@ -188,7 +188,7 @@ public class InventoryClickListener extends AbstractListener implements Listener
                 }
             }
             case PICKUP_HALF -> {
-                if (slotItem != null) {
+                if (ItemUtils.isValidItem(slotItem)) {
                     recordItemRemoveActivity(location, player, slotItem, slotItem.getAmount() / 2);
                 }
             }
@@ -202,7 +202,7 @@ public class InventoryClickListener extends AbstractListener implements Listener
                 recordItemInsertActivity(location, player, heldItem, 1);
             }
             case PLACE_SOME -> {
-                if (slotItem != null) {
+                if (ItemUtils.isValidItem(slotItem)) {
                     recordItemInsertActivity(
                         location,
                         player,
