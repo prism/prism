@@ -244,10 +244,10 @@ public class TagLib {
     public static final CustomTag<Material> BOTTOM_DETACHABLES = new CustomTag<>(
         Material.class,
         Material.HANGING_ROOTS,
-        Material.SPORE_BLOSSOM,
-        Material.LANTERN,
-        Material.SOUL_LANTERN
-    ).append(DETACHABLES, RECURSIVE_BOTTOM_DETACHABLES);
+        Material.SPORE_BLOSSOM
+    )
+        .append(Tag.LANTERNS)
+        .append(DETACHABLES, RECURSIVE_BOTTOM_DETACHABLES);
 
     /**
      * All materials that can detach from the side of a block.
@@ -275,6 +275,12 @@ public class TagLib {
     )
         .append(Tag.BUTTONS, Tag.WALL_SIGNS, Tag.CLIMBABLE, Tag.WALL_CORALS)
         .append(WALL_BANNERS, DETACHABLES);
+
+    static {
+        if (VersionUtils.atLeast(1, 21, 9)) {
+            SIDE_DETACHABLES.append(Material.COPPER_WALL_TORCH);
+        }
+    }
 
     /**
      * All materials that can attach to themselves on the top (breaks travel upward).
@@ -313,13 +319,12 @@ public class TagLib {
         Material.NETHER_WART,
         Material.BEACON,
         Material.ITEM_FRAME,
-        Material.LANTERN,
         Material.CONDUIT,
         Material.BELL,
         Material.MOSS_CARPET
     )
         .append(Tag.DOORS, Tag.RAILS, Tag.SAPLINGS, Tag.STANDING_SIGNS)
-        .append(Tag.WOOL_CARPETS, Tag.FLOWER_POTS)
+        .append(Tag.WOOL_CARPETS, Tag.FLOWER_POTS, Tag.LANTERNS)
         .append(
             REDSTONE_DETACHABLE,
             GROWABLES,
@@ -329,6 +334,12 @@ public class TagLib {
             RECURSIVE_TOP_DETACHABLES,
             LITTER
         );
+
+    static {
+        if (VersionUtils.atLeast(1, 21, 9)) {
+            TOP_DETACHABLES.append(Material.COPPER_TORCH);
+        }
+    }
 
     /**
      * All wall-placeable skulls.
