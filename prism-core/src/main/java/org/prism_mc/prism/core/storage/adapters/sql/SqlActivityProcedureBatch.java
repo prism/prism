@@ -268,9 +268,13 @@ public class SqlActivityProcedureBatch implements ActivityBatch {
 
     @Override
     public void commitBatch() throws SQLException {
-        statement.executeBatch();
-
-        statement.close();
-        connection.close();
+        try {
+            statement.executeBatch();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            statement.close();
+            connection.close();
+        }
     }
 }

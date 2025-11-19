@@ -140,10 +140,13 @@ public class HikariConfigFactories {
         String host = storageConfiguration.postgres().host();
         String port = storageConfiguration.postgres().port();
         String database = storageConfiguration.postgres().database();
+        String schema = storageConfiguration.postgres().schema();
         boolean useSpy = storageConfiguration.spy();
 
         hikariConfig.setJdbcUrl(
-            "jdbc:" + (useSpy ? "p6spy:" : "") + String.format("postgresql://%s:%s/%s", host, port, database)
+            "jdbc:" +
+            (useSpy ? "p6spy:" : "") +
+            String.format("postgresql://%s:%s/%s?currentSchema=%s", host, port, database, schema)
         );
 
         return hikariConfig;
