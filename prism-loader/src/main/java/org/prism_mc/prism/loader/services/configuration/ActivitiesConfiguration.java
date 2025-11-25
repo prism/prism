@@ -20,6 +20,8 @@
 
 package org.prism_mc.prism.loader.services.configuration;
 
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 import org.spongepowered.configurate.objectmapping.meta.Comment;
@@ -34,4 +36,23 @@ public class ActivitiesConfiguration {
         For finer control, you may also create a filter."""
     )
     private boolean ignoreCreative = true;
+
+    @Comment("""
+        Commands that may contain sensitive data when tracking player-command.
+        Matches the beginning of a command string. Do not include the forward-slash.""")
+    private List<String> sensitiveCommands = new ArrayList<>();
+
+    /**
+     * Constructor.
+     */
+    public ActivitiesConfiguration() {
+        sensitiveCommands.add("l");
+        sensitiveCommands.add("login");
+        sensitiveCommands.add("reg");
+        sensitiveCommands.add("register");
+        sensitiveCommands.add("changepassword");
+        sensitiveCommands.add("changepw");
+        sensitiveCommands.add("unreg");
+        sensitiveCommands.add("unregister");
+    }
 }

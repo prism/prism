@@ -66,7 +66,15 @@ public class PlayerCommandPreprocessListener extends AbstractListener implements
             return;
         }
 
-        var action = new GenericPaperAction(PaperActionTypeRegistry.PLAYER_COMMAND, event.getMessage());
+        String commandMessage = event.getMessage();
+
+        for (var command : configurationService.prismConfig().activities().sensitiveCommands()) {
+            if (event.getMessage().startsWith(String.format("/%s", command))) {
+                commandMessage = String.format("/%s ...", command);
+            }
+        }
+
+        var action = new GenericPaperAction(PaperActionTypeRegistry.PLAYER_COMMAND, commandMessage);
         var activity = PaperActivity.builder().action(action).location(player.getLocation()).cause(player).build();
         recordingService.addToQueue(activity);
     }
