@@ -37,9 +37,11 @@ public class ActivitiesConfiguration {
     )
     private boolean ignoreCreative = true;
 
-    @Comment("""
+    @Comment(
+        """
         Commands that may contain sensitive data when tracking player-command.
-        Matches the beginning of a command string. Do not include the forward-slash.""")
+        Matches the beginning of a command string. Do not include the forward-slash."""
+    )
     private List<String> sensitiveCommands = new ArrayList<>();
 
     /**
