@@ -62,6 +62,7 @@ import org.prism_mc.prism.paper.utils.TagLib;
 public class PaperItemStackAction extends PaperMaterialAction implements ItemAction {
 
     public static final @Nullable TextColor ITEM_COLOR = TextColor.fromCSSHexString("#03a5fc");
+
     /**
      * The item stack.
      */

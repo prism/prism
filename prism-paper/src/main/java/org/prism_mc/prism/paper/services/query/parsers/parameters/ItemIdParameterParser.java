@@ -42,10 +42,10 @@ public class ItemIdParameterParser extends IntegerSetQueryArgumentParser {
 
     @Override
     public boolean parse(
-            CommandSender sender,
-            ParameterContext parameterContext,
-            Arguments arguments,
-            PaperActivityQuery.PaperActivityQueryBuilder<?, ?> builder
+        CommandSender sender,
+        ParameterContext parameterContext,
+        Arguments arguments,
+        PaperActivityQuery.PaperActivityQueryBuilder<?, ?> builder
     ) {
         var values = parseMultipleParameters(arguments, builder);
 
