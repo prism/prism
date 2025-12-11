@@ -48,8 +48,8 @@ import org.prism_mc.prism.paper.services.query.parsers.parameters.EntityTypeCaus
 import org.prism_mc.prism.paper.services.query.parsers.parameters.EntityTypeParameterParser;
 import org.prism_mc.prism.paper.services.query.parsers.parameters.EntityTypeTagParameterParser;
 import org.prism_mc.prism.paper.services.query.parsers.parameters.IdParameterParser;
-import org.prism_mc.prism.paper.services.query.parsers.parameters.ItemIdParameterParser;
 import org.prism_mc.prism.paper.services.query.parsers.parameters.InParameterParser;
+import org.prism_mc.prism.paper.services.query.parsers.parameters.ItemIdParameterParser;
 import org.prism_mc.prism.paper.services.query.parsers.parameters.ItemParameterParser;
 import org.prism_mc.prism.paper.services.query.parsers.parameters.ItemTagParameterParser;
 import org.prism_mc.prism.paper.services.query.parsers.parameters.PlayerAffectedParameterParser;

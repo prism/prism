@@ -821,7 +821,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             short itemQuantity = r.getValue(coalesce(PRISM_ACTIVITIES.AFFECTED_ITEM_QUANTITY, DSL.val(0))).shortValue();
 
             // Item ID
-            int itemId;
+            int itemId = 0;
             if (r.getValue(PRISM_ACTIVITIES.AFFECTED_ITEM_ID) != null) {
                 itemId = r.getValue(PRISM_ACTIVITIES.AFFECTED_ITEM_ID).intValue();
             }
