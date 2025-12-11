@@ -115,31 +115,7 @@ public class PaperItemStackAction extends PaperMaterialAction implements ItemAct
                 .append(Component.space());
         }
 
-        Component itemName = Component.translatable(itemStack.translationKey());
-        if (meta != null && meta.hasItemName()) {
-            // Strip custom color/format codes out of item name for consistency
-            itemName = Component.text(
-                PlainTextComponentSerializer.plainText()
-                    .serialize(LegacyComponentSerializer.legacySection().deserialize(meta.getItemName()))
-            );
-        } else if (meta instanceof SkullMeta skullMeta && skullMeta.hasOwner()) {
-            Component name = Component.text("unknown");
-            if (skullMeta.getOwningPlayer() != null && skullMeta.getOwningPlayer().getName() != null) {
-                name = Component.text(skullMeta.getOwningPlayer().getName());
-            }
-
-            itemName = Component.translatable("block.minecraft.player_head.named", name);
-        }
-
-        complete.append(itemName);
-
-        if (meta != null && meta.hasDisplayName() && !meta.getDisplayName().isEmpty()) {
-            complete
-                .append(Component.space())
-                .append(Component.text("\""))
-                .append(Component.text(meta.getDisplayName()))
-                .append(Component.text("\""));
-        }
+        complete.append(itemStack.displayName());
 
         if (meta instanceof PotionMeta potionMeta) {
             if (
