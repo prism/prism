@@ -190,6 +190,7 @@ public class SqlActivityQueryBuilder {
             PRISM_ITEMS.MATERIAL,
             coalesce(PRISM_ACTIVITIES.AFFECTED_ITEM_QUANTITY, DSL.val(0)),
             PRISM_ITEMS.DATA,
+            PRISM_ACTIVITIES.AFFECTED_ITEM_ID,
             PRISM_BLOCKS.NS,
             PRISM_BLOCKS.NAME,
             PRISM_BLOCKS.TRANSLATION_KEY,
@@ -267,6 +268,7 @@ public class SqlActivityQueryBuilder {
                 PRISM_ITEMS.MATERIAL,
                 PRISM_ACTIVITIES.AFFECTED_ITEM_QUANTITY,
                 PRISM_ITEMS.DATA,
+                PRISM_ACTIVITIES.AFFECTED_ITEM_ID,
                 PRISM_BLOCKS.NS,
                 PRISM_BLOCKS.NAME,
                 PRISM_BLOCKS.TRANSLATION_KEY,
@@ -470,6 +472,11 @@ public class SqlActivityQueryBuilder {
         // Activity IDs
         if (query.activityIds() != null && !query.activityIds().isEmpty()) {
             conditions.add(PRISM_ACTIVITIES.ACTIVITY_ID.in(query.activityIds()));
+        }
+
+        // Item IDs
+        if (query.itemIds() != null && !query.itemIds().isEmpty()) {
+            conditions.add(PRISM_ACTIVITIES.AFFECTED_ITEM_ID.in(query.itemIds()));
         }
 
         // Affected Blocks

@@ -34,4 +34,11 @@ public interface ItemAction extends MaterialAction {
      * @return The item data string
      */
     String serializeItemData();
+
+    /**
+     * Get the item ID (database primary key for this item stack).
+     *
+     * @return The item ID, or null if not yet persisted
+     */
+    int itemId();
 }

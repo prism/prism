@@ -26,6 +26,7 @@ public record ActionData(
     String material,
     short itemQuantity,
     String itemData,
+    int itemId,
     String blockNamespace,
     String blockName,
     String blockData,

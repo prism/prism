@@ -57,6 +57,11 @@ public class ActivityQuery {
     private Collection<Integer> activityIds;
 
     /**
+     * The item ids.
+     */
+    private Collection<Integer> itemIds;
+
+    /**
      * The lower-bound timestamp.
      */
     private Long after;
@@ -236,6 +241,22 @@ public class ActivityQuery {
 
             return self();
         }
+
+            /**
+             * Add a single item id.
+             *
+             * @param itemId Item id
+             * @return The builder
+             */
+            public B itemId(int itemId) {
+                if (itemIds == null) {
+                    itemIds = new ArrayList<>();
+                }
+
+                itemIds.add(itemId);
+
+                return self();
+            }
 
         /**
          * Set the coordinate corners of a bounding box.

@@ -52,6 +52,6 @@ public class ItemActionType extends ActionType {
             itemStack = new ItemStack(material);
         }
 
-        return new PaperItemStackAction(this, itemStack, actionData.itemQuantity(), actionData.descriptor());
+        return new PaperItemStackAction(this, itemStack, actionData.itemQuantity(), actionData.descriptor(), actionData.itemId());
     }
 }

@@ -24,6 +24,8 @@ import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.translation.Argument;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -42,6 +44,7 @@ import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.jetbrains.annotations.Nullable;
 import org.prism_mc.prism.api.actions.ItemAction;
 import org.prism_mc.prism.api.actions.types.ActionResultType;
 import org.prism_mc.prism.api.actions.types.ActionType;
@@ -58,6 +61,7 @@ import org.prism_mc.prism.paper.utils.TagLib;
 
 public class PaperItemStackAction extends PaperMaterialAction implements ItemAction {
 
+    public static final @Nullable TextColor ITEM_COLOR = TextColor.fromCSSHexString("#03a5fc");
     /**
      * The item stack.
      */
@@ -70,13 +74,19 @@ public class PaperItemStackAction extends PaperMaterialAction implements ItemAct
     private final ReadWriteNBT readWriteNbt;
 
     /**
+     * The item ID (database primary key).
+     */
+    @Getter
+    private int itemId;
+
+    /**
      * Construct a new item stack action.
      *
      * @param type The action type
      * @param itemStack The item stack
      */
     public PaperItemStackAction(ActionType type, ItemStack itemStack) {
-        this(type, itemStack, itemStack.getAmount(), null);
+        this(type, itemStack, itemStack.getAmount(), null, 0);
         this.descriptor = PlainTextComponentSerializer.plainText().serialize(descriptorComponent());
     }
 
@@ -89,8 +99,22 @@ public class PaperItemStackAction extends PaperMaterialAction implements ItemAct
      * @param descriptor The descriptor
      */
     public PaperItemStackAction(ActionType type, ItemStack itemStack, int quantity, String descriptor) {
+        this(type, itemStack, quantity, descriptor, 0);
+    }
+
+    /**
+     * Construct a new item stack action.
+     *
+     * @param type The action type
+     * @param itemStack The item stack
+     * @param quantity The quantity
+     * @param descriptor The descriptor
+     * @param itemId The item ID from the database
+     */
+    public PaperItemStackAction(ActionType type, ItemStack itemStack, int quantity, String descriptor, int itemId) {
         super(type, itemStack.getType(), descriptor);
         this.itemStack = itemStack;
+        this.itemId = itemId;
         this.readWriteNbt = NBT.itemStackToNBT(itemStack);
         this.readWriteNbt.removeKey("count");
 
@@ -116,6 +140,10 @@ public class PaperItemStackAction extends PaperMaterialAction implements ItemAct
         }
 
         Component itemName = Component.translatable(itemStack.translationKey());
+        if (itemId > 0) {
+            itemName = itemName.clickEvent(ClickEvent.suggestCommand("/pr l itemid:" + itemId));
+        }
+
         if (meta != null && meta.hasItemName()) {
             // Strip custom color/format codes out of item name for consistency
             itemName = Component.text(

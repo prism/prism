@@ -506,6 +506,7 @@ public class PrismPaper implements Prism {
                 Argument.forString().name("at").build(),
                 Argument.forString().name("bounds").build(),
                 Argument.listOf(Integer.class).name("id").build(),
+                Argument.listOf(Integer.class).name("itemid").build(),
                 Argument.listOf(String.class).name("a").suggestion(SuggestionKey.of("actions")).build(),
                 Argument.listOf(String.class).name("btag").suggestion(SuggestionKey.of("blocktags")).build(),
                 Argument.listOf(String.class).name("etag").suggestion(SuggestionKey.of("entitytypetags")).build(),

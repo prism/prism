@@ -820,6 +820,12 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             // Item quantity
             short itemQuantity = r.getValue(coalesce(PRISM_ACTIVITIES.AFFECTED_ITEM_QUANTITY, DSL.val(0))).shortValue();
 
+            // Item ID
+            int itemId = -1;
+            if (r.getValue(PRISM_ACTIVITIES.AFFECTED_ITEM_ID) != null) {
+                itemId = r.getValue(PRISM_ACTIVITIES.AFFECTED_ITEM_ID).intValue();
+            }
+
             // Affected player
             String affectedPlayerName = r.getValue(AFFECTED_PLAYERS.PLAYER);
             UUID affectedPlayerUuid = null;
@@ -873,6 +879,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                     material,
                     itemQuantity,
                     itemData,
+                    itemId,
                     blockNamespace,
                     blockName,
                     blockData,
@@ -914,6 +921,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                     material,
                     itemQuantity,
                     itemData,
+                    itemId,
                     blockNamespace,
                     blockName,
                     null,
@@ -953,6 +961,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                     material,
                     itemQuantity,
                     itemData,
+                    itemId,
                     blockNamespace,
                     blockName,
                     null,
