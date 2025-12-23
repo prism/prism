@@ -21,6 +21,7 @@
 package org.prism_mc.prism.paper.listeners.entity;
 
 import com.google.inject.Inject;
+import org.bukkit.ExplosionResult;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -60,6 +61,11 @@ public class EntityExplodeListener extends AbstractListener implements Listener 
             return;
         }
 
-        processExplosion(event.blockList(), event.getEntity().getType());
+        if (
+            event.getExplosionResult().equals(ExplosionResult.DESTROY) ||
+            event.getExplosionResult().equals(ExplosionResult.DESTROY_WITH_DECAY)
+        ) {
+            processExplosion(event.blockList(), event.getEntity().getType());
+        }
     }
 }
