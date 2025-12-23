@@ -60,6 +60,6 @@ public class BlockExplodeListener extends AbstractListener implements Listener {
             return;
         }
 
-        processExplosion(event.blockList(), "explosion");
+        processExplosion(event.blockList(), event.getExplodedBlockState());
     }
 }
