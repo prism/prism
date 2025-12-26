@@ -189,7 +189,7 @@ public class InventoryClickListener extends AbstractListener implements Listener
             }
             case PICKUP_HALF -> {
                 if (ItemUtils.isValidItem(slotItem)) {
-                    recordItemRemoveActivity(location, player, slotItem, slotItem.getAmount() / 2);
+                    recordItemRemoveActivity(location, player, slotItem, Integer.max(slotItem.getAmount() / 2, 1));
                 }
             }
             case PICKUP_ONE -> {
