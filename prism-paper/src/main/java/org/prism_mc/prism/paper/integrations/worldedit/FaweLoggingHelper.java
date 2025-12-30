@@ -20,10 +20,9 @@
 
 package org.prism_mc.prism.paper.integrations.worldedit;
 
-import com.fastasyncworldedit.core.extent.processor.BatchProcessorHolder;
+import com.fastasyncworldedit.core.extent.processor.IBatchProcessorHolder;
 import com.fastasyncworldedit.core.queue.implementation.ParallelQueueExtent;
 import com.sk89q.worldedit.extent.Extent;
-import java.lang.reflect.Field;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
@@ -73,24 +72,21 @@ public final class FaweLoggingHelper {
             return false;
         }
 
-        try {
-            // Access the private 'processor' field via reflection
-            Field processorField = ParallelQueueExtent.class.getDeclaredField("processor");
-            processorField.setAccessible(true);
-            BatchProcessorHolder processorHolder = (BatchProcessorHolder) processorField.get(parallelQueue);
-
-            // Create our processor and chain with existing
-            PrismBlockChangeProcessor prismProcessor = new PrismBlockChangeProcessor(
-                bukkitPlayer,
-                bukkitWorld,
-                recordingService,
-                configurationService
-            );
-            processorHolder.setProcessor(prismProcessor.join(processorHolder.getProcessor()));
-            return true;
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            loggingService.error("Failed to add FAWE processor via reflection: {0}", e.getMessage());
+        // Get the inner extent which holds the processor
+        Extent innerExtent = parallelQueue.getExtent();
+        if (!(innerExtent instanceof IBatchProcessorHolder processorHolder)) {
+            loggingService.error("Failed to add FAWE processor: inner extent is not IBatchProcessorHolder");
             return false;
         }
+
+        // Create our processor and chain with existing
+        PrismBlockChangeProcessor prismProcessor = new PrismBlockChangeProcessor(
+            bukkitPlayer,
+            bukkitWorld,
+            recordingService,
+            configurationService
+        );
+        processorHolder.setProcessor(prismProcessor.join(processorHolder.getProcessor()));
+        return true;
     }
 }

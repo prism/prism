@@ -94,8 +94,16 @@ public class PrismLoggingExtent extends AbstractDelegateExtent {
 
     @Override
     public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 position, T block) throws WorldEditException {
-        // Get the old block state from WorldEdit's extent (works async-safe)
+        // Get the old block state BEFORE making changes
         BlockState oldWEState = getBlock(position);
+
+        // Perform the actual block change first
+        boolean result = super.setBlock(position, block);
+
+        // Only log if the change actually happened
+        if (!result) {
+            return false;
+        }
 
         // Determine the cause for logging
         Object cause = bukkitPlayer != null ? bukkitPlayer : "WorldEdit";
@@ -112,7 +120,6 @@ public class PrismLoggingExtent extends AbstractDelegateExtent {
 
         // Log block removal (break) if old block is not air
         if (!oldBlockIsAir && logBreak) {
-            // Convert WorldEdit block state to Bukkit block data
             BlockData oldBlockData = BukkitAdapter.adapt(oldWEState);
             String oldTranslationKey = oldBlockData.getMaterial().getBlockTranslationKey();
 
@@ -127,12 +134,8 @@ public class PrismLoggingExtent extends AbstractDelegateExtent {
             recordingService.addToQueue(breakActivity);
         }
 
-        // Perform the actual block change
-        boolean result = super.setBlock(position, block);
-
         // Log block placement if new block is not air
         if (!newBlockIsAir && logPlace) {
-            // Convert WorldEdit block state to Bukkit block data
             BlockData newBlockData = BukkitAdapter.adapt(block);
             String newTranslationKey = newBlockData.getMaterial().getBlockTranslationKey();
 
@@ -155,6 +158,6 @@ public class PrismLoggingExtent extends AbstractDelegateExtent {
             recordingService.addToQueue(placeActivity);
         }
 
-        return result;
+        return true;
     }
 }
