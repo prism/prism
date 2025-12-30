@@ -221,14 +221,14 @@ public class ActionsConfiguration {
         worldedit-break is when a block is removed via WorldEdit.
         Requires WorldEdit to be installed."""
     )
-    private boolean worldeditBreak = true;
+    private boolean worldeditBreak = false;
 
     @Comment(
         """
         worldedit-place is when a block is placed via WorldEdit.
         Requires WorldEdit to be installed."""
     )
-    private boolean worldeditPlace = true;
+    private boolean worldeditPlace = false;
 
     @Comment("xp-pickup is when a player picks up XP orbs.")
     private boolean xpPickup = false;
