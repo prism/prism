@@ -92,7 +92,7 @@ public class PaperItemStackAction extends PaperMaterialAction implements ItemAct
         this.readWriteNbt.removeKey("count");
 
         if (quantity <= itemStack.getMaxStackSize()) {
-            itemStack.setAmount(quantity);
+            itemStack.setAmount(Integer.max(quantity, 1));
         }
     }
 
