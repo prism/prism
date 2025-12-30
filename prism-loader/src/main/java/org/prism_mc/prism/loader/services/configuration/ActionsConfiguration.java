@@ -216,6 +216,20 @@ public class ActionsConfiguration {
     @Comment("vehicle-ride is when an entity enters a boat or minecart.")
     private boolean vehicleRide = true;
 
+    @Comment(
+        """
+        worldedit-break is when a block is removed via WorldEdit.
+        Requires WorldEdit to be installed."""
+    )
+    private boolean worldeditBreak = true;
+
+    @Comment(
+        """
+        worldedit-place is when a block is placed via WorldEdit.
+        Requires WorldEdit to be installed."""
+    )
+    private boolean worldeditPlace = true;
+
     @Comment("xp-pickup is when a player picks up XP orbs.")
     private boolean xpPickup = false;
 }

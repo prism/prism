@@ -136,6 +136,16 @@ public class PaperActionTypeRegistry extends AbstractActionTypeRegistry {
         true
     );
     public static final ActionType VEHICLE_RIDE = new EntityActionType("vehicle-ride", ActionResultType.NONE, false);
+    public static final ActionType WORLDEDIT_BREAK = new BlockActionType(
+        "worldedit-break",
+        ActionResultType.REMOVES,
+        true
+    );
+    public static final ActionType WORLDEDIT_PLACE = new BlockActionType(
+        "worldedit-place",
+        ActionResultType.CREATES,
+        true
+    );
     public static final ActionType XP_PICKUP = new GenericActionType("xp-pickup", ActionResultType.NONE, false);
 
     /**
@@ -192,6 +202,8 @@ public class PaperActionTypeRegistry extends AbstractActionTypeRegistry {
         registerAction(VEHICLE_EXIT);
         registerAction(VEHICLE_PLACE);
         registerAction(VEHICLE_RIDE);
+        registerAction(WORLDEDIT_BREAK);
+        registerAction(WORLDEDIT_PLACE);
         registerAction(XP_PICKUP);
     }
 }
