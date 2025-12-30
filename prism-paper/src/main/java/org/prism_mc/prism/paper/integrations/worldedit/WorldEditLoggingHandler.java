@@ -101,8 +101,10 @@ public class WorldEditLoggingHandler {
         }
 
         // Check if either WorldEdit action is enabled
-        if (!configurationService.prismConfig().actions().worldeditBreak()
-            && !configurationService.prismConfig().actions().worldeditPlace()) {
+        if (
+            !configurationService.prismConfig().actions().worldeditBreak() &&
+            !configurationService.prismConfig().actions().worldeditPlace()
+        ) {
             return;
         }
 

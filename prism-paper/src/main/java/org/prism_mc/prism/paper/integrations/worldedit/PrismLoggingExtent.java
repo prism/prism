@@ -123,11 +123,7 @@ public class PrismLoggingExtent extends AbstractDelegateExtent {
                 null,
                 null
             );
-            var breakActivity = PaperActivity.builder()
-                .action(breakAction)
-                .location(location)
-                .cause(cause)
-                .build();
+            var breakActivity = PaperActivity.builder().action(breakAction).location(location).cause(cause).build();
             recordingService.addToQueue(breakActivity);
         }
 
@@ -155,11 +151,7 @@ public class PrismLoggingExtent extends AbstractDelegateExtent {
                 oldBlockData,
                 oldTranslationKey
             );
-            var placeActivity = PaperActivity.builder()
-                .action(placeAction)
-                .location(location)
-                .cause(cause)
-                .build();
+            var placeActivity = PaperActivity.builder().action(placeAction).location(location).cause(cause).build();
             recordingService.addToQueue(placeActivity);
         }
 
