@@ -67,7 +67,6 @@ public class FaweLoggingHelper {
         LoggingService loggingService
     ) {
         if (!(extent instanceof ParallelQueueExtent parallelQueue)) {
-
             return false;
         }
 
