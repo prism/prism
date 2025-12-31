@@ -167,11 +167,13 @@ public class PrismBlockChangeProcessor implements IBatchProcessor {
                         null,
                         null
                     );
+
                     var breakActivity = PaperActivity.builder()
                         .action(breakAction)
                         .location(location)
                         .cause(cause)
                         .build();
+
                     recordingService.addToQueue(breakActivity);
                 }
 
@@ -194,11 +196,13 @@ public class PrismBlockChangeProcessor implements IBatchProcessor {
                         oldBlockData,
                         oldTranslationKey
                     );
+
                     var placeActivity = PaperActivity.builder()
                         .action(placeAction)
                         .location(location)
                         .cause(cause)
                         .build();
+
                     recordingService.addToQueue(placeActivity);
                 }
             }

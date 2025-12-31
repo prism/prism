@@ -68,7 +68,7 @@ public class WorldEditIntegration {
         this.loggingHandler = new WorldEditLoggingHandler(recordingService, configurationService, loggingService);
         WorldEdit.getInstance().getEventBus().register(loggingHandler);
 
-        loggingService.info("Hooking into {0} (with block logging enabled)", worldEditPlugin.getName());
+        loggingService.info("Hooking into {0}", worldEditPlugin.getName());
     }
 
     /**

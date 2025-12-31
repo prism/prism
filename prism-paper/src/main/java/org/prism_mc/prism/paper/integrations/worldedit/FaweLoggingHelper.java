@@ -23,6 +23,7 @@ package org.prism_mc.prism.paper.integrations.worldedit;
 import com.fastasyncworldedit.core.extent.processor.IBatchProcessorHolder;
 import com.fastasyncworldedit.core.queue.implementation.ParallelQueueExtent;
 import com.sk89q.worldedit.extent.Extent;
+import lombok.experimental.UtilityClass;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
@@ -33,11 +34,8 @@ import org.prism_mc.prism.paper.services.recording.PaperRecordingService;
  * Helper class for FAWE-specific logging functionality.
  * This class is only loaded when FAWE is present to avoid ClassNotFoundException.
  */
-public final class FaweLoggingHelper {
-
-    private FaweLoggingHelper() {
-        // Utility class
-    }
+@UtilityClass
+public class FaweLoggingHelper {
 
     /**
      * Check if the extent is a FAWE ParallelQueueExtent.
@@ -69,6 +67,7 @@ public final class FaweLoggingHelper {
         LoggingService loggingService
     ) {
         if (!(extent instanceof ParallelQueueExtent parallelQueue)) {
+
             return false;
         }
 
@@ -76,6 +75,7 @@ public final class FaweLoggingHelper {
         Extent innerExtent = parallelQueue.getExtent();
         if (!(innerExtent instanceof IBatchProcessorHolder processorHolder)) {
             loggingService.error("Failed to add FAWE processor: inner extent is not IBatchProcessorHolder");
+
             return false;
         }
 
@@ -87,6 +87,7 @@ public final class FaweLoggingHelper {
             configurationService
         );
         processorHolder.setProcessor(prismProcessor.join(processorHolder.getProcessor()));
+
         return true;
     }
 }
