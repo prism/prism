@@ -118,8 +118,8 @@ public class PrismLoggingExtent extends AbstractDelegateExtent {
 
         Location location = new Location(bukkitWorld, position.x(), position.y(), position.z());
 
-        // Log block removal (break) if old block is not air
-        if (!oldBlockIsAir && logBreak) {
+        // Log block removal (break) only if replacing with air (actual removal)
+        if (!oldBlockIsAir && newBlockIsAir && logBreak) {
             BlockData oldBlockData = BukkitAdapter.adapt(oldWEState);
             String oldTranslationKey = oldBlockData.getMaterial().getBlockTranslationKey();
 

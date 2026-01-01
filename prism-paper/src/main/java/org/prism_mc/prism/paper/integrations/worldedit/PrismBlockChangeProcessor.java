@@ -155,8 +155,8 @@ public class PrismBlockChangeProcessor implements IBatchProcessor {
 
                 Location location = new Location(bukkitWorld, worldX, worldY, worldZ);
 
-                // Log block removal (break)
-                if (!oldIsAir && logBreak) {
+                // Log block removal (break) only if replacing with air (actual removal)
+                if (!oldIsAir && newIsAir && logBreak) {
                     BlockData oldBlockData = BukkitAdapter.adapt(oldState);
                     String oldTranslationKey = oldBlockData.getMaterial().getBlockTranslationKey();
 
