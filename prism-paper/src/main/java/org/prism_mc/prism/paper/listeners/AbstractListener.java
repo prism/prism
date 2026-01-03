@@ -373,6 +373,11 @@ public class AbstractListener {
             clonedStack.setAmount(amount);
         }
 
+        // Validate the cloned stack after setting amount (setting amount to 0 can make items air)
+        if (!ItemUtils.isValidItem(clonedStack)) {
+            return;
+        }
+
         var action = new PaperItemStackAction(actionType, clonedStack);
 
         var builder = PaperActivity.builder().action(action).location(location).cause(cause);
