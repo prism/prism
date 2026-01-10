@@ -32,8 +32,6 @@ dependencies {
     compileOnly project.property('deps.triumph-gui')
     compileOnly project.property('deps.world-edit-core')
     compileOnly project.property('deps.world-edit-bukkit')
-    compileOnly project.property('deps.fawe-core')
-    compileOnly project.property('deps.fawe-bukkit')
     compileOnly project(':prism-api')
     compileOnly project(':prism-loader')
 

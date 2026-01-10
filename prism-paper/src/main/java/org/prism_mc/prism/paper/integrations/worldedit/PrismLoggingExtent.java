@@ -43,9 +43,6 @@ import org.prism_mc.prism.paper.services.recording.PaperRecordingService;
  * <p>This extent intercepts all block changes made via WorldEdit operations
  * (//set, //cut, //paste, //replace, //undo, //redo, etc.) and logs them
  * as worldedit-break and worldedit-place activities.</p>
- *
- * <p>Note: This extent is only used for regular WorldEdit. For FastAsyncWorldEdit (FAWE),
- * see {@link PrismBlockChangeProcessor} which uses FAWE's batch processor API.</p>
  */
 public class PrismLoggingExtent extends AbstractDelegateExtent {
 

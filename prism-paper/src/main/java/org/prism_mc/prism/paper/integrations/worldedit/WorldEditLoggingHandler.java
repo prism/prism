@@ -27,7 +27,6 @@ import com.sk89q.worldedit.util.eventbus.Subscribe;
 import com.sk89q.worldedit.world.World;
 import org.bukkit.Bukkit;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
-import org.prism_mc.prism.loader.services.logging.LoggingService;
 import org.prism_mc.prism.paper.services.recording.PaperRecordingService;
 
 /**
@@ -47,49 +46,18 @@ public class WorldEditLoggingHandler {
     private final ConfigurationService configurationService;
 
     /**
-     * The logging service.
-     */
-    private final LoggingService loggingService;
-
-    /**
-     * Whether FAWE is available.
-     */
-    private final boolean faweAvailable;
-
-    /**
      * Construct the WorldEditLoggingHandler.
      *
      * @param recordingService The recording service
      * @param configurationService The configuration service
-     * @param loggingService The logging service
      */
-    public WorldEditLoggingHandler(
-        PaperRecordingService recordingService,
-        ConfigurationService configurationService,
-        LoggingService loggingService
-    ) {
+    public WorldEditLoggingHandler(PaperRecordingService recordingService, ConfigurationService configurationService) {
         this.recordingService = recordingService;
         this.configurationService = configurationService;
-        this.loggingService = loggingService;
-        this.faweAvailable = isFawePresent();
     }
 
     /**
-     * Check if FAWE classes are available.
-     *
-     * @return true if FAWE is present
-     */
-    private static boolean isFawePresent() {
-        try {
-            Class.forName("com.fastasyncworldedit.core.queue.implementation.ParallelQueueExtent");
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
-    }
-
-    /**
-     * Handle EditSessionEvent to add our processor for FAWE or wrap extent for WorldEdit.
+     * Handle EditSessionEvent.
      *
      * @param event The EditSessionEvent
      */
@@ -131,27 +99,8 @@ public class WorldEditLoggingHandler {
             bukkitPlayer = Bukkit.getPlayer(actor.getUniqueId());
         }
 
-        // Check if FAWE is available and being used
-        if (faweAvailable && FaweLoggingHelper.isParallelQueueExtent(event.getExtent())) {
-            FaweLoggingHelper.addProcessor(
-                event.getExtent(),
-                bukkitPlayer,
-                bukkitWorld,
-                recordingService,
-                configurationService,
-                loggingService
-            );
-        } else {
-            // Regular WorldEdit - use extent wrapper
-            event.setExtent(
-                new PrismLoggingExtent(
-                    event.getExtent(),
-                    bukkitPlayer,
-                    bukkitWorld,
-                    recordingService,
-                    configurationService
-                )
-            );
-        }
+        event.setExtent(
+            new PrismLoggingExtent(event.getExtent(), bukkitPlayer, bukkitWorld, recordingService, configurationService)
+        );
     }
 }

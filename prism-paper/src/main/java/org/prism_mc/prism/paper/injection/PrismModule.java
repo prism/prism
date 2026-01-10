@@ -174,11 +174,8 @@ public class PrismModule extends AbstractModule {
         PaperRecordingService recordingService,
         ConfigurationService configurationService
     ) {
-        // Check for WorldEdit or FastAsyncWorldEdit (FAWE)
+        // Check for WorldEdit
         Plugin worldEdit = Bukkit.getServer().getPluginManager().getPlugin("WorldEdit");
-        if (worldEdit == null) {
-            worldEdit = Bukkit.getServer().getPluginManager().getPlugin("FastAsyncWorldEdit");
-        }
         if (worldEdit != null) {
             return new WorldEditIntegration(loggingService, worldEdit, recordingService, configurationService);
         }
