@@ -280,12 +280,20 @@ public class MysqlStorageAdapter extends AbstractSqlStorageAdapter {
 
         int patchVersion = 0;
         var segments = databaseMetaData.getDatabaseProductVersion().split("\\.");
-        if (segments.length == 3) {
-            patchVersion = Integer.parseInt(segments[2].replaceAll("\\D", ""));
+        if (segments.length >= 3) {
+            var patchStr = segments[2].replaceAll("-.*", "");
+            patchStr = patchStr.replaceAll("\\D", "");
+            patchVersion = Integer.parseInt(patchStr);
         }
 
         if (majorVersion < 8 || (majorVersion == 8 && patchVersion < 20)) {
             loggingService.warn("Your database version appears to be older than prism supports.");
+            loggingService.info("Reported database product version: {0}", databaseMetaData.getDatabaseProductVersion());
+            loggingService.info(
+                "We think your database major version is {0} and patch version is {1}",
+                majorVersion,
+                patchVersion
+            );
         }
     }
 
