@@ -183,6 +183,9 @@ public class ActionsConfiguration {
     @Comment("item-use is when a player uses an item.")
     private boolean itemUse = true;
 
+    @Comment("player-chat is when a player tries to submit a chat message.")
+    private boolean playerChat = false;
+
     @Comment("player-command is when a player tries to use a command.")
     private boolean playerCommand = false;
 

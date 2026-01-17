@@ -104,6 +104,7 @@ import org.prism_mc.prism.paper.listeners.inventory.InventoryClickListener;
 import org.prism_mc.prism.paper.listeners.inventory.InventoryDragListener;
 import org.prism_mc.prism.paper.listeners.inventory.InventoryMoveItemListener;
 import org.prism_mc.prism.paper.listeners.leaves.LeavesDecayListener;
+import org.prism_mc.prism.paper.listeners.player.AsyncPlayerChatListener;
 import org.prism_mc.prism.paper.listeners.player.PlayerArmorStandManipulateListener;
 import org.prism_mc.prism.paper.listeners.player.PlayerBedEnterListener;
 import org.prism_mc.prism.paper.listeners.player.PlayerBucketEmptyListener;
@@ -262,6 +263,7 @@ public class PrismPaper implements Prism {
             }
 
             // Register event listeners
+            registerEvent(AsyncPlayerChatListener.class);
             registerEvent(BlockBreakListener.class);
             registerEvent(BlockBurnListener.class);
             registerEvent(BlockDispenseListener.class);

@@ -94,6 +94,7 @@ public class PaperActionTypeRegistry extends AbstractActionTypeRegistry {
     // This is a generic action type because a. it can be an item or entity and b. it can't be modified
     public static final ActionType ITEM_THROW = new GenericActionType("item-throw", ActionResultType.NONE, false);
     public static final ActionType ITEM_USE = new GenericActionType("item-use", ActionResultType.NONE, false);
+    public static final ActionType PLAYER_CHAT = new GenericActionType("player-chat", ActionResultType.NONE, false);
     public static final ActionType PLAYER_COMMAND = new GenericActionType(
         "player-command",
         ActionResultType.NONE,
@@ -191,6 +192,7 @@ public class PaperActionTypeRegistry extends AbstractActionTypeRegistry {
         registerAction(ITEM_ROTATE);
         registerAction(ITEM_THROW);
         registerAction(ITEM_USE);
+        registerAction(PLAYER_CHAT);
         registerAction(PLAYER_COMMAND);
         registerAction(PLAYER_DEATH);
         registerAction(PLAYER_JOIN);
