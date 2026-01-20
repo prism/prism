@@ -44,11 +44,6 @@ public class WorldEditIntegration {
     private final WorldEditPlugin worldEdit;
 
     /**
-     * The logging handler for WorldEdit operations.
-     */
-    private final WorldEditLoggingHandler loggingHandler;
-
-    /**
      * Constructor.
      *
      * @param loggingService The logging service
@@ -65,8 +60,9 @@ public class WorldEditIntegration {
         this.worldEdit = (WorldEditPlugin) worldEditPlugin;
 
         // Create and register the logging handler
-        this.loggingHandler = new WorldEditLoggingHandler(recordingService, configurationService);
-        WorldEdit.getInstance().getEventBus().register(loggingHandler);
+        WorldEdit.getInstance()
+            .getEventBus()
+            .register(new WorldEditLoggingHandler(recordingService, configurationService));
 
         loggingService.info("Hooking into {0}", worldEditPlugin.getName());
     }

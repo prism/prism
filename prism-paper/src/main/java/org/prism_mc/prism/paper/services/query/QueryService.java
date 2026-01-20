@@ -21,11 +21,11 @@
 package org.prism_mc.prism.paper.services.query;
 
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import dev.triumphteam.cmd.core.argument.keyed.Arguments;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -86,7 +86,7 @@ public class QueryService {
         PaperActionTypeRegistry actionRegistry,
         ConfigurationService configurationService,
         MessageService messageService,
-        @Nullable WorldEditIntegration worldEditIntegration
+        Provider<WorldEditIntegration> worldEditIntegration
     ) {
         this.messageService = messageService;
         this.idParameterParser = new IdParameterParser(messageService, configurationService.prismConfig().defaults());

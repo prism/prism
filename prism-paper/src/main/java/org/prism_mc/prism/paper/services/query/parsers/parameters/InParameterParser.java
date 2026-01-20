@@ -20,6 +20,7 @@
 
 package org.prism_mc.prism.paper.services.query.parsers.parameters;
 
+import com.google.inject.Provider;
 import dev.triumphteam.cmd.core.argument.keyed.Arguments;
 import org.bukkit.Chunk;
 import org.bukkit.command.CommandSender;
@@ -38,7 +39,7 @@ public class InParameterParser extends StringQueryArgumentParser {
     /**
      * The world edit integration.
      */
-    private final WorldEditIntegration worldEditIntegration;
+    private final Provider<WorldEditIntegration> worldEditIntegrationProvider;
 
     /**
      * Constructor.
@@ -49,10 +50,10 @@ public class InParameterParser extends StringQueryArgumentParser {
     public InParameterParser(
         MessageService messageService,
         DefaultsConfiguration defaultsConfiguration,
-        WorldEditIntegration worldEditIntegration
+        Provider<WorldEditIntegration> worldEditIntegration
     ) {
         super(messageService, defaultsConfiguration, "in");
-        this.worldEditIntegration = worldEditIntegration;
+        this.worldEditIntegrationProvider = worldEditIntegration;
     }
 
     @Override
@@ -72,6 +73,7 @@ public class InParameterParser extends StringQueryArgumentParser {
             }
 
             if (optionalParameter.get().equalsIgnoreCase("worldedit")) {
+                var worldEditIntegration = worldEditIntegrationProvider.get();
                 if (worldEditIntegration != null) {
                     var regionBounds = worldEditIntegration.getRegionBounds((Player) sender);
 

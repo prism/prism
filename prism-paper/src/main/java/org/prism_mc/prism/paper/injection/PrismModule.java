@@ -21,7 +21,6 @@
 package org.prism_mc.prism.paper.injection;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
@@ -29,6 +28,7 @@ import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import io.leangen.geantyref.TypeToken;
 import java.nio.file.Path;
+import javax.annotation.Nullable;
 import net.kyori.moonshine.Moonshine;
 import net.kyori.moonshine.exception.scan.UnscannableMethodException;
 import net.kyori.moonshine.strategy.StandardPlaceholderResolverStrategy;
@@ -169,14 +169,14 @@ public class PrismModule extends AbstractModule {
      */
     @Provides
     @Singleton
-    @Inject
+    @Nullable
     public WorldEditIntegration getWorldEditIntegeration(
         PaperRecordingService recordingService,
         ConfigurationService configurationService
     ) {
         // Check for WorldEdit
         Plugin worldEdit = Bukkit.getServer().getPluginManager().getPlugin("WorldEdit");
-        if (worldEdit != null) {
+        if (worldEdit != null && worldEdit.isEnabled()) {
             return new WorldEditIntegration(loggingService, worldEdit, recordingService, configurationService);
         }
 
@@ -195,7 +195,6 @@ public class PrismModule extends AbstractModule {
      */
     @Provides
     @Singleton
-    @Inject
     public MessageService getMessageService(
         PaperTranslationService translationService,
         MessageRenderer messageRenderer,
