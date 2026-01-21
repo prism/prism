@@ -27,6 +27,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.prism_mc.prism.api.actions.metadata.Metadata;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.paper.actions.GenericPaperAction;
 import org.prism_mc.prism.paper.actions.types.PaperActionTypeRegistry;
@@ -68,8 +69,10 @@ public class AsyncPlayerChatListener extends AbstractListener implements Listene
         }
 
         final String chatMessage = PlainTextComponentSerializer.plainText().serialize(event.message());
+        final String originalChatMessage = PlainTextComponentSerializer.plainText().serialize(event.originalMessage());
 
-        final var action = new GenericPaperAction(PaperActionTypeRegistry.PLAYER_CHAT, chatMessage);
+        final var messageMetadata = Metadata.builder().originalMessage(originalChatMessage).build();
+        final var action = new GenericPaperAction(PaperActionTypeRegistry.PLAYER_CHAT, chatMessage, messageMetadata);
         final var activity = PaperActivity.builder()
             .action(action)
             .location(player.getLocation())

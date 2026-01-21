@@ -39,6 +39,7 @@ public class Metadata {
         SIGN_LINE_3,
         SIGN_LINE_4,
         USING,
+        ORIGINAL_MESSAGE,
     }
 
     @Getter
@@ -53,7 +54,7 @@ public class Metadata {
          * @param lines The lines
          * @return The builder
          */
-        public MetadataBuilder signText(String[] lines) {
+        public MetadataBuilder signText(final String[] lines) {
             if (lines.length > 0) {
                 entry(MetadataKey.SIGN_LINE_1.toString().toLowerCase(Locale.ENGLISH), lines[0]);
             }
@@ -76,8 +77,19 @@ public class Metadata {
          * @param value Using
          * @return The builder
          */
-        public MetadataBuilder using(String value) {
+        public MetadataBuilder using(final String value) {
             entry(MetadataKey.USING.toString().toLowerCase(Locale.ENGLISH), value);
+            return this;
+        }
+
+        /**
+         * Set the original message metadata.
+         *
+         * @param value The original message
+         * @return The builder
+         */
+        public MetadataBuilder originalMessage(final String value) {
+            entry(MetadataKey.ORIGINAL_MESSAGE.toString().toLowerCase(Locale.ENGLISH), value);
             return this;
         }
     }
