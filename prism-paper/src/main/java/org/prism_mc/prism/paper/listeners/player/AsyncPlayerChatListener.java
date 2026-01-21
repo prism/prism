@@ -58,7 +58,7 @@ public class AsyncPlayerChatListener extends AbstractListener implements Listene
      *
      * @param event The event
      */
-    @EventHandler(priority = EventPriority.NORMAL)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onAsyncChat(final AsyncChatEvent event) {
         final Player player = event.getPlayer();
 
