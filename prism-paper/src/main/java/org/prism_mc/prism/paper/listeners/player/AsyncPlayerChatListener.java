@@ -71,8 +71,14 @@ public class AsyncPlayerChatListener extends AbstractListener implements Listene
         final String chatMessage = PlainTextComponentSerializer.plainText().serialize(event.message());
         final String originalChatMessage = PlainTextComponentSerializer.plainText().serialize(event.originalMessage());
 
-        final var messageMetadata = Metadata.builder().originalMessage(originalChatMessage).build();
-        final var action = new GenericPaperAction(PaperActionTypeRegistry.PLAYER_CHAT, chatMessage, messageMetadata);
+        final GenericPaperAction action;
+        if (chatMessage.equals(originalChatMessage)) {
+            action = new GenericPaperAction(PaperActionTypeRegistry.PLAYER_CHAT, chatMessage);
+        } else {
+            final var messageMetadata = Metadata.builder().originalMessage(originalChatMessage).build();
+            action = new GenericPaperAction(PaperActionTypeRegistry.PLAYER_CHAT, chatMessage, messageMetadata);
+        }
+
         final var activity = PaperActivity.builder()
             .action(action)
             .location(player.getLocation())
