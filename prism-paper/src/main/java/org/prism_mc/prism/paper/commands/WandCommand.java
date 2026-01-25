@@ -78,8 +78,8 @@ public class WandCommand {
 
         if (
             (wandMode == WandMode.INSPECT && !canInspect) ||
-                (wandMode == WandMode.ROLLBACK && !canModify) ||
-                (wandMode == WandMode.RESTORE && !canModify)
+            (wandMode == WandMode.ROLLBACK && !canModify) ||
+            (wandMode == WandMode.RESTORE && !canModify)
         ) {
             messageService.errorInsufficientPermission(player);
 
