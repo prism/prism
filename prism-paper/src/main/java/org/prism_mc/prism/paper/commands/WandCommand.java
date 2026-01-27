@@ -73,7 +73,6 @@ public class WandCommand {
         wandMode = wandMode == null ? WandMode.INSPECT : wandMode;
 
         boolean canInspect = player.hasPermission("prism.inspect") || player.hasPermission("prism.lookup");
-
         boolean canModify = player.hasPermission("prism.modify");
 
         if (
