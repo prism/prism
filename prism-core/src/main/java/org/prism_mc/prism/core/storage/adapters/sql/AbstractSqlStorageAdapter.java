@@ -618,7 +618,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
         if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_REPLACED_BLOCK_ID.getName())) {
             dslContext
                 .createIndex(Indexes.PRISM_ACTIVITIES_REPLACED_BLOCK_ID)
-                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.AFFECTED_BLOCK_ID)
+                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.REPLACED_BLOCK_ID)
                 .execute();
         }
 
