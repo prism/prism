@@ -432,7 +432,10 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             updateSchemas(schemaVersion);
         } else {
             // Insert the schema version
-            dslContext.insertInto(PRISM_META, PRISM_META.K, PRISM_META.V).values("schema_ver", "400").execute();
+            dslContext
+                .insertInto(PRISM_META, PRISM_META.K, PRISM_META.V)
+                .values("schema_ver", SqlSchemaUpdater.CURRENT_SCHEMA_VERSION)
+                .execute();
         }
 
         // Create the players table
@@ -612,7 +615,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
         if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_REPLACED_BLOCK_ID.getName())) {
             dslContext
                 .createIndex(Indexes.PRISM_ACTIVITIES_REPLACED_BLOCK_ID)
-                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.AFFECTED_BLOCK_ID)
+                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.REPLACED_BLOCK_ID)
                 .execute();
         }
 
@@ -745,7 +748,9 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
      *
      * @throws SQLException The database exception
      */
-    protected void updateSchemas(String schemaVersion) throws Exception {}
+    protected void updateSchemas(String schemaVersion) throws Exception {
+        schemaUpdater.update(dslContext, schemaVersion);
+    }
 
     @Override
     public List<Activity> queryActivities(ActivityQuery query) throws Exception {
