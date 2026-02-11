@@ -190,8 +190,8 @@ public class MysqlStorageAdapter extends AbstractSqlStorageAdapter {
                     stmt.execute(drop);
                 } catch (SQLException e) {
                     loggingService.warn(
-                            "Stored procedures are enabled but could not be activated (test failed), force disabling and falling back to standard SQL. Error: {0}",
-                            e.getMessage()
+                        "Stored procedures are enabled but could not be activated (test failed), force disabling and falling back to standard SQL. Error: {0}",
+                        e.getMessage()
                     );
                     canUseRoutines = false;
                 }
@@ -293,10 +293,10 @@ public class MysqlStorageAdapter extends AbstractSqlStorageAdapter {
             loggingService.warn("Your database version appears to be older than prism supports.");
             loggingService.info("Reported database product version: {0}", databaseMetaData.getDatabaseProductVersion());
             loggingService.info(
-                    "We think your database version is {0}.{1}.{2}",
-                    majorVersion,
-                    minorVersion,
-                    patchVersion
+                "We think your database version is {0}.{1}.{2}",
+                majorVersion,
+                minorVersion,
+                patchVersion
             );
         }
     }

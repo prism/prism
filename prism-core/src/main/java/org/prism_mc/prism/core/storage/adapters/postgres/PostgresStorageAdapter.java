@@ -131,7 +131,10 @@ public class PostgresStorageAdapter extends AbstractSqlStorageAdapter {
                 loggingService.info("supports procedures: {0}", supportsProcedures);
 
                 var canUseFunctions = dslContext
-                    .fetchSingle("SELECT has_schema_privilege(?, 'CREATE')", configurationService.storageConfig().postgres().schema())
+                    .fetchSingle(
+                        "SELECT has_schema_privilege(?, 'CREATE')",
+                        configurationService.storageConfig().postgres().schema()
+                    )
                     .into(Boolean.class);
                 loggingService.info("can use functions: {0}", canUseFunctions);
 
