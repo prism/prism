@@ -130,14 +130,14 @@ public class PostgresStorageAdapter extends AbstractSqlStorageAdapter {
                 boolean supportsProcedures = databaseMetaData.supportsStoredProcedures();
                 loggingService.info("supports procedures: {0}", supportsProcedures);
 
-                var canCreateFunctions = dslContext
-                    .fetchSingle("SELECT bool_or(has_schema_privilege(oid, 'CREATE')) FROM pg_catalog.pg_namespace;")
+                var canUseFunctions = dslContext
+                    .fetchSingle("SELECT has_schema_privilege(?, 'CREATE')", configurationService.storageConfig().postgres().schema())
                     .into(Boolean.class);
-                loggingService.info("can create functions: {0}", canCreateFunctions);
+                loggingService.info("can use functions: {0}", canUseFunctions);
 
                 usingStoredProcedures =
                     supportsProcedures &&
-                    canCreateFunctions &&
+                    canUseFunctions &&
                     configurationService.storageConfig().postgres().useStoredProcedures();
 
                 if (!usingStoredProcedures) {
