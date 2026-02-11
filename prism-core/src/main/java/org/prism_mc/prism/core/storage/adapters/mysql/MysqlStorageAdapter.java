@@ -279,8 +279,9 @@ public class MysqlStorageAdapter extends AbstractSqlStorageAdapter {
      */
     protected void versionCheck(DatabaseMetaData databaseMetaData) throws SQLException {
         int majorVersion = databaseMetaData.getDatabaseMajorVersion();
-
+        int minorVersion = databaseMetaData.getDatabaseMinorVersion();
         int patchVersion = 0;
+
         var segments = databaseMetaData.getDatabaseProductVersion().split("\\.");
         if (segments.length >= 3) {
             var patchStr = segments[2].replaceAll("-.*", "");
@@ -288,13 +289,14 @@ public class MysqlStorageAdapter extends AbstractSqlStorageAdapter {
             patchVersion = Integer.parseInt(patchStr);
         }
 
-        if (majorVersion < 8 || (majorVersion == 8 && patchVersion < 20)) {
+        if (majorVersion < 8 || (majorVersion == 8 && minorVersion == 0 && patchVersion < 20)) {
             loggingService.warn("Your database version appears to be older than prism supports.");
             loggingService.info("Reported database product version: {0}", databaseMetaData.getDatabaseProductVersion());
             loggingService.info(
-                "We think your database major version is {0} and patch version is {1}",
-                majorVersion,
-                patchVersion
+                    "We think your database version is {0}.{1}.{2}",
+                    majorVersion,
+                    minorVersion,
+                    patchVersion
             );
         }
     }

@@ -82,8 +82,14 @@ public class MariaDbStorageAdapter extends MysqlStorageAdapter {
         int majorVersion = databaseMetaData.getDatabaseMajorVersion();
         int minorVersion = databaseMetaData.getDatabaseMinorVersion();
 
-        if (majorVersion < 10 || (majorVersion == 10 && minorVersion < 2)) {
+        if (majorVersion < 10 || (majorVersion == 10 && minorVersion < 7)) {
             loggingService.warn("Your database version appears to be older than prism supports.");
+            loggingService.info("Reported database product version: {0}", databaseMetaData.getDatabaseProductVersion());
+            loggingService.info(
+                    "We think your database version is {0}.{1}",
+                    majorVersion,
+                    minorVersion
+            );
         }
     }
 }
