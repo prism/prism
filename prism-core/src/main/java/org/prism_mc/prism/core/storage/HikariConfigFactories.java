@@ -87,6 +87,9 @@ public class HikariConfigFactories {
         hikariConfig.setJdbcUrl(
             "jdbc:" + (useSpy ? "p6spy:" : "") + String.format("mariadb://%s:%s/%s", host, port, database)
         );
+
+        if (storageConfiguration.mariadb().useHikariOptimizations()) applyHikariOptimizations(hikariConfig);
+
         hikariConfig.setTransactionIsolation("TRANSACTION_READ_COMMITTED");
 
         return hikariConfig;
@@ -110,18 +113,7 @@ public class HikariConfigFactories {
             "jdbc:" + (useSpy ? "p6spy:" : "") + String.format("mysql://%s:%s/%s", host, port, database)
         );
 
-        if (storageConfiguration.mysql().useHikariOptimizations()) {
-            hikariConfig.addDataSourceProperty("cachePrepStmts", true);
-            hikariConfig.addDataSourceProperty("prepStmtCacheSize", 250);
-            hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", 2048);
-            hikariConfig.addDataSourceProperty("useServerPrepStmts", true);
-            hikariConfig.addDataSourceProperty("cacheCallableStmts", true);
-            hikariConfig.addDataSourceProperty("cacheResultSetMetadata", true);
-            hikariConfig.addDataSourceProperty("cacheServerConfiguration", true);
-            hikariConfig.addDataSourceProperty("useLocalSessionState", true);
-            hikariConfig.addDataSourceProperty("elideSetAutoCommits", true);
-            hikariConfig.addDataSourceProperty("alwaysSendSetIsolation", false);
-        }
+        if (storageConfiguration.mysql().useHikariOptimizations()) applyHikariOptimizations(hikariConfig);
 
         hikariConfig.setTransactionIsolation("TRANSACTION_READ_COMMITTED");
 
@@ -214,5 +206,25 @@ public class HikariConfigFactories {
                 // ignore
             }
         }
+    }
+
+    /**
+     * Applies HikariOptimizations to hikari config.
+     *
+     * @param hikariConfig The hikari config to optimize
+     */
+    private static void applyHikariOptimizations(HikariConfig hikariConfig) {
+        hikariConfig.addDataSourceProperty("cachePrepStmts", true);
+        hikariConfig.addDataSourceProperty("prepStmtCacheSize", 250);
+        hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", 2048);
+        hikariConfig.addDataSourceProperty("useServerPrepStmts", true);
+        hikariConfig.addDataSourceProperty("cacheCallableStmts", true);
+        hikariConfig.addDataSourceProperty("cacheResultSetMetadata", true);
+        hikariConfig.addDataSourceProperty("cacheServerConfiguration", true);
+        hikariConfig.addDataSourceProperty("useLocalSessionState", true);
+        hikariConfig.addDataSourceProperty("rewriteBatchedStatements", true);
+        hikariConfig.addDataSourceProperty("elideSetAutoCommits", true);
+        hikariConfig.addDataSourceProperty("alwaysSendSetIsolation", false);
+        hikariConfig.addDataSourceProperty("maintainTimeStats", false);
     }
 }
