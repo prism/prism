@@ -19,3 +19,4 @@ buildSrc/.gradle
 # custom
 /run/
 node_modules
+.claude
