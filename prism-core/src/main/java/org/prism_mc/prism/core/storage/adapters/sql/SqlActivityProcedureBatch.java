@@ -270,10 +270,12 @@ public class SqlActivityProcedureBatch implements ActivityBatch {
     public void commitBatch() throws SQLException {
         try {
             statement.executeBatch();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         } finally {
-            statement.close();
+            try {
+                statement.close();
+            } catch (SQLException e) {
+                loggingService.handleException(e);
+            }
             connection.close();
         }
     }
