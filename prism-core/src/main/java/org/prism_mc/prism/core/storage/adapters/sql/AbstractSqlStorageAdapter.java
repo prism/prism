@@ -433,7 +433,10 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             updateSchemas(schemaVersion);
         } else {
             // Insert the schema version
-            dslContext.insertInto(PRISM_META, PRISM_META.K, PRISM_META.V).values("schema_ver", "400").execute();
+            dslContext
+                .insertInto(PRISM_META, PRISM_META.K, PRISM_META.V)
+                .values("schema_ver", SqlSchemaUpdater.CURRENT_SCHEMA_VERSION)
+                .execute();
         }
 
         // Create the players table
@@ -726,7 +729,9 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
      *
      * @throws SQLException The database exception
      */
-    protected void updateSchemas(String schemaVersion) throws Exception {}
+    protected void updateSchemas(String schemaVersion) throws Exception {
+        schemaUpdater.update(dslContext, schemaVersion);
+    }
 
     @Override
     public List<Activity> queryActivities(ActivityQuery query) throws Exception {
