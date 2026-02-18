@@ -21,7 +21,6 @@ dependencies {
     compileOnly project.property('deps.jar-relocator')
     compileOnly project.property('deps.jooq')
     compileOnly project.property('deps.log4j-api')
-    compileOnly project.property('deps.log4j-core')
     compileOnly project.property('deps.moonshine-core')
     compileOnly project.property('deps.moonshine-standard')
     compileOnly project.property('deps.nbt-api')
