@@ -51,7 +51,12 @@ public class BlockParameterParser extends StringSetQueryArgumentParser {
         var values = parseMultipleParameters(arguments, builder);
 
         if (!values.isEmpty()) {
-            builder.affectedBlocks(values.stream().map(block -> block.toLowerCase(Locale.ENGLISH)).toList());
+            builder.affectedBlocks(
+                values
+                    .stream()
+                    .map(block -> block.toLowerCase(Locale.ENGLISH))
+                    .toList()
+            );
         }
 
         return true;

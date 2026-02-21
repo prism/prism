@@ -49,7 +49,8 @@ public abstract class BooleanQueryArgumentParser extends QueryArgumentSingleValu
         Arguments arguments,
         PaperActivityQuery.PaperActivityQueryBuilder<?, ?> builder
     ) {
-        return parseSingleParameter(arguments, builder, (defaultValue, paramName) -> Boolean.parseBoolean(defaultValue)
+        return parseSingleParameter(arguments, builder, (defaultValue, paramName) ->
+            Boolean.parseBoolean(defaultValue)
         );
     }
 }

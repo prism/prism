@@ -188,14 +188,17 @@ public class VaultCommand {
                         messageService.defaultsUsed(player, String.join(" ", query.defaultsUsed()));
                     }
 
-                    var title = MiniMessage.miniMessage()
-                        .deserialize(translationService.messageOf(player, "prism.vault-gui-title"));
+                    var title = MiniMessage.miniMessage().deserialize(
+                        translationService.messageOf(player, "prism.vault-gui-title")
+                    );
 
-                    var next = MiniMessage.miniMessage()
-                        .deserialize(translationService.messageOf(player, "prism.vault-gui-next"));
+                    var next = MiniMessage.miniMessage().deserialize(
+                        translationService.messageOf(player, "prism.vault-gui-next")
+                    );
 
-                    var prev = MiniMessage.miniMessage()
-                        .deserialize(translationService.messageOf(player, "prism.vault-gui-previous"));
+                    var prev = MiniMessage.miniMessage().deserialize(
+                        translationService.messageOf(player, "prism.vault-gui-previous")
+                    );
 
                     Bukkit.getServer()
                         .getScheduler()

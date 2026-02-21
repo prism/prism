@@ -57,7 +57,8 @@ public class PrismActivitiesRecord
             UShort,
             String,
             Boolean
-        > {
+        >
+{
 
     private static final long serialVersionUID = 1L;
 

@@ -114,8 +114,10 @@ public class PaperActivity extends Activity {
         return new Location(world, coordinate.x(), coordinate.y(), coordinate.z());
     }
 
-    public abstract static class PaperActivityBuilder<C extends PaperActivity, B extends PaperActivityBuilder<C, B>>
-        extends ActivityBuilder<C, B> {
+    public abstract static class PaperActivityBuilder<
+        C extends PaperActivity,
+        B extends PaperActivityBuilder<C, B>
+    > extends ActivityBuilder<C, B> {
 
         /**
          * Set the cause.

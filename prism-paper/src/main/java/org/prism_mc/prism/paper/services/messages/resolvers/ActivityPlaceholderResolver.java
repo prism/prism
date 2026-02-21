@@ -165,17 +165,21 @@ public class ActivityPlaceholderResolver implements IPlaceholderResolver<Command
         } else if (cause.container() instanceof PlayerContainer playerContainer) {
             OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerContainer.uuid());
 
-            Component playerHeading = MiniMessage.miniMessage()
-                .deserialize(translationService.messageOf(receiver, "prism.player-hover-header"));
+            Component playerHeading = MiniMessage.miniMessage().deserialize(
+                translationService.messageOf(receiver, "prism.player-hover-header")
+            );
 
-            Component uuid = MiniMessage.miniMessage()
-                .deserialize(translationService.messageOf(receiver, "prism.player-hover-uuid"));
+            Component uuid = MiniMessage.miniMessage().deserialize(
+                translationService.messageOf(receiver, "prism.player-hover-uuid")
+            );
 
-            Component online = MiniMessage.miniMessage()
-                .deserialize(translationService.messageOf(receiver, "prism.player-hover-online"));
+            Component online = MiniMessage.miniMessage().deserialize(
+                translationService.messageOf(receiver, "prism.player-hover-online")
+            );
 
-            Component banned = MiniMessage.miniMessage()
-                .deserialize(translationService.messageOf(receiver, "prism.player-hover-banned"));
+            Component banned = MiniMessage.miniMessage().deserialize(
+                translationService.messageOf(receiver, "prism.player-hover-banned")
+            );
 
             String yes = translationService.messageOf(receiver, "prism.player-hover-yes");
             String no = translationService.messageOf(receiver, "prism.player-hover-no");

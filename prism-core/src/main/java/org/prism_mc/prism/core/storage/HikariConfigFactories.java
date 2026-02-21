@@ -41,11 +41,11 @@ public class HikariConfigFactories {
 
         hikariConfig.setJdbcUrl(
             "jdbc:" +
-            (storageConfiguration.spy() ? "p6spy:" : "") +
-            "h2:file:" +
-            h2File.getAbsolutePath() +
-            ";MODE=mysql;" +
-            "DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;"
+                (storageConfiguration.spy() ? "p6spy:" : "") +
+                "h2:file:" +
+                h2File.getAbsolutePath() +
+                ";MODE=mysql;" +
+                "DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;"
         );
 
         return hikariConfig;
@@ -137,8 +137,8 @@ public class HikariConfigFactories {
 
         hikariConfig.setJdbcUrl(
             "jdbc:" +
-            (useSpy ? "p6spy:" : "") +
-            String.format("postgresql://%s:%s/%s?currentSchema=%s", host, port, database, schema)
+                (useSpy ? "p6spy:" : "") +
+                String.format("postgresql://%s:%s/%s?currentSchema=%s", host, port, database, schema)
         );
 
         return hikariConfig;

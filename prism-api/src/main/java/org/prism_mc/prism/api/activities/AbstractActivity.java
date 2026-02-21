@@ -95,6 +95,7 @@ public abstract class AbstractActivity {
     }
 
     public abstract static class AbstractActivityBuilder<
-        C extends AbstractActivity, B extends AbstractActivityBuilder<C, B>
+        C extends AbstractActivity,
+        B extends AbstractActivityBuilder<C, B>
     > {}
 }

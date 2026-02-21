@@ -39,7 +39,8 @@ import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
 import org.prism_mc.prism.paper.services.translation.PaperTranslationService;
 
 public class ModificationQueueResultPlaceholderResolver
-    implements IPlaceholderResolver<CommandSender, ModificationQueueResult, Component> {
+    implements IPlaceholderResolver<CommandSender, ModificationQueueResult, Component>
+{
 
     /**
      * The translation service.

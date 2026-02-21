@@ -43,8 +43,9 @@ public class SortedProperties extends Properties {
 
     @Override
     public Set<Map.Entry<Object, Object>> entrySet() {
-        final Stream<SimpleEntry<Object, Object>> stream = sortedKeys()
-            .map(k -> new AbstractMap.SimpleEntry<>(k, getProperty(k)));
+        final Stream<SimpleEntry<Object, Object>> stream = sortedKeys().map(k ->
+            new AbstractMap.SimpleEntry<>(k, getProperty(k))
+        );
         return stream.collect(Collectors.toCollection(LinkedHashSet::new));
     }
 

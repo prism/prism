@@ -37,7 +37,8 @@ import org.prism_mc.prism.api.services.modifications.ModificationResult;
 import org.prism_mc.prism.api.services.modifications.ModificationResultStatus;
 
 public class ModificationResultPlaceholderResolver
-    implements IPlaceholderResolver<CommandSender, ModificationResult, Component> {
+    implements IPlaceholderResolver<CommandSender, ModificationResult, Component>
+{
 
     @Override
     public @NonNull Map<String, Either<ConclusionValue<? extends Component>, ContinuanceValue<?>>> resolve(
