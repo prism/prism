@@ -29,6 +29,7 @@ import dev.triumphteam.cmd.core.argument.keyed.Flag;
 import dev.triumphteam.cmd.core.argument.keyed.FlagKey;
 import dev.triumphteam.cmd.core.extension.CommandOptions;
 import dev.triumphteam.cmd.core.suggestion.SuggestionKey;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -620,14 +621,42 @@ public class PrismPaper implements PrismPaperApi {
     public void onDisable() {
         Bukkit.getServicesManager().unregisterAll(loaderPlugin());
 
-        if (recordingService != null) {
+        if (recordingService instanceof PaperRecordingService paperRecordingService) {
             if (!recordingService.queue().isEmpty()) {
-                loader()
-                    .loggingService()
-                    .warn(
-                        "Server is shutting down yet there are {0} activities in the queue",
-                        recordingService.queue().size()
-                    );
+                int drainTimeout = bootstrap
+                    .loader()
+                    .configurationService()
+                    .prismConfig()
+                    .recording()
+                    .drainTimeoutSeconds();
+
+                if (drainTimeout > 0) {
+                    loader()
+                        .loggingService()
+                        .info(
+                            "Draining {0} queued activities (timeout: {1}s)...",
+                            recordingService.queue().size(),
+                            drainTimeout
+                        );
+
+                    paperRecordingService.drainSync(Duration.ofSeconds(drainTimeout));
+
+                    int remaining = recordingService.queue().size();
+                    if (remaining == 0) {
+                        loader().loggingService().info("Queue fully drained.");
+                    } else {
+                        loader()
+                            .loggingService()
+                            .warn("Queue drain finished with {0} activities remaining.", remaining);
+                    }
+                } else {
+                    loader()
+                        .loggingService()
+                        .warn(
+                            "Server is shutting down with {0} activities still queued",
+                            recordingService.queue().size()
+                        );
+                }
             }
 
             recordingService.stop();

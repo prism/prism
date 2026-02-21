@@ -22,6 +22,7 @@ package org.prism_mc.prism.paper.services.recording;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Duration;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.bukkit.Bukkit;
@@ -183,16 +184,34 @@ public class PaperRecordingService implements RecordingService {
     }
 
     /**
-     * Drains the queue sync.
+     * Drains the queue synchronously with a timeout.
+     *
+     * <p>Attempts to flush all pending activities to the database before
+     * shutdown. Stops early if the timeout is exceeded or a batch fails,
+     * to avoid blocking server shutdown indefinitely.</p>
+     *
+     * @param timeout Maximum time to spend draining
      */
-    public void drainSync() {
+    public void drainSync(Duration timeout) {
         recordMode = RecordMode.DRAIN_SYNC;
+        long deadline = System.nanoTime() + timeout.toNanos();
 
         aggregator.flushAll(queue);
 
         RecordingTask drainTask = this.recordingTask.toNew();
         while (!queue.isEmpty()) {
-            drainTask.save();
+            if (System.nanoTime() > deadline) {
+                loggingService.warn("Drain timeout reached, {0} activities remain", queue.size());
+                break;
+            }
+
+            try {
+                drainTask.saveOrThrow();
+            } catch (Exception e) {
+                loggingService.handleException(e);
+                loggingService.warn("Drain aborted due to error, {0} activities remain", queue.size());
+                break;
+            }
         }
     }
 

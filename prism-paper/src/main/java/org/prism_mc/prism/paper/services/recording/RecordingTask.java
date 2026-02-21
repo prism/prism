@@ -92,26 +92,10 @@ public class RecordingTask implements Runnable {
         // Reset the drop counter so we only track drops during this cycle
         recordingService.resetDroppedCount();
 
-        if (!recordingService.queue().isEmpty()) {
-            try {
-                int batchMax = storageConfig.primaryDataSource().batchMax();
-
-                List<Activity> drained = new ArrayList<>(batchMax);
-                recordingService.queue().drainTo(drained, batchMax);
-
-                if (!drained.isEmpty()) {
-                    ActivityBatch batch = storageAdapter.createActivityBatch();
-                    batch.startBatch();
-
-                    for (Activity activity : drained) {
-                        batch.add(activity);
-                    }
-
-                    batch.commitBatch();
-                }
-            } catch (Exception e) {
-                loggingService.handleException(e);
-            }
+        try {
+            saveOrThrow();
+        } catch (Exception e) {
+            loggingService.handleException(e);
         }
 
         int dropped = recordingService.resetDroppedCount();
@@ -120,6 +104,31 @@ public class RecordingTask implements Runnable {
         }
 
         recordingService.clearTask();
+    }
+
+    /**
+     * Saves anything in the queue, or as many as we can.
+     *
+     * @throws Exception If the batch commit fails
+     */
+    public void saveOrThrow() throws Exception {
+        if (!recordingService.queue().isEmpty()) {
+            int batchMax = storageConfig.primaryDataSource().batchMax();
+
+            List<Activity> drained = new ArrayList<>(batchMax);
+            recordingService.queue().drainTo(drained, batchMax);
+
+            if (!drained.isEmpty()) {
+                ActivityBatch batch = storageAdapter.createActivityBatch();
+                batch.startBatch();
+
+                for (Activity activity : drained) {
+                    batch.add(activity);
+                }
+
+                batch.commitBatch();
+            }
+        }
     }
 
     /**
