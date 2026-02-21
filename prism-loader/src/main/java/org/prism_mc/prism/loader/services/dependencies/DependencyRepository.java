@@ -150,11 +150,11 @@ public enum DependencyRepository {
         if (!dependency.checksumMatches(hash)) {
             throw new DependencyDownloadException(
                 "Downloaded file had an invalid hash. " +
-                "Expected: " +
-                Base64.getEncoder().encodeToString(dependency.checksum()) +
-                " " +
-                "Actual: " +
-                Base64.getEncoder().encodeToString(hash)
+                    "Expected: " +
+                    Base64.getEncoder().encodeToString(dependency.checksum()) +
+                    " " +
+                    "Actual: " +
+                    Base64.getEncoder().encodeToString(hash)
             );
         }
 

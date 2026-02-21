@@ -39,10 +39,9 @@ public class PrismCommandJob implements Job {
         String command = dataMap.getString("command");
         if (command != null) {
             // Jobs via the scheduler are async, but commands must execute on the game thread
-            Bukkit.getScheduler()
-                .runTask(PrismPaper.instance().loaderPlugin(), () -> {
-                    Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), command);
-                });
+            Bukkit.getScheduler().runTask(PrismPaper.instance().loaderPlugin(), () -> {
+                Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), command);
+            });
         }
     }
 }

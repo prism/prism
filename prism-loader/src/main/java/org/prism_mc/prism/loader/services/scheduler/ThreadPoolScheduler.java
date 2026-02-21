@@ -114,18 +114,18 @@ public class ThreadPoolScheduler {
     }
 
     private void reportRunningTasks(Predicate<Thread> predicate) {
-        Thread.getAllStackTraces()
-            .forEach((thread, stack) -> {
-                if (predicate.test(thread)) {
-                    this.loader.loggingService()
-                        .warn(
-                            "Thread " +
-                            thread.getName() +
-                            " is blocked, and may be the reason for the slow shutdown!\n" +
-                            Arrays.stream(stack).map(el -> "  " + el).collect(Collectors.joining("\n"))
-                        );
-                }
-            });
+        Thread.getAllStackTraces().forEach((thread, stack) -> {
+            if (predicate.test(thread)) {
+                this.loader.loggingService().warn(
+                    "Thread " +
+                        thread.getName() +
+                        " is blocked, and may be the reason for the slow shutdown!\n" +
+                        Arrays.stream(stack)
+                            .map(el -> "  " + el)
+                            .collect(Collectors.joining("\n"))
+                );
+            }
+        });
     }
 
     private static final class WorkerThreadFactory implements ForkJoinPool.ForkJoinWorkerThreadFactory {
@@ -145,8 +145,10 @@ public class ThreadPoolScheduler {
 
         @Override
         public void uncaughtException(Thread t, Throwable e) {
-            ThreadPoolScheduler.this.loader.loggingService()
-                .error("Thread {0} threw an uncaught exception", t.getName());
+            ThreadPoolScheduler.this.loader.loggingService().error(
+                "Thread {0} threw an uncaught exception",
+                t.getName()
+            );
             ThreadPoolScheduler.this.loader.loggingService().error(e.getMessage());
         }
     }

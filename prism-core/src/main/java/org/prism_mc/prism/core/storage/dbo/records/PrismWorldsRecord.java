@@ -32,7 +32,8 @@ import org.jooq.types.UInteger;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class PrismWorldsRecord
     extends UpdatableRecordImpl<PrismWorldsRecord>
-    implements Record3<UInteger, String, String> {
+    implements Record3<UInteger, String, String>
+{
 
     private static final long serialVersionUID = 1L;
 
