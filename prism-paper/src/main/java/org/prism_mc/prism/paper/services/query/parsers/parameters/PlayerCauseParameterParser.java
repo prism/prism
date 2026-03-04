@@ -20,15 +20,10 @@
 
 package org.prism_mc.prism.paper.services.query.parsers.parameters;
 
-import dev.triumphteam.cmd.core.argument.keyed.Arguments;
-import org.bukkit.command.CommandSender;
 import org.prism_mc.prism.loader.services.configuration.DefaultsConfiguration;
-import org.prism_mc.prism.paper.api.activities.PaperActivityQuery;
 import org.prism_mc.prism.paper.services.messages.MessageService;
-import org.prism_mc.prism.paper.services.query.ParameterContext;
-import org.prism_mc.prism.paper.services.query.parsers.multiple.OfflinePlayerSetQueryArgumentParser;
 
-public class PlayerCauseParameterParser extends OfflinePlayerSetQueryArgumentParser {
+public class PlayerCauseParameterParser extends PlayerParameterParser {
 
     /**
      * Constructor.
@@ -38,21 +33,5 @@ public class PlayerCauseParameterParser extends OfflinePlayerSetQueryArgumentPar
      */
     public PlayerCauseParameterParser(MessageService messageService, DefaultsConfiguration defaultsConfiguration) {
         super(messageService, defaultsConfiguration, "pc");
-    }
-
-    @Override
-    public boolean parse(
-        CommandSender sender,
-        ParameterContext parameterContext,
-        Arguments arguments,
-        PaperActivityQuery.PaperActivityQueryBuilder<?, ?> builder
-    ) {
-        var values = parseMultipleParameters(arguments, builder);
-
-        if (!values.isEmpty()) {
-            builder.causePlayerNames(values);
-        }
-
-        return true;
     }
 }

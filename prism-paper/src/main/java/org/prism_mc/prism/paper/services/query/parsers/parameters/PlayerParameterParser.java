@@ -35,6 +35,21 @@ public class PlayerParameterParser extends OfflinePlayerSetQueryArgumentParser {
      *
      * @param messageService The message service
      * @param defaultsConfiguration The defaults configuration
+     * @param alias The parameter alias
+     */
+    public PlayerParameterParser(
+        MessageService messageService,
+        DefaultsConfiguration defaultsConfiguration,
+        String alias
+    ) {
+        super(messageService, defaultsConfiguration, alias);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param messageService The message service
+     * @param defaultsConfiguration The defaults configuration
      */
     public PlayerParameterParser(MessageService messageService, DefaultsConfiguration defaultsConfiguration) {
         super(messageService, defaultsConfiguration, "p");
@@ -50,7 +65,6 @@ public class PlayerParameterParser extends OfflinePlayerSetQueryArgumentParser {
         var values = parseMultipleParameters(arguments, builder);
 
         if (!values.isEmpty()) {
-            builder.affectedPlayerNames(values);
             builder.causePlayerNames(values);
         }
 
