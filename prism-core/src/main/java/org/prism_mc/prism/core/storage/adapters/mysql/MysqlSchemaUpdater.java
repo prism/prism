@@ -54,7 +54,6 @@ public class MysqlSchemaUpdater extends SqlSchemaUpdater {
             "ALTER TABLE `%s` " +
             "DROP INDEX `%s`, " +
             "DROP INDEX `%s`, " +
-            "DROP INDEX `%s`, " +
             "ADD INDEX `%s` (`%s`), " +
             "ADD INDEX `%s` (`%s`, `%s`, `%s`, `%s`, `%s`, `%s`), " +
             "ADD INDEX `%s` (`%s`, `%s`, `%s`, `%s`, `%s`), " +
@@ -62,7 +61,6 @@ public class MysqlSchemaUpdater extends SqlSchemaUpdater {
             PRISM_ACTIVITIES.getName(),
             // Drop indexes
             Indexes.PRISM_ACTIVITIES_REPLACED_BLOCK_ID.getName(),
-            Indexes.PRISM_ACTIVITIES_WORLDID.getName(),
             Indexes.PRISM_ACTIVITIES_COORDINATE_400.getName(),
             // Replaced block index
             Indexes.PRISM_ACTIVITIES_REPLACED_BLOCK_ID.getName(),
@@ -85,6 +83,10 @@ public class MysqlSchemaUpdater extends SqlSchemaUpdater {
         );
 
         dslContext.execute(sql);
+
+        // Drop the world id index. This can only be done when modifications to the composite are done
+        // as world_id must be first in another index to satisfy mysql fk rules
+        dslContext.dropIndex(Indexes.PRISM_ACTIVITIES_WORLDID).on(PRISM_ACTIVITIES).execute();
 
         // Create the new player name index
         dslContext.createIndex(Indexes.PRISM_PLAYERS_PLAYER).on(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER).execute();
