@@ -329,12 +329,12 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
             Indexes.PRISM_ACTIVITIES_CAUSE_PLAYER_ID,
             Indexes.PRISM_ACTIVITIES_CAUSE_ENTITY_TYPE_ID,
             Indexes.PRISM_ACTIVITIES_AFFECTED_BLOCK_ID,
-            Indexes.PRISM_ACTIVITIES_COORDINATE,
             Indexes.PRISM_ACTIVITIES_AFFECTED_ENTITY_TYPE_ID,
             Indexes.PRISM_ACTIVITIES_AFFECTED_ITEM_ID,
             Indexes.PRISM_ACTIVITIES_AFFECTED_BLOCK_ID,
             Indexes.PRISM_ACTIVITIES_REPLACED_BLOCK_ID,
-            Indexes.PRISM_ACTIVITIES_WORLDID
+            Indexes.PRISM_ACTIVITIES_WORLD_ACTION_TIME_COORDS,
+            Indexes.PRISM_ACTIVITIES_WORLD_TIME_COORDS
         );
     }
 

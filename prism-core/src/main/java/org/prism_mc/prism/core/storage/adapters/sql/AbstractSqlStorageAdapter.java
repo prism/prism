@@ -654,26 +654,41 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                 .execute();
         }
 
-        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_WORLDID.getName())) {
+        // Create a composite index for world, action, timestamp, coords
+        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_WORLD_ACTION_TIME_COORDS.getName())) {
             dslContext
-                .createIndex(Indexes.PRISM_ACTIVITIES_WORLDID)
-                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.WORLD_ID)
-                .execute();
-        }
-
-        // Create a composite index for world, coordinate, and timestamp since most lookups use all three
-        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_COORDINATE.getName())) {
-            dslContext
-                .createIndex(Indexes.PRISM_ACTIVITIES_COORDINATE)
+                .createIndex(Indexes.PRISM_ACTIVITIES_WORLD_ACTION_TIME_COORDS)
                 .on(
                     PRISM_ACTIVITIES,
                     PRISM_ACTIVITIES.WORLD_ID,
+                    PRISM_ACTIVITIES.ACTION_ID,
+                    PRISM_ACTIVITIES.TIMESTAMP,
                     PRISM_ACTIVITIES.X,
                     PRISM_ACTIVITIES.Y,
-                    PRISM_ACTIVITIES.Z,
-                    PRISM_ACTIVITIES.TIMESTAMP
+                    PRISM_ACTIVITIES.Z
                 )
                 .execute();
+        }
+
+        // Create a composite index for world, timestamp, coords
+        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_WORLD_TIME_COORDS.getName())) {
+            dslContext
+                .createIndex(Indexes.PRISM_ACTIVITIES_WORLD_TIME_COORDS)
+                .on(
+                    PRISM_ACTIVITIES,
+                    PRISM_ACTIVITIES.WORLD_ID,
+                    PRISM_ACTIVITIES.TIMESTAMP,
+                    PRISM_ACTIVITIES.X,
+                    PRISM_ACTIVITIES.Y,
+                    PRISM_ACTIVITIES.Z
+                )
+                .execute();
+        }
+
+        var playerIndexNames = queryIndexNames(PRISM_PLAYERS.getName());
+
+        if (!playerIndexNames.contains(Indexes.PRISM_PLAYERS_PLAYER.getName())) {
+            dslContext.createIndex(Indexes.PRISM_PLAYERS_PLAYER).on(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER).execute();
         }
     }
 
