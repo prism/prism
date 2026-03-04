@@ -47,7 +47,6 @@ import java.util.Locale;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Result;
@@ -583,12 +582,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .execute();
 
         // Sqlite doesn't support creating indexes inline with create table and IF NOT EXISTS isn't a thing for indexes
-        var indexNames = dslContext
-            .meta()
-            .getIndexes()
-            .stream()
-            .map(org.jooq.Named::getName)
-            .collect(Collectors.toCollection(ArrayList::new));
+        var indexNames = queryIndexNames(PRISM_ACTIVITIES.getName());
 
         if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_ACTION_ID.getName())) {
             dslContext
@@ -660,27 +654,67 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                 .execute();
         }
 
-        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_WORLDID.getName())) {
+        // Create a composite index for world, action, timestamp, coords
+        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_WORLD_ACTION_TIME_COORDS.getName())) {
             dslContext
-                .createIndex(Indexes.PRISM_ACTIVITIES_WORLDID)
-                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.WORLD_ID)
-                .execute();
-        }
-
-        // Create a composite index for world, coordinate, and timestamp since most lookups use all three
-        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_COORDINATE.getName())) {
-            dslContext
-                .createIndex(Indexes.PRISM_ACTIVITIES_COORDINATE)
+                .createIndex(Indexes.PRISM_ACTIVITIES_WORLD_ACTION_TIME_COORDS)
                 .on(
                     PRISM_ACTIVITIES,
                     PRISM_ACTIVITIES.WORLD_ID,
+                    PRISM_ACTIVITIES.ACTION_ID,
+                    PRISM_ACTIVITIES.TIMESTAMP,
                     PRISM_ACTIVITIES.X,
                     PRISM_ACTIVITIES.Y,
-                    PRISM_ACTIVITIES.Z,
-                    PRISM_ACTIVITIES.TIMESTAMP
+                    PRISM_ACTIVITIES.Z
                 )
                 .execute();
         }
+
+        // Create a composite index for world, timestamp, coords
+        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_WORLD_TIME_COORDS.getName())) {
+            dslContext
+                .createIndex(Indexes.PRISM_ACTIVITIES_WORLD_TIME_COORDS)
+                .on(
+                    PRISM_ACTIVITIES,
+                    PRISM_ACTIVITIES.WORLD_ID,
+                    PRISM_ACTIVITIES.TIMESTAMP,
+                    PRISM_ACTIVITIES.X,
+                    PRISM_ACTIVITIES.Y,
+                    PRISM_ACTIVITIES.Z
+                )
+                .execute();
+        }
+
+        var playerIndexNames = queryIndexNames(PRISM_PLAYERS.getName());
+
+        if (!playerIndexNames.contains(Indexes.PRISM_PLAYERS_PLAYER.getName())) {
+            dslContext.createIndex(Indexes.PRISM_PLAYERS_PLAYER).on(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER).execute();
+        }
+    }
+
+    /**
+     * Query the database for index names on a specific table, scoped to the current catalog.
+     *
+     * @param tableName The table name
+     * @return A list of index names
+     * @throws SQLException The database exception
+     */
+    protected List<String> queryIndexNames(String tableName) throws SQLException {
+        List<String> indexNames = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            try (
+                var rs = metaData.getIndexInfo(connection.getCatalog(), connection.getSchema(), tableName, false, false)
+            ) {
+                while (rs.next()) {
+                    String indexName = rs.getString("INDEX_NAME");
+                    if (indexName != null) {
+                        indexNames.add(indexName);
+                    }
+                }
+            }
+        }
+        return indexNames;
     }
 
     /**

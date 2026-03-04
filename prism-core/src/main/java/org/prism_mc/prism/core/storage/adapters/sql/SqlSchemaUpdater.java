@@ -22,6 +22,7 @@ package org.prism_mc.prism.core.storage.adapters.sql;
 
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ACTIVITIES;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_META;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_PLAYERS;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -40,7 +41,7 @@ public class SqlSchemaUpdater {
     /**
      * The logger.
      */
-    private final LoggingService loggingService;
+    protected final LoggingService loggingService;
 
     /**
      * Construct the updater.
@@ -70,24 +71,52 @@ public class SqlSchemaUpdater {
      *
      * @param dslContext The DSL context
      */
-    private void update400To401(DSLContext dslContext) {
+    protected void update400To401(DSLContext dslContext) {
         loggingService.info("Updating schema from 400 to 401...");
 
-        dslContext.transaction(tx -> {
-            DSLContext txCtx = tx.dsl();
+        // Drop the old indexes
+        dslContext.dropIndex(Indexes.PRISM_ACTIVITIES_REPLACED_BLOCK_ID).on(PRISM_ACTIVITIES).execute();
+        dslContext.dropIndex(Indexes.PRISM_ACTIVITIES_COORDINATE_400).on(PRISM_ACTIVITIES).execute();
+        dslContext.dropIndex(Indexes.PRISM_ACTIVITIES_WORLDID).on(PRISM_ACTIVITIES).execute();
 
-            // Drop the incorrectly created index
-            txCtx.dropIndex(Indexes.PRISM_ACTIVITIES_REPLACED_BLOCK_ID).on(PRISM_ACTIVITIES).execute();
+        // Recreate the replaced-block index on the correct column
+        dslContext
+            .createIndex(Indexes.PRISM_ACTIVITIES_REPLACED_BLOCK_ID)
+            .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.REPLACED_BLOCK_ID)
+            .execute();
 
-            // Recreate the index on the correct column
-            txCtx
-                .createIndex(Indexes.PRISM_ACTIVITIES_REPLACED_BLOCK_ID)
-                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.REPLACED_BLOCK_ID)
-                .execute();
+        // Create the new composite index
+        dslContext
+            .createIndex(Indexes.PRISM_ACTIVITIES_WORLD_ACTION_TIME_COORDS)
+            .on(
+                PRISM_ACTIVITIES,
+                PRISM_ACTIVITIES.WORLD_ID,
+                PRISM_ACTIVITIES.ACTION_ID,
+                PRISM_ACTIVITIES.TIMESTAMP,
+                PRISM_ACTIVITIES.X,
+                PRISM_ACTIVITIES.Y,
+                PRISM_ACTIVITIES.Z
+            )
+            .execute();
 
-            // Update the schema version
-            txCtx.update(PRISM_META).set(PRISM_META.V, "401").where(PRISM_META.K.eq("schema_ver")).execute();
-        });
+        // Create the new composite index
+        dslContext
+            .createIndex(Indexes.PRISM_ACTIVITIES_WORLD_TIME_COORDS)
+            .on(
+                PRISM_ACTIVITIES,
+                PRISM_ACTIVITIES.WORLD_ID,
+                PRISM_ACTIVITIES.TIMESTAMP,
+                PRISM_ACTIVITIES.X,
+                PRISM_ACTIVITIES.Y,
+                PRISM_ACTIVITIES.Z
+            )
+            .execute();
+
+        // Create the new player name index
+        dslContext.createIndex(Indexes.PRISM_PLAYERS_PLAYER).on(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER).execute();
+
+        // Update the schema version
+        dslContext.update(PRISM_META).set(PRISM_META.V, "401").where(PRISM_META.K.eq("schema_ver")).execute();
 
         loggingService.info("Schema updated to 401.");
     }
