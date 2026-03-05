@@ -57,6 +57,7 @@ import org.prism_mc.prism.core.injection.factories.SqlActivityQueryBuilderFactor
 import org.prism_mc.prism.core.services.cache.CacheService;
 import org.prism_mc.prism.core.storage.adapters.h2.H2StorageAdapter;
 import org.prism_mc.prism.core.storage.adapters.mariadb.MariaDbStorageAdapter;
+import org.prism_mc.prism.core.storage.adapters.mysql.MysqlActivityQueryBuilder;
 import org.prism_mc.prism.core.storage.adapters.mysql.MysqlSchemaUpdater;
 import org.prism_mc.prism.core.storage.adapters.mysql.MysqlStorageAdapter;
 import org.prism_mc.prism.core.storage.adapters.postgres.PostgresStorageAdapter;
@@ -329,6 +330,12 @@ public class PrismModule extends AbstractModule {
                 new FactoryModuleBuilder()
                     .implement(SqlActivityQueryBuilder.class, FileSqlActivityQueryBuilder.class)
                     .build(FileSqlActivityQueryBuilderFactory.class)
+            );
+        } else if (storageType.equals(StorageType.MYSQL) || storageType.equals(StorageType.MARIADB)) {
+            install(
+                new FactoryModuleBuilder()
+                    .implement(SqlActivityQueryBuilder.class, MysqlActivityQueryBuilder.class)
+                    .build(SqlActivityQueryBuilderFactory.class)
             );
         } else {
             install(
