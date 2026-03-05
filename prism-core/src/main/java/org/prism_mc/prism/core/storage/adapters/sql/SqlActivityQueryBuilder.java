@@ -364,13 +364,26 @@ public class SqlActivityQueryBuilder {
     }
 
     /**
+     * Get the join type for the action table.
+     *
+     * @return The join type
+     */
+    protected JoinType actionJoinType() {
+        return JoinType.JOIN;
+    }
+
+    /**
      * A convenience method to add all joins needed for a lookup.
      *
      * @param queryBuilder Query builder
      * @param query Activity Query
      */
     protected void joins(SelectQuery<Record> queryBuilder, ActivityQuery query) {
-        queryBuilder.addJoin(PRISM_ACTIONS, PRISM_ACTIONS.ACTION_ID.equal(PRISM_ACTIVITIES.ACTION_ID));
+        queryBuilder.addJoin(
+            PRISM_ACTIONS,
+            actionJoinType(),
+            PRISM_ACTIONS.ACTION_ID.equal(PRISM_ACTIVITIES.ACTION_ID)
+        );
 
         queryBuilder.addJoin(PRISM_WORLDS, PRISM_WORLDS.WORLD_ID.equal(PRISM_ACTIVITIES.WORLD_ID));
 
