@@ -21,7 +21,6 @@
 package org.prism_mc.prism.core.storage.adapters.sql;
 
 import static org.jooq.impl.DSL.avg;
-import static org.jooq.impl.DSL.coalesce;
 import static org.jooq.impl.DSL.constraint;
 
 import com.google.inject.Inject;
@@ -873,7 +872,8 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             String itemData = r.getValue(PRISM_ITEMS.DATA);
 
             // Item quantity
-            short itemQuantity = r.getValue(coalesce(PRISM_ACTIVITIES.AFFECTED_ITEM_QUANTITY, DSL.val(0))).shortValue();
+            UShort affectedItemQuantity = r.getValue(PRISM_ACTIVITIES.AFFECTED_ITEM_QUANTITY);
+            short itemQuantity = affectedItemQuantity != null ? affectedItemQuantity.shortValue() : 0;
 
             // Affected player
             String affectedPlayerName = r.getValue(AFFECTED_PLAYERS.PLAYER);
