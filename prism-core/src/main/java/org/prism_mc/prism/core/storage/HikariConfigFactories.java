@@ -52,13 +52,18 @@ public class HikariConfigFactories {
     public static HikariConfig h2(StorageConfiguration storageConfiguration, File h2File, boolean enableSpy) {
         HikariConfig hikariConfig = createSharedConfig(storageConfiguration, enableSpy);
 
+        String database = storageConfiguration.h2().database();
         hikariConfig.setJdbcUrl(
             "jdbc:" +
             (enableSpy ? "p6spy:" : "") +
             "h2:file:" +
             h2File.getAbsolutePath() +
             ";MODE=mysql;" +
-            "DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;"
+            "DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;" +
+            "INIT=CREATE SCHEMA IF NOT EXISTS " +
+            database +
+            "\\;SET SCHEMA " +
+            database
         );
 
         return hikariConfig;
