@@ -47,6 +47,7 @@ import java.nio.file.StandardCopyOption;
  * by the loading code & this classloader.</p>
  */
 public class JarInJarClassLoader extends URLClassLoader {
+
     static {
         ClassLoader.registerAsParallelCapable();
     }

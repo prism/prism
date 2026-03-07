@@ -141,55 +141,55 @@ public class PaperTranslationService implements IMessageSource<CommandSender, St
 
         // Load localization files from the jar
         this.walkPluginJar(stream ->
-                stream
-                    .filter(Files::isRegularFile)
-                    .filter(it -> {
-                        final String pathString = it.toString();
-                        return (pathString.startsWith("/locale/messages-") && pathString.endsWith(".properties"));
-                    })
-                    .forEach(localeFile -> {
-                        final String localeString = localeFile
-                            .getFileName()
-                            .toString()
-                            .substring("messages-".length())
-                            .replace(".properties", "");
-                        // MC uses no_NO when the player selects nb_NO...
-                        @Nullable
-                        final Locale locale = Translator.parseLocale(localeString.replace("nb_NO", "no_NO"));
+            stream
+                .filter(Files::isRegularFile)
+                .filter(it -> {
+                    final String pathString = it.toString();
+                    return (pathString.startsWith("/locale/messages-") && pathString.endsWith(".properties"));
+                })
+                .forEach(localeFile -> {
+                    final String localeString = localeFile
+                        .getFileName()
+                        .toString()
+                        .substring("messages-".length())
+                        .replace(".properties", "");
+                    // MC uses no_NO when the player selects nb_NO...
+                    @Nullable
+                    final Locale locale = Translator.parseLocale(localeString.replace("nb_NO", "no_NO"));
 
-                        if (locale == null) {
-                            this.loggingService.warn("Unknown locale '{0}'?", localeString);
-                            return;
-                        }
+                    if (locale == null) {
+                        this.loggingService.warn("Unknown locale '{0}'?", localeString);
+                        return;
+                    }
+
+                    this.loggingService.info(
+                        "Found locale {0} ({1}) in: {2}",
+                        locale.getDisplayName(),
+                        locale,
+                        localeFile
+                    );
+                    final SortedProperties properties = new SortedProperties();
+
+                    try {
+                        this.loadProperties(properties, localeDirectory, localeFile);
+                        this.locales.put(locale, properties);
 
                         this.loggingService.info(
-                                "Found locale {0} ({1}) in: {2}",
-                                locale.getDisplayName(),
-                                locale,
-                                localeFile
-                            );
-                        final SortedProperties properties = new SortedProperties();
-
-                        try {
-                            this.loadProperties(properties, localeDirectory, localeFile);
-                            this.locales.put(locale, properties);
-
-                            this.loggingService.info(
-                                    "Successfully loaded locale {0} ({1})",
-                                    locale.getDisplayName(),
-                                    locale
-                                );
-                        } catch (final IOException ex) {
-                            this.loggingService.warn(
-                                    "Unable to load locale {0} ({1}) from source: {2}",
-                                    locale.getDisplayName(),
-                                    locale,
-                                    localeFile,
-                                    ex
-                                );
-                        }
-                    })
-            );
+                            "Successfully loaded locale {0} ({1})",
+                            locale.getDisplayName(),
+                            locale
+                        );
+                    } catch (final IOException ex) {
+                        this.loggingService.warn(
+                            "Unable to load locale {0} ({1}) from source: {2}",
+                            locale.getDisplayName(),
+                            locale,
+                            localeFile,
+                            ex
+                        );
+                    }
+                })
+        );
 
         // Load any unrecognized localization files
         for (var entry : loadProperties(localeDirectory).entrySet()) {
@@ -197,10 +197,10 @@ public class PaperTranslationService implements IMessageSource<CommandSender, St
                 this.locales.put(entry.getKey(), entry.getValue());
 
                 this.loggingService.info(
-                        "Successfully loaded custom locale {0} ({1})",
-                        entry.getKey().getDisplayName(),
-                        entry.getKey()
-                    );
+                    "Successfully loaded custom locale {0} ({1})",
+                    entry.getKey().getDisplayName(),
+                    entry.getKey()
+                );
             }
         }
 

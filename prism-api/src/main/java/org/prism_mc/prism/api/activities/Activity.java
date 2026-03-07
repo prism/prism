@@ -77,8 +77,10 @@ public class Activity extends AbstractActivity {
         );
     }
 
-    public abstract static class ActivityBuilder<C extends Activity, B extends ActivityBuilder<C, B>>
-        extends AbstractActivityBuilder<C, B> {
+    public abstract static class ActivityBuilder<
+        C extends Activity,
+        B extends ActivityBuilder<C, B>
+    > extends AbstractActivityBuilder<C, B> {
 
         @Tolerate
         public B world(UUID worldUuid, String worldName) {

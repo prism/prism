@@ -36,7 +36,8 @@ import org.prism_mc.prism.api.services.purges.PurgeCycleResult;
 
 @Singleton
 public class PurgeCycleResultPlaceholderResolver
-    implements IPlaceholderResolver<CommandSender, PurgeCycleResult, Component> {
+    implements IPlaceholderResolver<CommandSender, PurgeCycleResult, Component>
+{
 
     @Override
     public @NonNull Map<String, Either<ConclusionValue<? extends Component>, ContinuanceValue<?>>> resolve(

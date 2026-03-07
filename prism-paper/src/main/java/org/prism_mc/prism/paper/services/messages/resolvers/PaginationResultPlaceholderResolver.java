@@ -34,7 +34,8 @@ import org.jetbrains.annotations.Nullable;
 import org.prism_mc.prism.api.services.pagination.PaginationResult;
 
 public class PaginationResultPlaceholderResolver
-    implements IPlaceholderResolver<CommandSender, PaginationResult<?>, Component> {
+    implements IPlaceholderResolver<CommandSender, PaginationResult<?>, Component>
+{
 
     @Override
     public @NonNull Map<String, Either<ConclusionValue<? extends Component>, ContinuanceValue<?>>> resolve(

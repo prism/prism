@@ -51,7 +51,12 @@ public class BlockCauseParameterParser extends StringSetQueryArgumentParser {
         var values = parseMultipleParameters(arguments, builder);
 
         if (!values.isEmpty()) {
-            builder.causeBlocks(values.stream().map(block -> block.toLowerCase(Locale.ENGLISH)).toList());
+            builder.causeBlocks(
+                values
+                    .stream()
+                    .map(block -> block.toLowerCase(Locale.ENGLISH))
+                    .toList()
+            );
         }
 
         return true;

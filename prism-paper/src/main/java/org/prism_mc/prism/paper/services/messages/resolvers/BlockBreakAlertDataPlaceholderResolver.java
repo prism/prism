@@ -38,7 +38,8 @@ import org.prism_mc.prism.paper.services.alerts.BlockBreakAlertData;
 
 @Singleton
 public class BlockBreakAlertDataPlaceholderResolver
-    implements IPlaceholderResolver<CommandSender, BlockBreakAlertData, Component> {
+    implements IPlaceholderResolver<CommandSender, BlockBreakAlertData, Component>
+{
 
     @Override
     public @NonNull Map<String, Either<ConclusionValue<? extends Component>, ContinuanceValue<?>>> resolve(

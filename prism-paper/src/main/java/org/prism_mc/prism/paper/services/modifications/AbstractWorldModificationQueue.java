@@ -264,8 +264,9 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
         loggingService.debug(queueSizeMsg, modificationsQueue.size());
 
         if (!modificationsQueue.isEmpty()) {
-            ModificationQueueResult.ModificationQueueResultBuilder builder = ModificationQueueResult.builder()
-                .queue(this);
+            ModificationQueueResult.ModificationQueueResultBuilder builder = ModificationQueueResult.builder().queue(
+                this
+            );
 
             if (countModificationsRead == 0) {
                 preProcess(builder);
@@ -287,6 +288,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                             for (
                                 final Iterator<Activity> iterator = modificationsQueue.listIterator(currentQueueOffset);
                                 iterator.hasNext();
+
                             ) {
                                 final Activity activity = iterator.next();
 

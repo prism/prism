@@ -29,9 +29,9 @@ import org.prism_mc.prism.api.util.Coordinate;
 public class PaperActivityQuery extends ActivityQuery {
 
     public abstract static class PaperActivityQueryBuilder<
-        C extends PaperActivityQuery, B extends PaperActivityQueryBuilder<C, B>
-    >
-        extends ActivityQueryBuilder<C, B> {
+        C extends PaperActivityQuery,
+        B extends PaperActivityQueryBuilder<C, B>
+    > extends ActivityQueryBuilder<C, B> {
 
         /**
          * Set the world uuid and coordinate from a Location.

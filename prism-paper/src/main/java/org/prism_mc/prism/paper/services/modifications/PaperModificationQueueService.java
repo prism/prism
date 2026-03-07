@@ -191,6 +191,7 @@ public class PaperModificationQueueService implements ModificationQueueService {
             for (
                 final Iterator<ModificationResult> iterator = queueResult.results().listIterator();
                 iterator.hasNext();
+
             ) {
                 final ModificationResult result = iterator.next();
 

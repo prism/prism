@@ -118,8 +118,9 @@ public class NbtService {
         if (cachedDefaultNbt != null) {
             trimEntityNbt(entity, cachedDefaultNbt, consumer);
         } else {
-            EntitySnapshot entitySnapshot = Bukkit.getEntityFactory()
-                .createEntitySnapshot(String.format("{id:\"%s\"}", key));
+            EntitySnapshot entitySnapshot = Bukkit.getEntityFactory().createEntitySnapshot(
+                String.format("{id:\"%s\"}", key)
+            );
 
             Entity dummyEntity = entitySnapshot.createEntity(Bukkit.getWorlds().getFirst());
             NBT.get(dummyEntity, defaultNbt -> {

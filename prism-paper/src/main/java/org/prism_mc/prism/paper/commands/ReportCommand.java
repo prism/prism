@@ -142,8 +142,8 @@ public class ReportCommand {
                     paginationService.show(sender);
                 },
                 (result -> {
-                        messageService.modificationsReportSkippedActivity(sender, result.activity(), result);
-                    })
+                    messageService.modificationsReportSkippedActivity(sender, result.activity(), result);
+                })
             );
 
             paginationService.show(sender, paginationHandler);
@@ -185,8 +185,8 @@ public class ReportCommand {
                     paginationService.show(sender);
                 },
                 (result -> {
-                        messageService.modificationsReportSkippedActivity(sender, result.activity(), result);
-                    })
+                    messageService.modificationsReportSkippedActivity(sender, result.activity(), result);
+                })
             );
 
             paginationService.show(sender, paginationHandler);

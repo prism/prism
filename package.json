@@ -11,7 +11,7 @@
   "license": "MIT",
   "packageManager": "pnpm@10.5.2",
   "devDependencies": {
-    "prettier": "^3.5.3",
-    "prettier-plugin-java": "^2.6.7"
+    "prettier": "^3.8.1",
+    "prettier-plugin-java": "^2.8.1"
   }
 }
