@@ -21,6 +21,8 @@
 package org.prism_mc.prism.core.storage.dbo;
 
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ACTIVITIES;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ITEMS;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_PLAYERS;
 
 import org.jooq.Index;
 import org.jooq.OrderField;
@@ -30,10 +32,44 @@ import org.jooq.impl.Internal;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Indexes {
 
-    public static final Index PRISM_ACTIVITIES_COORDINATE = Internal.createIndex(
+    @Deprecated
+    public static final Index PRISM_ACTIVITIES_COORDINATE_400 = Internal.createIndex(
         DSL.name("idx_prism_coordinates"),
         PRISM_ACTIVITIES,
-        new OrderField[] { PRISM_ACTIVITIES.X, PRISM_ACTIVITIES.Z, PRISM_ACTIVITIES.Y, PRISM_ACTIVITIES.TIMESTAMP },
+        new OrderField[] {
+            PRISM_ACTIVITIES.WORLD_ID,
+            PRISM_ACTIVITIES.X,
+            PRISM_ACTIVITIES.Y,
+            PRISM_ACTIVITIES.Z,
+            PRISM_ACTIVITIES.TIMESTAMP,
+        },
+        false
+    );
+
+    public static final Index PRISM_ACTIVITIES_WORLD_ACTION_TIME_COORDS = Internal.createIndex(
+        DSL.name("idx_prism_worldActionTimeCoords"),
+        PRISM_ACTIVITIES,
+        new OrderField[] {
+            PRISM_ACTIVITIES.WORLD_ID,
+            PRISM_ACTIVITIES.ACTION_ID,
+            PRISM_ACTIVITIES.X,
+            PRISM_ACTIVITIES.Y,
+            PRISM_ACTIVITIES.Z,
+            PRISM_ACTIVITIES.TIMESTAMP,
+        },
+        false
+    );
+
+    public static final Index PRISM_ACTIVITIES_WORLD_TIME_COORDS = Internal.createIndex(
+        DSL.name("idx_prism_worldTimeCoords"),
+        PRISM_ACTIVITIES,
+        new OrderField[] {
+            PRISM_ACTIVITIES.WORLD_ID,
+            PRISM_ACTIVITIES.X,
+            PRISM_ACTIVITIES.Y,
+            PRISM_ACTIVITIES.Z,
+            PRISM_ACTIVITIES.TIMESTAMP,
+        },
         false
     );
 
@@ -107,10 +143,25 @@ public class Indexes {
         false
     );
 
+    @Deprecated
     public static final Index PRISM_ACTIVITIES_WORLDID = Internal.createIndex(
         DSL.name("idx_prism_worldId"),
         PRISM_ACTIVITIES,
         new OrderField[] { PRISM_ACTIVITIES.WORLD_ID },
+        false
+    );
+
+    public static final Index PRISM_ITEMS_MATERIAL = Internal.createIndex(
+        DSL.name("idx_prism_material"),
+        PRISM_ITEMS,
+        new OrderField[] { PRISM_ITEMS.MATERIAL },
+        false
+    );
+
+    public static final Index PRISM_PLAYERS_PLAYER = Internal.createIndex(
+        DSL.name("idx_prism_playerName"),
+        PRISM_PLAYERS,
+        new OrderField[] { PRISM_PLAYERS.PLAYER },
         false
     );
 }

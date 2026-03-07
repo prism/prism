@@ -18,20 +18,23 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package org.prism_mc.prism.paper.services.query.parsers.parameters;
+package org.prism_mc.prism.loader.services.schema;
 
-import org.prism_mc.prism.loader.services.configuration.DefaultsConfiguration;
-import org.prism_mc.prism.paper.services.messages.MessageService;
+import java.nio.file.Path;
+import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
+import org.prism_mc.prism.loader.services.logging.LoggingService;
 
-public class PlayerCauseParameterParser extends PlayerParameterParser {
-
+/**
+ * Interface for running schema updates from the CLI without a Minecraft server.
+ */
+public interface SchemaUpdateCli {
     /**
-     * Constructor.
+     * Run schema updates against the configured database.
      *
-     * @param messageService The message service
-     * @param defaultsConfiguration The defaults configuration
+     * @param configService The configuration service
+     * @param loggingService The logging service
+     * @param dataPath The plugin data path
+     * @throws Exception If a schema update error occurs
      */
-    public PlayerCauseParameterParser(MessageService messageService, DefaultsConfiguration defaultsConfiguration) {
-        super(messageService, defaultsConfiguration, "pc");
-    }
+    void run(ConfigurationService configService, LoggingService loggingService, Path dataPath) throws Exception;
 }

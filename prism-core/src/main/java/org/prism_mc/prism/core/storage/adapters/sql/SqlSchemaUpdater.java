@@ -20,17 +20,29 @@
 
 package org.prism_mc.prism.core.storage.adapters.sql;
 
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ACTIVITIES;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ITEMS;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_META;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_PLAYERS;
+
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import org.jooq.DSLContext;
+import org.prism_mc.prism.core.storage.dbo.Indexes;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 
 @Singleton
 public class SqlSchemaUpdater {
 
     /**
+     * The current/latest schema version for fresh installations.
+     */
+    public static final String CURRENT_SCHEMA_VERSION = "401";
+
+    /**
      * The logger.
      */
-    private final LoggingService loggingService;
+    protected final LoggingService loggingService;
 
     /**
      * Construct the updater.
@@ -40,5 +52,85 @@ public class SqlSchemaUpdater {
     @Inject
     public SqlSchemaUpdater(LoggingService loggingService) {
         this.loggingService = loggingService;
+    }
+
+    /**
+     * Apply all necessary schema updates based on the current schema version.
+     *
+     * @param dslContext The DSL context
+     * @param schemaVersion The current schema version
+     */
+    public void update(DSLContext dslContext, String schemaVersion) {
+        if ("400".equals(schemaVersion)) {
+            update400To401(dslContext);
+            schemaVersion = "401";
+        }
+    }
+
+    /**
+     * Update schema from 400 to 401.
+     *
+     * @param dslContext The DSL context
+     */
+    protected void update400To401(DSLContext dslContext) {
+        loggingService.info("Updating schema from 400 to 401...");
+
+        // Drop the old indexes
+        dslContext.dropIndex(Indexes.PRISM_ACTIVITIES_REPLACED_BLOCK_ID).on(PRISM_ACTIVITIES).execute();
+        dslContext.dropIndex(Indexes.PRISM_ACTIVITIES_COORDINATE_400).on(PRISM_ACTIVITIES).execute();
+        dslContext.dropIndex(Indexes.PRISM_ACTIVITIES_WORLDID).on(PRISM_ACTIVITIES).execute();
+
+        // Recreate the replaced-block index on the correct column
+        dslContext
+            .createIndex(Indexes.PRISM_ACTIVITIES_REPLACED_BLOCK_ID)
+            .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.REPLACED_BLOCK_ID)
+            .execute();
+
+        // Create the new composite index
+        dslContext
+            .createIndex(Indexes.PRISM_ACTIVITIES_WORLD_ACTION_TIME_COORDS)
+            .on(
+                PRISM_ACTIVITIES,
+                PRISM_ACTIVITIES.WORLD_ID,
+                PRISM_ACTIVITIES.ACTION_ID,
+                PRISM_ACTIVITIES.X,
+                PRISM_ACTIVITIES.Y,
+                PRISM_ACTIVITIES.Z,
+                PRISM_ACTIVITIES.TIMESTAMP
+            )
+            .execute();
+
+        // Create the new composite index
+        dslContext
+            .createIndex(Indexes.PRISM_ACTIVITIES_WORLD_TIME_COORDS)
+            .on(
+                PRISM_ACTIVITIES,
+                PRISM_ACTIVITIES.WORLD_ID,
+                PRISM_ACTIVITIES.X,
+                PRISM_ACTIVITIES.Y,
+                PRISM_ACTIVITIES.Z,
+                PRISM_ACTIVITIES.TIMESTAMP
+            )
+            .execute();
+
+        update400To401Shared(dslContext);
+    }
+
+    /**
+     * Shared logic updating the schema from 4oo to 401.
+     *
+     * @param dslContext - The DSL context
+     */
+    protected void update400To401Shared(DSLContext dslContext) {
+        // Create the new player name index
+        dslContext.createIndex(Indexes.PRISM_PLAYERS_PLAYER).on(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER).execute();
+
+        // Create the new item index
+        dslContext.createIndex(Indexes.PRISM_ITEMS_MATERIAL).on(PRISM_ITEMS, PRISM_ITEMS.MATERIAL).execute();
+
+        // Update the schema version
+        dslContext.update(PRISM_META).set(PRISM_META.V, "401").where(PRISM_META.K.eq("schema_ver")).execute();
+
+        loggingService.info("Schema updated to 401.");
     }
 }

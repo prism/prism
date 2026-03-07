@@ -21,6 +21,11 @@
 package org.prism_mc.prism.paper.loader;
 
 import dev.triumphteam.gui.TriumphGui;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.dependencies.loader.JarInJarClassLoader;
@@ -55,6 +60,16 @@ public class PrismPaperPluginLoader extends JavaPlugin implements PluginLoader {
      */
     private PrismBootstrap prismBootstrap;
 
+    /**
+     * The file channel for the lock file.
+     */
+    private FileChannel lockChannel;
+
+    /**
+     * The file lock held while the plugin is running.
+     */
+    private FileLock fileLock;
+
     @Override
     public ConfigurationService configurationService() {
         return configurationService;
@@ -67,6 +82,9 @@ public class PrismPaperPluginLoader extends JavaPlugin implements PluginLoader {
 
     @Override
     public void onEnable() {
+        // Acquire a file lock so the CLI can detect a running server
+        acquireLock(getDataFolder().toPath());
+
         // Instantiate the loader
         JarInJarClassLoader loader = new JarInJarClassLoader(getClass().getClassLoader(), JAR_NAME);
 
@@ -88,5 +106,42 @@ public class PrismPaperPluginLoader extends JavaPlugin implements PluginLoader {
     @Override
     public void onDisable() {
         this.prismBootstrap.onDisable();
+
+        releaseLock();
+    }
+
+    /**
+     * Acquire an exclusive file lock to prevent CLI usage while running.
+     *
+     * @param dataFolder The plugin data folder
+     */
+    private void acquireLock(Path dataFolder) {
+        try {
+            Path lockFile = dataFolder.resolve(PrismLock.LOCK_FILE_NAME);
+            lockFile.toFile().getParentFile().mkdirs();
+            lockChannel = FileChannel.open(lockFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+            fileLock = lockChannel.tryLock();
+            if (fileLock == null) {
+                getLogger().warning("Could not acquire lock file — another process may hold it");
+            }
+        } catch (IOException e) {
+            getLogger().warning("Could not acquire lock file: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Release the file lock.
+     */
+    private void releaseLock() {
+        try {
+            if (fileLock != null) {
+                fileLock.release();
+            }
+            if (lockChannel != null) {
+                lockChannel.close();
+            }
+        } catch (IOException e) {
+            getLogger().warning("Could not release lock file: " + e.getMessage());
+        }
     }
 }

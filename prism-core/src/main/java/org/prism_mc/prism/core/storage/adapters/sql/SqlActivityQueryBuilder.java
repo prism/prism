@@ -101,65 +101,6 @@ public class SqlActivityQueryBuilder {
     public int deleteActivities(ActivityQuery query, int cycleMinPrimaryKey, int cycleMaxPrimaryKey) {
         DeleteQuery<PrismActivitiesRecord> queryBuilder = dslContext.deleteQuery(PRISM_ACTIVITIES);
 
-        if (!query.actionTypes().isEmpty() || !query.actionTypeKeys().isEmpty()) {
-            queryBuilder.addUsing(PRISM_ACTIONS);
-            queryBuilder.addConditions(PRISM_ACTIVITIES.ACTION_ID.equal(PRISM_ACTIONS.ACTION_ID));
-        }
-
-        // Items
-        if (!query.affectedMaterials().isEmpty()) {
-            queryBuilder.addUsing(PRISM_ITEMS);
-            queryBuilder.addConditions(PRISM_ACTIVITIES.AFFECTED_ITEM_ID.equal(PRISM_ITEMS.ITEM_ID));
-        }
-
-        // Affected Blocks
-        if (!query.affectedBlocks().isEmpty()) {
-            queryBuilder.addUsing(PRISM_BLOCKS);
-            queryBuilder.addConditions(PRISM_ACTIVITIES.AFFECTED_BLOCK_ID.equal(PRISM_BLOCKS.BLOCK_ID));
-        }
-
-        // Cause Blocks
-        if (!query.causeBlocks().isEmpty()) {
-            queryBuilder.addUsing(CAUSE_BLOCKS);
-            queryBuilder.addConditions(PRISM_ACTIVITIES.CAUSE_BLOCK_ID.equal(CAUSE_BLOCKS.BLOCK_ID));
-        }
-
-        // Affected Entity Types
-        if (!query.affectedEntityTypes().isEmpty()) {
-            queryBuilder.addUsing(PRISM_ENTITY_TYPES);
-            queryBuilder.addConditions(
-                PRISM_ACTIVITIES.AFFECTED_ENTITY_TYPE_ID.equal(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
-            );
-        }
-
-        // Cause Entity Types
-        if (!query.causeEntityTypes().isEmpty()) {
-            queryBuilder.addUsing(CAUSE_ENTITY_TYPES);
-            queryBuilder.addConditions(PRISM_ACTIVITIES.CAUSE_ENTITY_TYPE_ID.equal(CAUSE_ENTITY_TYPES.ENTITY_TYPE_ID));
-        }
-
-        // Affected Players
-        if (!query.affectedPlayerNames().isEmpty()) {
-            queryBuilder.addUsing(AFFECTED_PLAYERS);
-            queryBuilder.addConditions(PRISM_ACTIVITIES.AFFECTED_PLAYER_ID.equal(AFFECTED_PLAYERS.PLAYER_ID));
-        }
-
-        // Cause Players
-        if (!query.causePlayerNames().isEmpty()) {
-            queryBuilder.addUsing(PRISM_PLAYERS);
-            queryBuilder.addConditions(PRISM_ACTIVITIES.CAUSE_PLAYER_ID.equal(PRISM_PLAYERS.PLAYER_ID));
-        }
-
-        if (query.namedCause() != null) {
-            queryBuilder.addUsing(PRISM_CAUSES);
-            queryBuilder.addConditions(PRISM_ACTIVITIES.CAUSE_ID.equal(PRISM_CAUSES.CAUSE_ID));
-        }
-
-        if (query.worldUuid() != null) {
-            queryBuilder.addUsing(PRISM_WORLDS);
-            queryBuilder.addConditions(PRISM_ACTIVITIES.WORLD_ID.equal(PRISM_WORLDS.WORLD_ID));
-        }
-
         // Add conditions
         queryBuilder.addConditions(conditions(query));
 
@@ -188,8 +129,8 @@ public class SqlActivityQueryBuilder {
             PRISM_WORLDS.WORLD_UUID,
             PRISM_WORLDS.WORLD,
             PRISM_ITEMS.MATERIAL,
-            coalesce(PRISM_ACTIVITIES.AFFECTED_ITEM_QUANTITY, DSL.val(0)),
             PRISM_ITEMS.DATA,
+            PRISM_ACTIVITIES.AFFECTED_ITEM_QUANTITY,
             PRISM_BLOCKS.NS,
             PRISM_BLOCKS.NAME,
             PRISM_BLOCKS.TRANSLATION_KEY,
@@ -260,8 +201,8 @@ public class SqlActivityQueryBuilder {
                 PRISM_WORLDS.WORLD,
                 PRISM_ACTIVITIES.ACTION_ID,
                 PRISM_ITEMS.MATERIAL,
-                coalesce(PRISM_ACTIVITIES.AFFECTED_ITEM_QUANTITY, DSL.val(0)),
                 PRISM_ITEMS.DATA,
+                PRISM_ACTIVITIES.AFFECTED_ITEM_QUANTITY,
                 PRISM_BLOCKS.NS,
                 PRISM_BLOCKS.NAME,
                 PRISM_BLOCKS.TRANSLATION_KEY,
@@ -364,13 +305,26 @@ public class SqlActivityQueryBuilder {
     }
 
     /**
+     * Get the join type for the action table.
+     *
+     * @return The join type
+     */
+    protected JoinType actionJoinType() {
+        return JoinType.JOIN;
+    }
+
+    /**
      * A convenience method to add all joins needed for a lookup.
      *
      * @param queryBuilder Query builder
      * @param query Activity Query
      */
     protected void joins(SelectQuery<Record> queryBuilder, ActivityQuery query) {
-        queryBuilder.addJoin(PRISM_ACTIONS, PRISM_ACTIONS.ACTION_ID.equal(PRISM_ACTIVITIES.ACTION_ID));
+        queryBuilder.addJoin(
+            PRISM_ACTIONS,
+            actionJoinType(),
+            PRISM_ACTIONS.ACTION_ID.equal(PRISM_ACTIVITIES.ACTION_ID)
+        );
 
         queryBuilder.addJoin(PRISM_WORLDS, PRISM_WORLDS.WORLD_ID.equal(PRISM_ACTIVITIES.WORLD_ID));
 
@@ -440,12 +394,13 @@ public class SqlActivityQueryBuilder {
     }
 
     /**
-     * Get all conditions for the query.
+     * Pre-resolve foreign key IDs from lookup tables so the main query
+     * uses literal {@code IN (1, 2, 3)} conditions instead of subqueries.
      *
-     * @param query The query
-     * @return All conditions
+     * @param query The activity query
+     * @return Conditions with pre-resolved ID lists
      */
-    protected List<Condition> conditions(ActivityQuery query) {
+    protected List<Condition> joinConditions(ActivityQuery query) {
         List<Condition> conditions = new ArrayList<>();
 
         // Action Types
@@ -455,42 +410,162 @@ public class SqlActivityQueryBuilder {
                 actionTypeKeys.add(actionType.key());
             }
 
-            conditions.add(PRISM_ACTIONS.ACTION.in(actionTypeKeys));
+            conditions.add(
+                PRISM_ACTIVITIES.ACTION_ID.in(
+                    dslContext
+                        .select(PRISM_ACTIONS.ACTION_ID)
+                        .from(PRISM_ACTIONS)
+                        .where(PRISM_ACTIONS.ACTION.in(actionTypeKeys))
+                        .fetch(PRISM_ACTIONS.ACTION_ID)
+                )
+            );
         }
 
         // Action Type Keys
         if (!query.actionTypeKeys().isEmpty()) {
-            conditions.add(PRISM_ACTIONS.ACTION.in(query.actionTypeKeys()));
-        }
-
-        // Activity IDs
-        if (query.activityIds() != null && !query.activityIds().isEmpty()) {
-            conditions.add(PRISM_ACTIVITIES.ACTIVITY_ID.in(query.activityIds()));
+            conditions.add(
+                PRISM_ACTIVITIES.ACTION_ID.in(
+                    dslContext
+                        .select(PRISM_ACTIONS.ACTION_ID)
+                        .from(PRISM_ACTIONS)
+                        .where(PRISM_ACTIONS.ACTION.in(query.actionTypeKeys()))
+                        .fetch(PRISM_ACTIONS.ACTION_ID)
+                )
+            );
         }
 
         // Affected Blocks
         if (!query.affectedBlocks().isEmpty()) {
-            conditions.add(PRISM_BLOCKS.NAME.in(query.affectedBlocks()));
+            conditions.add(
+                PRISM_ACTIVITIES.AFFECTED_BLOCK_ID.in(
+                    dslContext
+                        .select(PRISM_BLOCKS.BLOCK_ID)
+                        .from(PRISM_BLOCKS)
+                        .where(PRISM_BLOCKS.NAME.in(query.affectedBlocks()))
+                        .fetch(PRISM_BLOCKS.BLOCK_ID)
+                )
+            );
         }
 
         // Cause Blocks
         if (!query.causeBlocks().isEmpty()) {
-            conditions.add(CAUSE_BLOCKS.NAME.in(query.causeBlocks()));
+            conditions.add(
+                PRISM_ACTIVITIES.CAUSE_BLOCK_ID.in(
+                    dslContext
+                        .select(PRISM_BLOCKS.BLOCK_ID)
+                        .from(PRISM_BLOCKS)
+                        .where(PRISM_BLOCKS.NAME.in(query.causeBlocks()))
+                        .fetch(PRISM_BLOCKS.BLOCK_ID)
+                )
+            );
         }
 
         // Affected Entity Types
         if (!query.affectedEntityTypes().isEmpty()) {
-            conditions.add(PRISM_ENTITY_TYPES.ENTITY_TYPE.in(query.affectedEntityTypes()));
+            conditions.add(
+                PRISM_ACTIVITIES.AFFECTED_ENTITY_TYPE_ID.in(
+                    dslContext
+                        .select(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
+                        .from(PRISM_ENTITY_TYPES)
+                        .where(PRISM_ENTITY_TYPES.ENTITY_TYPE.in(query.affectedEntityTypes()))
+                        .fetch(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
+                )
+            );
         }
 
         // Cause Entity Types
         if (!query.causeEntityTypes().isEmpty()) {
-            conditions.add(CAUSE_ENTITY_TYPES.ENTITY_TYPE.in(query.causeEntityTypes()));
+            conditions.add(
+                PRISM_ACTIVITIES.CAUSE_ENTITY_TYPE_ID.in(
+                    dslContext
+                        .select(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
+                        .from(PRISM_ENTITY_TYPES)
+                        .where(PRISM_ENTITY_TYPES.ENTITY_TYPE.in(query.causeEntityTypes()))
+                        .fetch(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
+                )
+            );
         }
 
         // Named Causes
         if (query.namedCause() != null) {
-            conditions.add(PRISM_CAUSES.CAUSE.equal(query.namedCause()));
+            conditions.add(
+                PRISM_ACTIVITIES.CAUSE_ID.in(
+                    dslContext
+                        .select(PRISM_CAUSES.CAUSE_ID)
+                        .from(PRISM_CAUSES)
+                        .where(PRISM_CAUSES.CAUSE.equal(query.namedCause()))
+                        .fetch(PRISM_CAUSES.CAUSE_ID)
+                )
+            );
+        }
+
+        // Materials
+        if (!query.affectedMaterials().isEmpty()) {
+            conditions.add(
+                PRISM_ACTIVITIES.AFFECTED_ITEM_ID.in(
+                    dslContext
+                        .select(PRISM_ITEMS.ITEM_ID)
+                        .from(PRISM_ITEMS)
+                        .where(PRISM_ITEMS.MATERIAL.in(query.affectedMaterials()))
+                        .fetch(PRISM_ITEMS.ITEM_ID)
+                )
+            );
+        }
+
+        // Affected Player
+        if (!query.affectedPlayerNames().isEmpty()) {
+            conditions.add(
+                PRISM_ACTIVITIES.AFFECTED_PLAYER_ID.in(
+                    dslContext
+                        .select(PRISM_PLAYERS.PLAYER_ID)
+                        .from(PRISM_PLAYERS)
+                        .where(PRISM_PLAYERS.PLAYER.in(query.affectedPlayerNames()))
+                        .fetch(PRISM_PLAYERS.PLAYER_ID)
+                )
+            );
+        }
+
+        // Cause Player
+        if (!query.causePlayerNames().isEmpty()) {
+            conditions.add(
+                PRISM_ACTIVITIES.CAUSE_PLAYER_ID.in(
+                    dslContext
+                        .select(PRISM_PLAYERS.PLAYER_ID)
+                        .from(PRISM_PLAYERS)
+                        .where(PRISM_PLAYERS.PLAYER.in(query.causePlayerNames()))
+                        .fetch(PRISM_PLAYERS.PLAYER_ID)
+                )
+            );
+        }
+
+        // World
+        if (query.worldUuid() != null) {
+            conditions.add(
+                PRISM_ACTIVITIES.WORLD_ID.in(
+                    dslContext
+                        .select(PRISM_WORLDS.WORLD_ID)
+                        .from(PRISM_WORLDS)
+                        .where(PRISM_WORLDS.WORLD_UUID.equal(query.worldUuid().toString()))
+                        .fetch(PRISM_WORLDS.WORLD_ID)
+                )
+            );
+        }
+
+        return conditions;
+    }
+
+    /**
+     * Get all conditions for the query.
+     *
+     * @param query The query
+     * @return All conditions
+     */
+    protected List<Condition> conditions(ActivityQuery query) {
+        List<Condition> conditions = new ArrayList<>(joinConditions(query));
+
+        // Activity IDs
+        if (query.activityIds() != null && !query.activityIds().isEmpty()) {
+            conditions.add(PRISM_ACTIVITIES.ACTIVITY_ID.in(query.activityIds()));
         }
 
         // Locations
@@ -502,24 +577,6 @@ public class SqlActivityQueryBuilder {
             conditions.add(PRISM_ACTIVITIES.X.between(query.minCoordinate().intX(), query.maxCoordinate().intX()));
             conditions.add(PRISM_ACTIVITIES.Y.between(query.minCoordinate().intY(), query.maxCoordinate().intY()));
             conditions.add(PRISM_ACTIVITIES.Z.between(query.minCoordinate().intZ(), query.maxCoordinate().intZ()));
-        }
-
-        // Materials
-        if (!query.affectedMaterials().isEmpty()) {
-            conditions.add(PRISM_ITEMS.MATERIAL.in(query.affectedMaterials()));
-        }
-
-        // Players
-        if (!query.affectedPlayerNames().isEmpty() && !query.causePlayerNames().isEmpty()) {
-            conditions.add(
-                AFFECTED_PLAYERS.PLAYER.in(query.affectedPlayerNames()).or(
-                    PRISM_PLAYERS.PLAYER.in(query.causePlayerNames())
-                )
-            );
-        } else if (!query.affectedPlayerNames().isEmpty()) {
-            conditions.add(AFFECTED_PLAYERS.PLAYER.in(query.affectedPlayerNames()));
-        } else if (!query.causePlayerNames().isEmpty()) {
-            conditions.add(PRISM_PLAYERS.PLAYER.in(query.causePlayerNames()));
         }
 
         // Query
@@ -541,11 +598,6 @@ public class SqlActivityQueryBuilder {
             conditions.add(PRISM_ACTIVITIES.TIMESTAMP.greaterThan(UInteger.valueOf(query.after())));
         } else if (query.before() != null) {
             conditions.add(PRISM_ACTIVITIES.TIMESTAMP.lessThan(UInteger.valueOf(query.before())));
-        }
-
-        // World
-        if (query.worldUuid() != null) {
-            conditions.add(PRISM_WORLDS.WORLD_UUID.equal(query.worldUuid().toString()));
         }
 
         return conditions;
