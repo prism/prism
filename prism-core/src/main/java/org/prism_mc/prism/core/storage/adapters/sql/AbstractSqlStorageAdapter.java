@@ -507,7 +507,6 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .column(PRISM_ITEMS.MATERIAL)
             .column(PRISM_ITEMS.DATA)
             .primaryKey(PRISM_ITEMS.ITEM_ID)
-            .unique(PRISM_ITEMS.MATERIAL, PRISM_ITEMS.DATA)
             .execute();
 
         // Create the worlds table
@@ -705,11 +704,8 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
         }
 
         var itemIndexNames = queryIndexNames(PRISM_ITEMS.getName());
-        if (!itemIndexNames.contains(Indexes.PRISM_ITEMS_MATERIAL_DATA.getName())) {
-            dslContext
-                .createIndex(Indexes.PRISM_ITEMS_MATERIAL_DATA)
-                .on(PRISM_ITEMS, PRISM_ITEMS.MATERIAL, PRISM_ITEMS.DATA)
-                .execute();
+        if (!itemIndexNames.contains(Indexes.PRISM_ITEMS_MATERIAL.getName())) {
+            dslContext.createIndex(Indexes.PRISM_ITEMS_MATERIAL).on(PRISM_ITEMS, PRISM_ITEMS.MATERIAL).execute();
         }
     }
 

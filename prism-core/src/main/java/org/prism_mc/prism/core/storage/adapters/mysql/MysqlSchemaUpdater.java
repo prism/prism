@@ -21,9 +21,6 @@
 package org.prism_mc.prism.core.storage.adapters.mysql;
 
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ACTIVITIES;
-import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ITEMS;
-import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_META;
-import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_PLAYERS;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -89,23 +86,6 @@ public class MysqlSchemaUpdater extends SqlSchemaUpdater {
         // as world_id must be first in another index to satisfy mysql fk rules
         dslContext.dropIndex(Indexes.PRISM_ACTIVITIES_WORLDID).on(PRISM_ACTIVITIES).execute();
 
-        // Create the new player name index
-        dslContext.createIndex(Indexes.PRISM_PLAYERS_PLAYER).on(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER).execute();
-
-        // Create the new item index
-        dslContext.execute(
-            String.format(
-                "CREATE INDEX `%s` ON `%s` (`%s`, `%s`(255))",
-                Indexes.PRISM_ITEMS_MATERIAL_DATA.getName(),
-                PRISM_ITEMS.getName(),
-                PRISM_ITEMS.MATERIAL.getName(),
-                PRISM_ITEMS.DATA.getName()
-            )
-        );
-
-        // Update the schema version
-        dslContext.update(PRISM_META).set(PRISM_META.V, "401").where(PRISM_META.K.eq("schema_ver")).execute();
-
-        loggingService.info("Schema updated to 401.");
+        update400To401Shared(dslContext);
     }
 }

@@ -151,10 +151,10 @@ public class Indexes {
         false
     );
 
-    public static final Index PRISM_ITEMS_MATERIAL_DATA = Internal.createIndex(
-        DSL.name("idx_prism_materialData"),
+    public static final Index PRISM_ITEMS_MATERIAL = Internal.createIndex(
+        DSL.name("idx_prism_material"),
         PRISM_ITEMS,
-        new OrderField[] { PRISM_ITEMS.MATERIAL, PRISM_ITEMS.DATA },
+        new OrderField[] { PRISM_ITEMS.MATERIAL },
         false
     );
 

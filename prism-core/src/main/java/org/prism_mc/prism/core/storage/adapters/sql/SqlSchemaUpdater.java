@@ -113,14 +113,20 @@ public class SqlSchemaUpdater {
             )
             .execute();
 
+        update400To401Shared(dslContext);
+    }
+
+    /**
+     * Shared logic updating the schema from 4oo to 401.
+     *
+     * @param dslContext - The DSL context
+     */
+    protected void update400To401Shared(DSLContext dslContext) {
         // Create the new player name index
         dslContext.createIndex(Indexes.PRISM_PLAYERS_PLAYER).on(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER).execute();
 
         // Create the new item index
-        dslContext
-            .createIndex("idx_prism_materialData")
-            .on(PRISM_ITEMS, PRISM_ITEMS.MATERIAL, PRISM_ITEMS.DATA)
-            .execute();
+        dslContext.createIndex(Indexes.PRISM_ITEMS_MATERIAL).on(PRISM_ITEMS, PRISM_ITEMS.MATERIAL).execute();
 
         // Update the schema version
         dslContext.update(PRISM_META).set(PRISM_META.V, "401").where(PRISM_META.K.eq("schema_ver")).execute();
