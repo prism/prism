@@ -221,11 +221,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      * Apply any post-modification tasks.
      */
     protected void postProcess(ModificationQueueResult.ModificationQueueResultBuilder builder) {
-        if (
-            modificationRuleset.moveEntities() &&
-            query.worldUuid() != null &&
-            !results.isEmpty()
-        ) {
+        if (modificationRuleset.moveEntities() && query.worldUuid() != null && !results.isEmpty()) {
             World world = Bukkit.getWorld(query.worldUuid());
             int count = EntityUtils.moveEntitiesToGround(world, modificationBoundingBox());
 
