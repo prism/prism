@@ -35,4 +35,14 @@ public class FileDataSourceConfiguration extends DataSourceConfiguration {
         You must use forward-slashes (c:/example) or double backslashes (c:\\temp)."""
     )
     private String path = ".";
+
+    /**
+     * File-based databases don't use a named schema.
+     *
+     * @return An empty schema name
+     */
+    @Override
+    public String schema() {
+        return "";
+    }
 }
