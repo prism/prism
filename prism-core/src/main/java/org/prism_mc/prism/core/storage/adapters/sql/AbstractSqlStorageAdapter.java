@@ -429,14 +429,14 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             loggingService.info("Prism schema version: {0}", schemaVersion);
 
             int dbVersion = Integer.parseInt(schemaVersion);
-            int currentVersion = 400;
+            int currentVersion = Integer.parseInt(SqlSchemaUpdater.CURRENT_SCHEMA_VERSION);
             if (dbVersion > currentVersion) {
                 throw new IllegalStateException(
                     String.format(
                         "Database schema version (%s) is newer than this version of Prism supports (%s). " +
                         "Please update Prism or restore a database backup.",
                         schemaVersion,
-                        currentVersion
+                        SqlSchemaUpdater.CURRENT_SCHEMA_VERSION
                     )
                 );
             }
