@@ -14,10 +14,20 @@ dependencies {
     }
 
     implementation project(':prism-loader')
+
+    // SLF4J for standalone CLI use (HikariCP requires it).
+    // When running as a Paper plugin, Paper's SLF4J takes precedence.
+    implementation 'org.slf4j:slf4j-simple:2.0.16'
 }
 
 shadowJar {
     archiveFileName = "prism-paper-${project.ext.fullVersion}.jar"
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    manifest {
+        attributes 'Main-Class': 'org.prism_mc.prism.paper.loader.PrismCli'
+    }
 
     from {
         project(':prism-paper').tasks.shadowJar.archiveFile

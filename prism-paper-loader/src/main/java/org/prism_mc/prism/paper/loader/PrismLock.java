@@ -18,20 +18,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package org.prism_mc.prism.paper.services.query.parsers.parameters;
+package org.prism_mc.prism.paper.loader;
 
-import org.prism_mc.prism.loader.services.configuration.DefaultsConfiguration;
-import org.prism_mc.prism.paper.services.messages.MessageService;
+import lombok.experimental.UtilityClass;
 
-public class PlayerCauseParameterParser extends PlayerParameterParser {
+/**
+ * Shared lock file constants for preventing concurrent access
+ * between the Minecraft server plugin and the CLI.
+ */
+@UtilityClass
+public final class PrismLock {
 
     /**
-     * Constructor.
-     *
-     * @param messageService The message service
-     * @param defaultsConfiguration The defaults configuration
+     * The name of the lock file used to detect a running server.
      */
-    public PlayerCauseParameterParser(MessageService messageService, DefaultsConfiguration defaultsConfiguration) {
-        super(messageService, defaultsConfiguration, "pc");
-    }
+    public static final String LOCK_FILE_NAME = "prism.lock";
 }

@@ -95,11 +95,4 @@ public class H2StorageAdapter extends AbstractSqlStorageAdapter {
             loggingService.handleException(e);
         }
     }
-
-    @Override
-    protected void prepareSchema() throws Exception {
-        dslContext.createSchemaIfNotExists(configurationService.storageConfig().h2().database()).execute();
-
-        super.prepareSchema();
-    }
 }

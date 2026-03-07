@@ -18,31 +18,23 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package org.prism_mc.prism.loader.services.configuration.storage;
+package org.prism_mc.prism.loader.services.schema;
 
-import lombok.Getter;
-import org.spongepowered.configurate.objectmapping.ConfigSerializable;
-import org.spongepowered.configurate.objectmapping.meta.Comment;
+import java.nio.file.Path;
+import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
+import org.prism_mc.prism.loader.services.logging.LoggingService;
 
-@ConfigSerializable
-@Getter
-public class FileDataSourceConfiguration extends DataSourceConfiguration {
-
-    @Comment(
-        """
-        The path for the database file, excluding the filename.
-        By default the file will be inside the prism plugin folder.
-        You must use forward-slashes (c:/example) or double backslashes (c:\\temp)."""
-    )
-    private String path = ".";
-
+/**
+ * Interface for running schema updates from the CLI without a Minecraft server.
+ */
+public interface SchemaUpdateCli {
     /**
-     * File-based databases don't use a named schema.
+     * Run schema updates against the configured database.
      *
-     * @return An empty schema name
+     * @param configService The configuration service
+     * @param loggingService The logging service
+     * @param dataPath The plugin data path
+     * @throws Exception If a schema update error occurs
      */
-    @Override
-    public String schema() {
-        return "";
-    }
+    void run(ConfigurationService configService, LoggingService loggingService, Path dataPath) throws Exception;
 }

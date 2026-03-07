@@ -57,6 +57,8 @@ import org.prism_mc.prism.core.injection.factories.SqlActivityQueryBuilderFactor
 import org.prism_mc.prism.core.services.cache.CacheService;
 import org.prism_mc.prism.core.storage.adapters.h2.H2StorageAdapter;
 import org.prism_mc.prism.core.storage.adapters.mariadb.MariaDbStorageAdapter;
+import org.prism_mc.prism.core.storage.adapters.mysql.MysqlActivityQueryBuilder;
+import org.prism_mc.prism.core.storage.adapters.mysql.MysqlSchemaUpdater;
 import org.prism_mc.prism.core.storage.adapters.mysql.MysqlStorageAdapter;
 import org.prism_mc.prism.core.storage.adapters.postgres.PostgresStorageAdapter;
 import org.prism_mc.prism.core.storage.adapters.sql.FileSqlActivityQueryBuilder;
@@ -314,9 +316,13 @@ public class PrismModule extends AbstractModule {
         wandBinder.addBinding(WandMode.RESTORE).to(RestoreWand.class);
 
         // Storage
-        bind(SqlSchemaUpdater.class).in(Singleton.class);
-
         StorageType storageType = prism.loader().configurationService().storageConfig().primaryStorageType();
+
+        if (storageType.equals(StorageType.MYSQL) || storageType.equals(StorageType.MARIADB)) {
+            bind(SqlSchemaUpdater.class).to(MysqlSchemaUpdater.class).in(Singleton.class);
+        } else {
+            bind(SqlSchemaUpdater.class).in(Singleton.class);
+        }
 
         // Install the correct query builder
         if (storageType.equals(StorageType.SQLITE) || storageType.equals(StorageType.H2)) {
@@ -324,6 +330,12 @@ public class PrismModule extends AbstractModule {
                 new FactoryModuleBuilder()
                     .implement(SqlActivityQueryBuilder.class, FileSqlActivityQueryBuilder.class)
                     .build(FileSqlActivityQueryBuilderFactory.class)
+            );
+        } else if (storageType.equals(StorageType.MYSQL) || storageType.equals(StorageType.MARIADB)) {
+            install(
+                new FactoryModuleBuilder()
+                    .implement(SqlActivityQueryBuilder.class, MysqlActivityQueryBuilder.class)
+                    .build(SqlActivityQueryBuilderFactory.class)
             );
         } else {
             install(

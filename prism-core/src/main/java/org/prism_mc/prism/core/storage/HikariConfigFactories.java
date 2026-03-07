@@ -34,14 +34,27 @@ public class HikariConfigFactories {
      * Create a hikari configuration for H2 databases.
      *
      * @param storageConfiguration The storage configuration
+     * @param h2File The H2 database file
      * @return The hikari configuration
      */
     public static HikariConfig h2(StorageConfiguration storageConfiguration, File h2File) {
-        HikariConfig hikariConfig = createSharedConfig(storageConfiguration);
+        return h2(storageConfiguration, h2File, storageConfiguration.spy());
+    }
+
+    /**
+     * Create a hikari configuration for H2 databases.
+     *
+     * @param storageConfiguration The storage configuration
+     * @param h2File The H2 database file
+     * @param enableSpy Whether to enable P6Spy query logging
+     * @return The hikari configuration
+     */
+    public static HikariConfig h2(StorageConfiguration storageConfiguration, File h2File, boolean enableSpy) {
+        HikariConfig hikariConfig = createSharedConfig(storageConfiguration, enableSpy);
 
         hikariConfig.setJdbcUrl(
             "jdbc:" +
-            (storageConfiguration.spy() ? "p6spy:" : "") +
+            (enableSpy ? "p6spy:" : "") +
             "h2:file:" +
             h2File.getAbsolutePath() +
             ";MODE=mysql;" +
@@ -75,17 +88,27 @@ public class HikariConfigFactories {
      * @return The hikari configuration
      */
     public static HikariConfig mariadb(StorageConfiguration storageConfiguration) {
-        HikariConfig hikariConfig = createSharedConfig(storageConfiguration);
+        return mariadb(storageConfiguration, storageConfiguration.spy());
+    }
+
+    /**
+     * Create a hikari configuration for MariaDB databases.
+     *
+     * @param storageConfiguration The storage configuration
+     * @param enableSpy Whether to enable P6Spy query logging
+     * @return The hikari configuration
+     */
+    public static HikariConfig mariadb(StorageConfiguration storageConfiguration, boolean enableSpy) {
+        HikariConfig hikariConfig = createSharedConfig(storageConfiguration, enableSpy);
 
         String host = storageConfiguration.mariadb().host();
         String port = storageConfiguration.mariadb().port();
         String database = storageConfiguration.mariadb().database();
-        boolean useSpy = storageConfiguration.spy();
 
         loadDriver(StorageType.MARIADB);
 
         hikariConfig.setJdbcUrl(
-            "jdbc:" + (useSpy ? "p6spy:" : "") + String.format("mariadb://%s:%s/%s", host, port, database)
+            "jdbc:" + (enableSpy ? "p6spy:" : "") + String.format("mariadb://%s:%s/%s", host, port, database)
         );
 
         if (storageConfiguration.mariadb().useHikariOptimizations()) applyHikariOptimizations(hikariConfig);
@@ -102,15 +125,25 @@ public class HikariConfigFactories {
      * @return The hikari configuration
      */
     public static HikariConfig mysql(StorageConfiguration storageConfiguration) {
-        HikariConfig hikariConfig = createSharedConfig(storageConfiguration);
+        return mysql(storageConfiguration, storageConfiguration.spy());
+    }
+
+    /**
+     * Create a hikari configuration for MySQL databases.
+     *
+     * @param storageConfiguration The storage configuration
+     * @param enableSpy Whether to enable P6Spy query logging
+     * @return The hikari configuration
+     */
+    public static HikariConfig mysql(StorageConfiguration storageConfiguration, boolean enableSpy) {
+        HikariConfig hikariConfig = createSharedConfig(storageConfiguration, enableSpy);
 
         String host = storageConfiguration.mysql().host();
         String port = storageConfiguration.mysql().port();
         String database = storageConfiguration.mysql().database();
-        boolean useSpy = storageConfiguration.spy();
 
         hikariConfig.setJdbcUrl(
-            "jdbc:" + (useSpy ? "p6spy:" : "") + String.format("mysql://%s:%s/%s", host, port, database)
+            "jdbc:" + (enableSpy ? "p6spy:" : "") + String.format("mysql://%s:%s/%s", host, port, database)
         );
 
         if (storageConfiguration.mysql().useHikariOptimizations()) applyHikariOptimizations(hikariConfig);
@@ -127,17 +160,27 @@ public class HikariConfigFactories {
      * @return The hikari configuration
      */
     public static HikariConfig postgres(StorageConfiguration storageConfiguration) {
-        HikariConfig hikariConfig = createSharedConfig(storageConfiguration);
+        return postgres(storageConfiguration, storageConfiguration.spy());
+    }
+
+    /**
+     * Create a hikari configuration for Postgres databases.
+     *
+     * @param storageConfiguration The storage configuration
+     * @param enableSpy Whether to enable P6Spy query logging
+     * @return The hikari configuration
+     */
+    public static HikariConfig postgres(StorageConfiguration storageConfiguration, boolean enableSpy) {
+        HikariConfig hikariConfig = createSharedConfig(storageConfiguration, enableSpy);
 
         String host = storageConfiguration.postgres().host();
         String port = storageConfiguration.postgres().port();
         String database = storageConfiguration.postgres().database();
         String schema = storageConfiguration.postgres().schema();
-        boolean useSpy = storageConfiguration.spy();
 
         hikariConfig.setJdbcUrl(
             "jdbc:" +
-            (useSpy ? "p6spy:" : "") +
+            (enableSpy ? "p6spy:" : "") +
             String.format("postgresql://%s:%s/%s?currentSchema=%s", host, port, database, schema)
         );
 
@@ -148,10 +191,23 @@ public class HikariConfigFactories {
      * Create a hikari configuration for sqlite databases.
      *
      * @param storageConfiguration The storage configuration
+     * @param sqliteFile The SQLite database file
      * @return The hikari configuration
      */
     public static HikariConfig sqlite(StorageConfiguration storageConfiguration, File sqliteFile) {
-        HikariConfig hikariConfig = createSharedConfig(storageConfiguration);
+        return sqlite(storageConfiguration, sqliteFile, storageConfiguration.spy());
+    }
+
+    /**
+     * Create a hikari configuration for sqlite databases.
+     *
+     * @param storageConfiguration The storage configuration
+     * @param sqliteFile The SQLite database file
+     * @param enableSpy Whether to enable P6Spy query logging
+     * @return The hikari configuration
+     */
+    public static HikariConfig sqlite(StorageConfiguration storageConfiguration, File sqliteFile, boolean enableSpy) {
+        HikariConfig hikariConfig = createSharedConfig(storageConfiguration, enableSpy);
         hikariConfig.setConnectionInitSql(
             String.format(
                 "PRAGMA journal_mode=WAL; PRAGMA busy_timeout=%d;",
@@ -159,9 +215,7 @@ public class HikariConfigFactories {
             )
         );
 
-        hikariConfig.setJdbcUrl(
-            "jdbc:" + (storageConfiguration.spy() ? "p6spy:" : "") + "sqlite:file:" + sqliteFile.getAbsolutePath()
-        );
+        hikariConfig.setJdbcUrl("jdbc:" + (enableSpy ? "p6spy:" : "") + "sqlite:file:" + sqliteFile.getAbsolutePath());
 
         return hikariConfig;
     }
@@ -170,9 +224,10 @@ public class HikariConfigFactories {
      * Create a hikari config with common settings.
      *
      * @param storageConfiguration The storage configuration
+     * @param enableSpy Whether to enable P6Spy query logging
      * @return The hikari config
      */
-    private static HikariConfig createSharedConfig(StorageConfiguration storageConfiguration) {
+    private static HikariConfig createSharedConfig(StorageConfiguration storageConfiguration, boolean enableSpy) {
         HikariConfig hikariConfig = new HikariConfig();
         hikariConfig.setPoolName("prism");
 
@@ -186,7 +241,7 @@ public class HikariConfigFactories {
             }
         }
 
-        if (storageConfiguration.spy()) {
+        if (enableSpy) {
             hikariConfig.setDriverClassName("com.p6spy.engine.spy.P6SpyDriver");
         }
 

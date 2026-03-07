@@ -31,14 +31,4 @@ public class SqliteDataSourceConfiguration extends FileDataSourceConfiguration {
      * The busy_timeout sqlite setting.
      */
     private int busyTimeout = 3000;
-
-    /**
-     * Sqlite has no schema concept.
-     *
-     * @return The schema
-     */
-    @Override
-    public String schema() {
-        return "";
-    }
 }

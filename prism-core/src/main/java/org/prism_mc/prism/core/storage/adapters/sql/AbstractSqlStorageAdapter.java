@@ -21,7 +21,6 @@
 package org.prism_mc.prism.core.storage.adapters.sql;
 
 import static org.jooq.impl.DSL.avg;
-import static org.jooq.impl.DSL.coalesce;
 import static org.jooq.impl.DSL.constraint;
 
 import com.google.inject.Inject;
@@ -432,7 +431,10 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             updateSchemas(schemaVersion);
         } else {
             // Insert the schema version
-            dslContext.insertInto(PRISM_META, PRISM_META.K, PRISM_META.V).values("schema_ver", "400").execute();
+            dslContext
+                .insertInto(PRISM_META, PRISM_META.K, PRISM_META.V)
+                .values("schema_ver", SqlSchemaUpdater.CURRENT_SCHEMA_VERSION)
+                .execute();
         }
 
         // Create the players table
@@ -492,6 +494,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .column(PRISM_ITEMS.MATERIAL)
             .column(PRISM_ITEMS.DATA)
             .primaryKey(PRISM_ITEMS.ITEM_ID)
+            .unique(PRISM_ITEMS.MATERIAL, PRISM_ITEMS.DATA)
             .execute();
 
         // Create the worlds table
@@ -578,7 +581,8 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             )
             .execute();
 
-        // Sqlite doesn't support creating indexes inline with create table and IF NOT EXISTS isn't a thing for indexes
+        // Sqlite doesn't support creating indexes inline with create table and
+        // MySQL doesn't support IF NOT EXISTS for indexes
         var indexNames = queryIndexNames(PRISM_ACTIVITIES.getName());
 
         if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_ACTION_ID.getName())) {
@@ -612,7 +616,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
         if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_REPLACED_BLOCK_ID.getName())) {
             dslContext
                 .createIndex(Indexes.PRISM_ACTIVITIES_REPLACED_BLOCK_ID)
-                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.AFFECTED_BLOCK_ID)
+                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.REPLACED_BLOCK_ID)
                 .execute();
         }
 
@@ -651,17 +655,26 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                 .execute();
         }
 
-        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_WORLDID.getName())) {
+        // Create a composite index for world, action, timestamp, coordinates
+        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_WORLD_ACTION_TIME_COORDS.getName())) {
             dslContext
-                .createIndex(Indexes.PRISM_ACTIVITIES_WORLDID)
-                .on(PRISM_ACTIVITIES, PRISM_ACTIVITIES.WORLD_ID)
+                .createIndex(Indexes.PRISM_ACTIVITIES_WORLD_ACTION_TIME_COORDS)
+                .on(
+                    PRISM_ACTIVITIES,
+                    PRISM_ACTIVITIES.WORLD_ID,
+                    PRISM_ACTIVITIES.ACTION_ID,
+                    PRISM_ACTIVITIES.X,
+                    PRISM_ACTIVITIES.Y,
+                    PRISM_ACTIVITIES.Z,
+                    PRISM_ACTIVITIES.TIMESTAMP
+                )
                 .execute();
         }
 
-        // Create a composite index for world, coordinate, and timestamp since most lookups use all three
-        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_COORDINATE.getName())) {
+        // Create a composite index for world, timestamp, coordinates
+        if (!indexNames.contains(Indexes.PRISM_ACTIVITIES_WORLD_TIME_COORDS.getName())) {
             dslContext
-                .createIndex(Indexes.PRISM_ACTIVITIES_COORDINATE)
+                .createIndex(Indexes.PRISM_ACTIVITIES_WORLD_TIME_COORDS)
                 .on(
                     PRISM_ACTIVITIES,
                     PRISM_ACTIVITIES.WORLD_ID,
@@ -670,6 +683,19 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
                     PRISM_ACTIVITIES.Z,
                     PRISM_ACTIVITIES.TIMESTAMP
                 )
+                .execute();
+        }
+
+        var playerIndexNames = queryIndexNames(PRISM_PLAYERS.getName());
+        if (!playerIndexNames.contains(Indexes.PRISM_PLAYERS_PLAYER.getName())) {
+            dslContext.createIndex(Indexes.PRISM_PLAYERS_PLAYER).on(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER).execute();
+        }
+
+        var itemIndexNames = queryIndexNames(PRISM_ITEMS.getName());
+        if (!itemIndexNames.contains(Indexes.PRISM_ITEMS_MATERIAL_DATA.getName())) {
+            dslContext
+                .createIndex(Indexes.PRISM_ITEMS_MATERIAL_DATA)
+                .on(PRISM_ITEMS, PRISM_ITEMS.MATERIAL, PRISM_ITEMS.DATA)
                 .execute();
         }
     }
@@ -745,7 +771,9 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
      *
      * @throws SQLException The database exception
      */
-    protected void updateSchemas(String schemaVersion) throws Exception {}
+    protected void updateSchemas(String schemaVersion) throws Exception {
+        schemaUpdater.update(dslContext, schemaVersion);
+    }
 
     @Override
     public List<Activity> queryActivities(ActivityQuery query) throws Exception {
@@ -831,7 +859,8 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             String itemData = r.getValue(PRISM_ITEMS.DATA);
 
             // Item quantity
-            short itemQuantity = r.getValue(coalesce(PRISM_ACTIVITIES.AFFECTED_ITEM_QUANTITY, DSL.val(0))).shortValue();
+            UShort affectedItemQuantity = r.getValue(PRISM_ACTIVITIES.AFFECTED_ITEM_QUANTITY);
+            short itemQuantity = affectedItemQuantity != null ? affectedItemQuantity.shortValue() : 0;
 
             // Affected player
             String affectedPlayerName = r.getValue(AFFECTED_PLAYERS.PLAYER);
