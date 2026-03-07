@@ -40,6 +40,8 @@ import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
 import org.prism_mc.prism.api.services.modifications.ModificationResult;
 import org.prism_mc.prism.api.services.modifications.ModificationResultStatus;
 import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
+import org.prism_mc.prism.api.util.Coordinate;
+import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 import org.prism_mc.prism.paper.PrismPaper;
 import org.prism_mc.prism.paper.utils.BlockUtils;
@@ -51,6 +53,11 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      * The logging service.
      */
     protected LoggingService loggingService;
+
+    /**
+     * The configuration service.
+     */
+    protected ConfigurationService configurationService;
 
     /**
      * The modification ruleset.
@@ -121,6 +128,8 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      * Construct a new world modification.
      *
      * @param loggingService The logging service
+     * @param configurationService The configuration service
+     * @param modificationRuleset Modification rule set
      * @param owner The owner
      * @param query The query
      * @param modifications A list of all modifications
@@ -128,6 +137,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      */
     public AbstractWorldModificationQueue(
         LoggingService loggingService,
+        ConfigurationService configurationService,
         ModificationRuleset modificationRuleset,
         Object owner,
         ActivityQuery query,
@@ -136,6 +146,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
     ) {
         modificationsQueue.addAll(modifications);
         this.loggingService = loggingService;
+        this.configurationService = configurationService;
         this.modificationRuleset = modificationRuleset;
         this.owner = owner;
         this.query = query;
@@ -168,17 +179,9 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                 query.minCoordinate() != null &&
                 query.maxCoordinate() != null
             ) {
-                double x1 = query.minCoordinate().x();
-                double y1 = query.minCoordinate().y();
-                double z1 = query.minCoordinate().z();
-                double x2 = query.maxCoordinate().x();
-                double y2 = query.maxCoordinate().y();
-                double z2 = query.maxCoordinate().z();
-                BoundingBox boundingBox = new BoundingBox(x1, y1, z1, x2, y2, z2);
-
                 World world = Bukkit.getWorld(query.worldUuid());
                 builder.drainedLava(
-                    BlockUtils.removeBlocksByMaterial(world, boundingBox, List.of(Material.LAVA)).size()
+                    BlockUtils.removeBlocksByMaterial(world, modificationBoundingBox(), List.of(Material.LAVA)).size()
                 );
             }
 
@@ -188,16 +191,8 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                 query.minCoordinate() != null &&
                 query.maxCoordinate() != null
             ) {
-                double x1 = query.minCoordinate().x();
-                double y1 = query.minCoordinate().y();
-                double z1 = query.minCoordinate().z();
-                double x2 = query.maxCoordinate().x();
-                double y2 = query.maxCoordinate().y();
-                double z2 = query.maxCoordinate().z();
-                BoundingBox boundingBox = new BoundingBox(x1, y1, z1, x2, y2, z2);
-
                 World world = Bukkit.getWorld(query.worldUuid());
-                int count = EntityUtils.removeDropsInRange(world, boundingBox);
+                int count = EntityUtils.removeDropsInRange(world, modificationBoundingBox());
 
                 builder.removedDrops(count);
             }
@@ -208,14 +203,6 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                 query.minCoordinate() != null &&
                 query.maxCoordinate() != null
             ) {
-                double x1 = query.minCoordinate().x();
-                double y1 = query.minCoordinate().y();
-                double z1 = query.minCoordinate().z();
-                double x2 = query.maxCoordinate().x();
-                double y2 = query.maxCoordinate().y();
-                double z2 = query.maxCoordinate().z();
-                BoundingBox boundingBox = new BoundingBox(x1, y1, z1, x2, y2, z2);
-
                 List<Material> materials = modificationRuleset
                     .removeBlocks()
                     .stream()
@@ -223,7 +210,9 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                     .toList();
 
                 World world = Bukkit.getWorld(query.worldUuid());
-                builder.removedBlocks(BlockUtils.removeBlocksByMaterial(world, boundingBox, materials).size());
+                builder.removedBlocks(
+                    BlockUtils.removeBlocksByMaterial(world, modificationBoundingBox(), materials).size()
+                );
             }
         }
     }
@@ -235,21 +224,101 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
         if (
             modificationRuleset.moveEntities() &&
             query.worldUuid() != null &&
-            query.minCoordinate() != null &&
-            query.maxCoordinate() != null
+            !results.isEmpty()
         ) {
-            double x1 = query.minCoordinate().x();
-            double y1 = query.minCoordinate().y();
-            double z1 = query.minCoordinate().z();
-            double x2 = query.maxCoordinate().x();
-            double y2 = query.maxCoordinate().y();
-            double z2 = query.maxCoordinate().z();
-            BoundingBox boundingBox = new BoundingBox(x1, y1, z1, x2, y2, z2);
             World world = Bukkit.getWorld(query.worldUuid());
-            int count = EntityUtils.moveEntitiesToGround(world, boundingBox);
+            int count = EntityUtils.moveEntitiesToGround(world, modificationBoundingBox());
 
             builder.movedEntities(count);
         }
+    }
+
+    /**
+     * Get the modification's bounding box.
+     *
+     * @return The result set bounding box, the query's, or empty
+     */
+    private BoundingBox modificationBoundingBox() {
+        var boundingBox = boundingBoxFromResults();
+
+        if (
+            boundingBox == null &&
+            query.worldUuid() != null &&
+            query.minCoordinate() != null &&
+            query.maxCoordinate() != null
+        ) {
+            boundingBox = boundingBoxFromQuery();
+        }
+
+        if (boundingBox == null || checkBoundingBoxExceedsLimits(boundingBox)) {
+            return new BoundingBox();
+        }
+
+        return boundingBox;
+    }
+
+    /**
+     * Compute a bounding box from the min/max coordinates of query.
+     *
+     * @return A bounding box
+     */
+    private BoundingBox boundingBoxFromQuery() {
+        double x1 = query.minCoordinate().x();
+        double y1 = query.minCoordinate().y();
+        double z1 = query.minCoordinate().z();
+        double x2 = query.maxCoordinate().x();
+        double y2 = query.maxCoordinate().y();
+        double z2 = query.maxCoordinate().z();
+        return new BoundingBox(x1, y1, z1, x2, y2, z2);
+    }
+
+    /**
+     * Compute a bounding box from the min/max coordinates of actual modification results.
+     *
+     * @return A bounding box, or null if no results have coordinates
+     */
+    private BoundingBox boundingBoxFromResults() {
+        double minX = Double.MAX_VALUE;
+        double minY = Double.MAX_VALUE;
+        double minZ = Double.MAX_VALUE;
+        double maxX = -Double.MAX_VALUE;
+        double maxY = -Double.MAX_VALUE;
+        double maxZ = -Double.MAX_VALUE;
+        boolean found = false;
+
+        if (!results.isEmpty()) {
+            for (ModificationResult result : results) {
+                Coordinate coordinate = result.activity().coordinate();
+                if (coordinate == null) {
+                    continue;
+                }
+
+                found = true;
+                minX = Math.min(minX, coordinate.x());
+                minY = Math.min(minY, coordinate.y());
+                minZ = Math.min(minZ, coordinate.z());
+                maxX = Math.max(maxX, coordinate.x());
+                maxY = Math.max(maxY, coordinate.y());
+                maxZ = Math.max(maxZ, coordinate.z());
+            }
+        }
+
+        if (!found) {
+            return null;
+        }
+
+        return new BoundingBox(minX, minY, minZ, maxX, maxY, maxZ);
+    }
+
+    /**
+     * Enforces limits on bounding boxes for pre-and-post-modification actions.
+     *
+     * @param boundingBox - Bounding box
+     * @return True if within the limits
+     */
+    private boolean checkBoundingBoxExceedsLimits(BoundingBox boundingBox) {
+        var limit = configurationService.prismConfig().modifications().maxQueryBoundingBoxLength();
+        return boundingBox.getHeight() > limit || boundingBox.getWidthX() > limit || boundingBox.getWidthZ() > limit;
     }
 
     @Override

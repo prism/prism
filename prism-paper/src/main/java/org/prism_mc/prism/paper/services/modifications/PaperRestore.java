@@ -33,6 +33,7 @@ import org.prism_mc.prism.api.services.modifications.ModificationResultStatus;
 import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
 import org.prism_mc.prism.api.services.modifications.Restore;
 import org.prism_mc.prism.api.storage.StorageAdapter;
+import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 
 public class PaperRestore extends AbstractWorldModificationQueue implements Restore {
@@ -46,6 +47,7 @@ public class PaperRestore extends AbstractWorldModificationQueue implements Rest
      * Construct a new restore.
      *
      * @param loggingService The logging service
+     * @param configurationService The configuration service
      * @param storageAdapter The storage adapter
      * @param modificationRuleset The ruleset
      * @param owner The owner
@@ -56,6 +58,7 @@ public class PaperRestore extends AbstractWorldModificationQueue implements Rest
     @Inject
     public PaperRestore(
         LoggingService loggingService,
+        ConfigurationService configurationService,
         StorageAdapter storageAdapter,
         @Assisted ModificationRuleset modificationRuleset,
         @Assisted Object owner,
@@ -63,7 +66,7 @@ public class PaperRestore extends AbstractWorldModificationQueue implements Rest
         @Assisted final List<Activity> modifications,
         @Assisted Consumer<ModificationQueueResult> onEnd
     ) {
-        super(loggingService, modificationRuleset, owner, query, modifications, onEnd);
+        super(loggingService, configurationService, modificationRuleset, owner, query, modifications, onEnd);
         this.storageAdapter = storageAdapter;
     }
 

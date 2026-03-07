@@ -56,6 +56,15 @@ public class ModificationConfiguration {
     )
     private int maxPerTask = 1000;
 
+    @Comment(
+        """
+        The max length of any dimension of the query bounding box used in pre or post modifications.
+        This prevents entity teleports from taking place server-wide if
+        you do a rollback without a coordinate bounding box.
+        """
+    )
+    private int maxQueryBoundingBoxLength = 200;
+
     @Comment("Teleport entities out of the way.")
     private boolean moveEntities = true;
 
