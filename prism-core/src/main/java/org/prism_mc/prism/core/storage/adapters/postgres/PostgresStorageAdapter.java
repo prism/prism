@@ -176,7 +176,10 @@ public class PostgresStorageAdapter extends AbstractSqlStorageAdapter {
                 stmt.execute(loadSqlFromResourceFile("postgres", "prism_get_or_create_entity_type", prefix));
                 stmt.execute(loadSqlFromResourceFile("postgres", "prism_get_or_create_item", prefix));
                 stmt.execute(loadSqlFromResourceFile("postgres", "prism_get_or_create_player", prefix));
-                stmt.execute(loadSqlFromResourceFile("postgres", "prism_get_or_create_world", prefix));
+                String worldProcedure = configurationService.storageConfig().identifyWorldsByName()
+                    ? "prism_get_or_create_world_by_name"
+                    : "prism_get_or_create_world";
+                stmt.execute(loadSqlFromResourceFile("postgres", worldProcedure, prefix));
                 stmt.execute(loadSqlFromResourceFile("postgres", "prism_create_activity", prefix));
             }
         }

@@ -31,6 +31,15 @@ public class StorageConfiguration {
 
     @Comment(
         """
+        When enabled, worlds are identified by name instead of UUID.
+        This is useful for servers with software that frequently regenerates worlds
+        where the world name stays the same but the UUID changes.
+        Disabled by default. Only enable if you have a specific need for this."""
+    )
+    private boolean identifyWorldsByName = false;
+
+    @Comment(
+        """
         Enable query spy. This logs queries and helpful debug information.
         Used primarily for development and debugging. Use carefully."""
     )

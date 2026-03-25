@@ -75,6 +75,11 @@ public class SqlActivityBatch implements ActivityBatch {
     protected final DSLContext dslContext;
 
     /**
+     * Whether to identify worlds by name instead of UUID.
+     */
+    private final boolean identifyWorldsByName;
+
+    /**
      * An array of records to batch insert.
      */
     private List<PrismActivitiesRecord> records = new ArrayList<>();
@@ -86,17 +91,20 @@ public class SqlActivityBatch implements ActivityBatch {
      * @param dslContext The DSL context
      * @param serializerVersion The serializer version
      * @param cacheService The cache service
+     * @param identifyWorldsByName Whether to identify worlds by name
      */
     public SqlActivityBatch(
         LoggingService loggingService,
         DSLContext dslContext,
         short serializerVersion,
-        CacheService cacheService
+        CacheService cacheService,
+        boolean identifyWorldsByName
     ) {
         this.loggingService = loggingService;
         this.dslContext = dslContext;
         this.serializerVersion = serializerVersion;
         this.cacheService = cacheService;
+        this.identifyWorldsByName = identifyWorldsByName;
     }
 
     @Override
@@ -517,6 +525,10 @@ public class SqlActivityBatch implements ActivityBatch {
      * @throws SQLException The database exception
      */
     private int getOrCreateWorldId(UUID worldUuid, String worldName) throws SQLException {
+        if (identifyWorldsByName) {
+            return getOrCreateWorldIdByName(worldUuid, worldName);
+        }
+
         Integer worldPk = cacheService.worldUuidPkMap().getIfPresent(worldUuid);
         if (worldPk != null) {
             return worldPk;
@@ -551,6 +563,85 @@ public class SqlActivityBatch implements ActivityBatch {
         }
 
         cacheService.worldUuidPkMap().put(worldUuid, primaryKey);
+
+        return primaryKey;
+    }
+
+    /**
+     * Get or create the world record by name and return the primary key.
+     *
+     * <p>When identifying worlds by name, the UUID is updated on the existing
+     * record to reflect the current world UUID. This supports worlds that are
+     * regenerated frequently where the name stays the same but the UUID changes.</p>
+     *
+     * @param worldUuid The world uuid
+     * @param worldName The world name
+     * @return The primary key
+     * @throws SQLException The database exception
+     */
+    private int getOrCreateWorldIdByName(UUID worldUuid, String worldName) throws SQLException {
+        // Detect UUID changes for this world name (e.g. world was dynamically reloaded)
+        UUID lastUuid = cacheService.worldNameUuidMap().put(worldName, worldUuid);
+        boolean uuidChanged = lastUuid != null && !lastUuid.equals(worldUuid);
+
+        Integer worldPk = cacheService.worldNamePkMap().getIfPresent(worldName);
+        if (worldPk != null) {
+            if (uuidChanged) {
+                // Update the UUID in the DB to reflect the current world
+                try {
+                    dslContext
+                        .update(PRISM_WORLDS)
+                        .set(PRISM_WORLDS.WORLD_UUID, worldUuid.toString())
+                        .where(PRISM_WORLDS.WORLD_ID.equal(UInteger.valueOf(worldPk)))
+                        .execute();
+                } catch (Exception e) {
+                    // Ignore unique constraint violations
+                }
+            }
+            return worldPk;
+        }
+
+        int primaryKey;
+
+        // Select any existing record by name
+        UInteger intPk = dslContext
+            .select(PRISM_WORLDS.WORLD_ID)
+            .from(PRISM_WORLDS)
+            .where(PRISM_WORLDS.WORLD.equal(worldName))
+            .fetchOne(PRISM_WORLDS.WORLD_ID);
+
+        if (intPk != null) {
+            primaryKey = intPk.intValue();
+
+            // Update the UUID to the current one since it may have changed
+            try {
+                dslContext
+                    .update(PRISM_WORLDS)
+                    .set(PRISM_WORLDS.WORLD_UUID, worldUuid.toString())
+                    .where(PRISM_WORLDS.WORLD_ID.equal(intPk))
+                    .execute();
+            } catch (Exception e) {
+                // Ignore unique constraint violations - the UUID is already in use
+                // by another world record, which is harmless
+            }
+        } else {
+            // Create the record
+            intPk = dslContext
+                .insertInto(PRISM_WORLDS, PRISM_WORLDS.WORLD_UUID, PRISM_WORLDS.WORLD)
+                .values(worldUuid.toString(), worldName)
+                .returningResult(PRISM_WORLDS.WORLD_ID)
+                .fetchOne(PRISM_WORLDS.WORLD_ID);
+
+            if (intPk != null) {
+                primaryKey = intPk.intValue();
+            } else {
+                throw new SQLException(
+                    String.format("Failed to get or create a world record. World: %s", worldName)
+                );
+            }
+        }
+
+        cacheService.worldNamePkMap().put(worldName, primaryKey);
 
         return primaryKey;
     }

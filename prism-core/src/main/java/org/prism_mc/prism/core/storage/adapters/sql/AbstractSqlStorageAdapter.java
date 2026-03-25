@@ -764,7 +764,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
 
         // World
         List<PrismWorldsRecord> worlds = dslContext
-            .select(PRISM_WORLDS.WORLD_UUID, PRISM_WORLDS.WORLD_ID)
+            .select(PRISM_WORLDS.WORLD_UUID, PRISM_WORLDS.WORLD_ID, PRISM_WORLDS.WORLD)
             .from(PRISM_WORLDS)
             .fetchInto(PrismWorldsRecord.class);
 
@@ -772,6 +772,8 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             int worldId = worldsRecord.getWorldId().intValue();
             UUID worldUuid = UUID.fromString(worldsRecord.getWorldUuid());
             cacheService.worldUuidPkMap().put(worldUuid, worldId);
+            cacheService.worldNamePkMap().put(worldsRecord.getWorld(), worldId);
+            cacheService.worldNameUuidMap().put(worldsRecord.getWorld(), worldUuid);
         }
     }
 
@@ -1051,7 +1053,13 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
 
     @Override
     public ActivityBatch createActivityBatch() {
-        return new SqlActivityBatch(loggingService, dslContext, serializerVersion, cacheService);
+        return new SqlActivityBatch(
+            loggingService,
+            dslContext,
+            serializerVersion,
+            cacheService,
+            configurationService.storageConfig().identifyWorldsByName()
+        );
     }
 
     @Override
