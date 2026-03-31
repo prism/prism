@@ -267,7 +267,10 @@ public class MysqlStorageAdapter extends AbstractSqlStorageAdapter {
                 stmt.execute(loadSqlFromResourceFile("mysql", "prism_get_or_create_entity_type", prefix));
                 stmt.execute(loadSqlFromResourceFile("mysql", "prism_get_or_create_item", prefix));
                 stmt.execute(loadSqlFromResourceFile("mysql", "prism_get_or_create_player", prefix));
-                stmt.execute(loadSqlFromResourceFile("mysql", "prism_get_or_create_world", prefix));
+                String worldProcedure = configurationService.storageConfig().identifyWorldsByName()
+                    ? "prism_get_or_create_world_by_name"
+                    : "prism_get_or_create_world";
+                stmt.execute(loadSqlFromResourceFile("mysql", worldProcedure, prefix));
             }
         }
     }

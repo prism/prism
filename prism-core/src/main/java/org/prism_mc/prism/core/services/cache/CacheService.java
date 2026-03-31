@@ -27,6 +27,7 @@ import com.google.inject.Singleton;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.Getter;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.configuration.cache.CacheConfiguration;
@@ -80,6 +81,17 @@ public class CacheService {
      * A cache of world uuids to primary keys.
      */
     private final Cache<UUID, Integer> worldUuidPkMap;
+
+    /**
+     * A cache of world names to primary keys.
+     */
+    private final Cache<String, Integer> worldNamePkMap;
+
+    /**
+     * Tracks the last-seen UUID for each world name, used to detect
+     * UUID changes when worlds are dynamically loaded/unloaded.
+     */
+    private final Map<String, UUID> worldNameUuidMap = new ConcurrentHashMap<>();
 
     /**
      * Constructor.
@@ -293,5 +305,34 @@ public class CacheService {
 
         worldUuidPkMap = worldBuilder.build();
         primaryKeyCaches.put("worldUuidPkMap", worldUuidPkMap);
+
+        // Create the world name cache
+        Caffeine<String, Integer> worldNameBuilder = Caffeine.newBuilder()
+            .maximumSize(cacheConfiguration.pkCacheWorld().maxSize())
+            .evictionListener((key, value, cause) -> {
+                String msg = "Evicting world name from PK cache: Key: {0}, Value: {1}, Removal Cause: {2}";
+                loggingService.debug(msg, key, value, cause);
+            })
+            .removalListener((key, value, cause) -> {
+                String msg = "Removing world name from PK cache: Key: {0}, Value: {1}, Removal Cause: {2}";
+                loggingService.debug(msg, key, value, cause);
+            });
+
+        if (
+            cacheConfiguration.pkCacheWorld().expiresAfterAccess() != null &&
+            cacheConfiguration.pkCacheWorld().expiresAfterAccess().duration() != null
+        ) {
+            worldNameBuilder.expireAfterAccess(
+                cacheConfiguration.pkCacheWorld().expiresAfterAccess().duration(),
+                cacheConfiguration.pkCacheWorld().expiresAfterAccess().timeUnit()
+            );
+        }
+
+        if (cacheConfiguration.recordStats()) {
+            worldNameBuilder.recordStats();
+        }
+
+        worldNamePkMap = worldNameBuilder.build();
+        primaryKeyCaches.put("worldNamePkMap", worldNamePkMap);
     }
 }
