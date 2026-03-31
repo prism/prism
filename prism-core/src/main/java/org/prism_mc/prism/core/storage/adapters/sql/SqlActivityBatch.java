@@ -635,9 +635,7 @@ public class SqlActivityBatch implements ActivityBatch {
             if (intPk != null) {
                 primaryKey = intPk.intValue();
             } else {
-                throw new SQLException(
-                    String.format("Failed to get or create a world record. World: %s", worldName)
-                );
+                throw new SQLException(String.format("Failed to get or create a world record. World: %s", worldName));
             }
         }
 
