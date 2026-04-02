@@ -256,12 +256,21 @@ public class SqlActivityBatch implements ActivityBatch {
         if (intPk != null) {
             primaryKey = intPk.intValue();
         } else {
-            // Create the record
-            intPk = dslContext
-                .insertInto(PRISM_ACTIONS, PRISM_ACTIONS.ACTION)
-                .values(actionKey)
-                .returningResult(PRISM_ACTIONS.ACTION_ID)
-                .fetchOne(PRISM_ACTIONS.ACTION_ID);
+            // Create the record, handling concurrent inserts
+            try {
+                intPk = dslContext
+                    .insertInto(PRISM_ACTIONS, PRISM_ACTIONS.ACTION)
+                    .values(actionKey)
+                    .returningResult(PRISM_ACTIONS.ACTION_ID)
+                    .fetchOne(PRISM_ACTIONS.ACTION_ID);
+            } catch (Exception e) {
+                // Likely duplicate key from concurrent insert — re-select
+                intPk = dslContext
+                    .select(PRISM_ACTIONS.ACTION_ID)
+                    .from(PRISM_ACTIONS)
+                    .where(PRISM_ACTIONS.ACTION.equal(actionKey))
+                    .fetchOne(PRISM_ACTIONS.ACTION_ID);
+            }
 
             if (intPk != null) {
                 primaryKey = intPk.intValue();
@@ -304,18 +313,31 @@ public class SqlActivityBatch implements ActivityBatch {
         if (intPk != null) {
             primaryKey = intPk.intValue();
         } else {
-            // Create the record
-            intPk = dslContext
-                .insertInto(
-                    PRISM_BLOCKS,
-                    PRISM_BLOCKS.NS,
-                    PRISM_BLOCKS.NAME,
-                    PRISM_BLOCKS.DATA,
-                    PRISM_BLOCKS.TRANSLATION_KEY
-                )
-                .values(namespace, name, blockData, translationKey)
-                .returningResult(PRISM_BLOCKS.BLOCK_ID)
-                .fetchOne(PRISM_BLOCKS.BLOCK_ID);
+            // Create the record, handling concurrent inserts
+            try {
+                intPk = dslContext
+                    .insertInto(
+                        PRISM_BLOCKS,
+                        PRISM_BLOCKS.NS,
+                        PRISM_BLOCKS.NAME,
+                        PRISM_BLOCKS.DATA,
+                        PRISM_BLOCKS.TRANSLATION_KEY
+                    )
+                    .values(namespace, name, blockData, translationKey)
+                    .returningResult(PRISM_BLOCKS.BLOCK_ID)
+                    .fetchOne(PRISM_BLOCKS.BLOCK_ID);
+            } catch (Exception e) {
+                // Likely duplicate key from concurrent insert — re-select
+                intPk = dslContext
+                    .select(PRISM_BLOCKS.BLOCK_ID)
+                    .from(PRISM_BLOCKS)
+                    .where(
+                        PRISM_BLOCKS.NS.equal(namespace),
+                        PRISM_BLOCKS.NAME.equal(name),
+                        PRISM_BLOCKS.DATA.equal(blockData)
+                    )
+                    .fetchOne(PRISM_BLOCKS.BLOCK_ID);
+            }
 
             if (intPk != null) {
                 primaryKey = intPk.intValue();
@@ -355,12 +377,21 @@ public class SqlActivityBatch implements ActivityBatch {
         if (intPk != null) {
             primaryKey = intPk.longValue();
         } else {
-            // Create the record
-            intPk = dslContext
-                .insertInto(PRISM_CAUSES)
-                .set(PRISM_CAUSES.CAUSE, causeName)
-                .returningResult(PRISM_CAUSES.CAUSE_ID)
-                .fetchOne(PRISM_CAUSES.CAUSE_ID);
+            // Create the record, handling concurrent inserts
+            try {
+                intPk = dslContext
+                    .insertInto(PRISM_CAUSES)
+                    .set(PRISM_CAUSES.CAUSE, causeName)
+                    .returningResult(PRISM_CAUSES.CAUSE_ID)
+                    .fetchOne(PRISM_CAUSES.CAUSE_ID);
+            } catch (Exception e) {
+                // Likely duplicate key from concurrent insert — re-select
+                intPk = dslContext
+                    .select(PRISM_CAUSES.CAUSE_ID)
+                    .from(PRISM_CAUSES)
+                    .where(PRISM_CAUSES.CAUSE.equal(causeName))
+                    .fetchOne(PRISM_CAUSES.CAUSE_ID);
+            }
 
             if (intPk != null) {
                 primaryKey = intPk.longValue();
@@ -402,12 +433,21 @@ public class SqlActivityBatch implements ActivityBatch {
         if (intPk != null) {
             primaryKey = intPk.intValue();
         } else {
-            // Create the record
-            intPk = dslContext
-                .insertInto(PRISM_ENTITY_TYPES, PRISM_ENTITY_TYPES.ENTITY_TYPE, PRISM_ENTITY_TYPES.TRANSLATION_KEY)
-                .values(entityType, translationKey)
-                .returningResult(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
-                .fetchOne(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID);
+            // Create the record, handling concurrent inserts
+            try {
+                intPk = dslContext
+                    .insertInto(PRISM_ENTITY_TYPES, PRISM_ENTITY_TYPES.ENTITY_TYPE, PRISM_ENTITY_TYPES.TRANSLATION_KEY)
+                    .values(entityType, translationKey)
+                    .returningResult(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
+                    .fetchOne(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID);
+            } catch (Exception e) {
+                // Likely duplicate key from concurrent insert — re-select
+                intPk = dslContext
+                    .select(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
+                    .from(PRISM_ENTITY_TYPES)
+                    .where(PRISM_ENTITY_TYPES.ENTITY_TYPE.equal(entityType))
+                    .fetchOne(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID);
+            }
 
             if (intPk != null) {
                 primaryKey = intPk.intValue();
@@ -449,12 +489,21 @@ public class SqlActivityBatch implements ActivityBatch {
         if (intPk != null) {
             primaryKey = intPk.intValue();
         } else {
-            // Create the record
-            intPk = dslContext
-                .insertInto(PRISM_ITEMS, PRISM_ITEMS.MATERIAL, PRISM_ITEMS.DATA)
-                .values(material, data)
-                .returningResult(PRISM_ITEMS.ITEM_ID)
-                .fetchOne(PRISM_ITEMS.ITEM_ID);
+            // Create the record, handling concurrent inserts
+            try {
+                intPk = dslContext
+                    .insertInto(PRISM_ITEMS, PRISM_ITEMS.MATERIAL, PRISM_ITEMS.DATA)
+                    .values(material, data)
+                    .returningResult(PRISM_ITEMS.ITEM_ID)
+                    .fetchOne(PRISM_ITEMS.ITEM_ID);
+            } catch (Exception e) {
+                // Likely duplicate key from concurrent insert — re-select
+                intPk = dslContext
+                    .select(PRISM_ITEMS.ITEM_ID)
+                    .from(PRISM_ITEMS)
+                    .where(PRISM_ITEMS.MATERIAL.equal(material), PRISM_ITEMS.DATA.equal(data))
+                    .fetchOne(PRISM_ITEMS.ITEM_ID);
+            }
 
             if (intPk != null) {
                 primaryKey = intPk.intValue();
@@ -548,12 +597,21 @@ public class SqlActivityBatch implements ActivityBatch {
         if (intPk != null) {
             primaryKey = intPk.intValue();
         } else {
-            // Create the record
-            intPk = dslContext
-                .insertInto(PRISM_WORLDS, PRISM_WORLDS.WORLD_UUID, PRISM_WORLDS.WORLD)
-                .values(worldUuid.toString(), worldName)
-                .returningResult(PRISM_WORLDS.WORLD_ID)
-                .fetchOne(PRISM_WORLDS.WORLD_ID);
+            // Create the record, handling concurrent inserts
+            try {
+                intPk = dslContext
+                    .insertInto(PRISM_WORLDS, PRISM_WORLDS.WORLD_UUID, PRISM_WORLDS.WORLD)
+                    .values(worldUuid.toString(), worldName)
+                    .returningResult(PRISM_WORLDS.WORLD_ID)
+                    .fetchOne(PRISM_WORLDS.WORLD_ID);
+            } catch (Exception e) {
+                // Likely duplicate key from concurrent insert — re-select
+                intPk = dslContext
+                    .select(PRISM_WORLDS.WORLD_ID)
+                    .from(PRISM_WORLDS)
+                    .where(PRISM_WORLDS.WORLD_UUID.equal(worldUuid.toString()))
+                    .fetchOne(PRISM_WORLDS.WORLD_ID);
+            }
 
             if (intPk != null) {
                 primaryKey = intPk.intValue();
@@ -625,12 +683,21 @@ public class SqlActivityBatch implements ActivityBatch {
                 // by another world record, which is harmless
             }
         } else {
-            // Create the record
-            intPk = dslContext
-                .insertInto(PRISM_WORLDS, PRISM_WORLDS.WORLD_UUID, PRISM_WORLDS.WORLD)
-                .values(worldUuid.toString(), worldName)
-                .returningResult(PRISM_WORLDS.WORLD_ID)
-                .fetchOne(PRISM_WORLDS.WORLD_ID);
+            // Create the record, handling concurrent inserts
+            try {
+                intPk = dslContext
+                    .insertInto(PRISM_WORLDS, PRISM_WORLDS.WORLD_UUID, PRISM_WORLDS.WORLD)
+                    .values(worldUuid.toString(), worldName)
+                    .returningResult(PRISM_WORLDS.WORLD_ID)
+                    .fetchOne(PRISM_WORLDS.WORLD_ID);
+            } catch (Exception e) {
+                // Likely duplicate key from concurrent insert — re-select
+                intPk = dslContext
+                    .select(PRISM_WORLDS.WORLD_ID)
+                    .from(PRISM_WORLDS)
+                    .where(PRISM_WORLDS.WORLD.equal(worldName))
+                    .fetchOne(PRISM_WORLDS.WORLD_ID);
+            }
 
             if (intPk != null) {
                 primaryKey = intPk.intValue();
