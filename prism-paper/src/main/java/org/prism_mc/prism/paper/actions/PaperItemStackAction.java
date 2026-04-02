@@ -24,7 +24,6 @@ import de.tr7zw.nbtapi.NBT;
 import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.translation.Argument;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -100,17 +99,6 @@ public class PaperItemStackAction extends PaperMaterialAction implements ItemAct
     public Component descriptorComponent() {
         var meta = itemStack.getItemMeta();
         var complete = Component.text();
-
-        if (itemStack.getAmount() > 1) {
-            complete
-                .append(
-                    Component.translatable(
-                        "prism.quantity",
-                        Argument.component("quantity", Component.text(itemStack.getAmount()))
-                    )
-                )
-                .append(Component.space());
-        }
 
         // Use the effective name, but strip colors for consistent chat UI
         complete.append(Component.text(PlainTextComponentSerializer.plainText().serialize(itemStack.effectiveName())));
