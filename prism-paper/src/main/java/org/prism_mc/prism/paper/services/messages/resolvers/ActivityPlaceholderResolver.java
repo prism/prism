@@ -34,7 +34,6 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.translation.Argument;
 import net.kyori.moonshine.placeholder.ConclusionValue;
 import net.kyori.moonshine.placeholder.ContinuanceValue;
 import net.kyori.moonshine.placeholder.IPlaceholderResolver;
@@ -45,6 +44,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.Nullable;
+import org.prism_mc.prism.api.actions.ItemAction;
 import org.prism_mc.prism.api.actions.types.ActionResultType;
 import org.prism_mc.prism.api.actions.types.ActionType;
 import org.prism_mc.prism.api.activities.AbstractActivity;
@@ -227,7 +227,18 @@ public class ActivityPlaceholderResolver implements IPlaceholderResolver<Command
             return Component.empty();
         }
 
-        var builder = Component.text().append(value.action().descriptorComponent());
+        var builder = Component.text();
+
+        if (value.action() instanceof ItemAction itemAction && itemAction.quantity() > 1) {
+            String template = translationService.messageOf(receiver, "prism.quantity");
+            builder.append(
+                MiniMessage.miniMessage()
+                    .deserialize(template.replace("<quantity>", String.valueOf(itemAction.quantity())))
+            );
+            builder.append(Component.space());
+        }
+
+        builder.append(value.action().descriptorComponent());
 
         if (
             value.action().metadata() != null &&
@@ -335,9 +346,7 @@ public class ActivityPlaceholderResolver implements IPlaceholderResolver<Command
             timeAgo.append(diff[2]).append('m');
         }
 
-        return Component.translatable(
-            "prism.time-ago",
-            Argument.component("time_ago", Component.text(timeAgo.toString()))
-        );
+        String template = translationService.messageOf(receiver, "prism.time-ago");
+        return MiniMessage.miniMessage().deserialize(template.replace("<time_ago>", timeAgo.toString()));
     }
 }
