@@ -66,6 +66,7 @@ import org.prism_mc.prism.core.storage.adapters.sql.SqlActivityQueryBuilder;
 import org.prism_mc.prism.core.storage.adapters.sql.SqlSchemaUpdater;
 import org.prism_mc.prism.core.storage.adapters.sqlite.SqliteStorageAdapter;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
+import org.prism_mc.prism.loader.services.configuration.storage.StorageConfiguration;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 import org.prism_mc.prism.loader.storage.StorageType;
 import org.prism_mc.prism.paper.PrismPaper;
@@ -258,6 +259,7 @@ public class PrismModule extends AbstractModule {
 
         // Service - Configuration
         bind(ConfigurationService.class).toInstance(prism.loader().configurationService());
+        bind(StorageConfiguration.class).toInstance(prism.loader().configurationService().storageConfig());
 
         // Service - Expectations
         bind(ExpectationService.class).in(Singleton.class);
