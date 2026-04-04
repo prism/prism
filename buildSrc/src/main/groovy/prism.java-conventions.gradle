@@ -9,7 +9,10 @@ plugins {
 group = project.property('group')
 description = project.property('description')
 
-targetCompatibility = sourceCompatibility = JavaVersion.VERSION_21
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
 
 repositories {
     mavenCentral()
@@ -25,12 +28,12 @@ repositories {
     exclusiveContent {
         forRepository {
             maven {
-                url "https://repo.papermc.io/repository/maven-public/"
+                url = "https://repo.papermc.io/repository/maven-public/"
             }
         }
         filter {
             includeGroup "com.mojang"
-            includeGroup "io.papermc"
+            includeGroupAndSubgroups "io.papermc"
         }
     }
 

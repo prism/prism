@@ -1,7 +1,7 @@
 plugins {
     id 'prism.java-conventions'
-    id 'com.gradleup.shadow' version '9.0.0-beta11'
-    id 'xyz.jpenilla.run-paper' version '2.3.1'
+    id 'com.gradleup.shadow' version '9.4.1'
+    id 'xyz.jpenilla.run-paper' version '3.0.2'
     id 'xyz.jpenilla.resource-factory-bukkit-convention' version '1.2.0'
 }
 
@@ -31,9 +31,9 @@ shadowJar {
         attributes 'Main-Class': 'org.prism_mc.prism.paper.loader.PrismCli'
     }
 
-    from {
-        project(':prism-paper').tasks.shadowJar.archiveFile
-    }
+    def paperShadowJar = project(':prism-paper').tasks.shadowJar
+    dependsOn paperShadowJar
+    from(paperShadowJar.archiveFile)
 
     relocate 'com.typesafe', 'org.prism_mc.prism.libs.typesafe'
     relocate 'com.fasterxml.jackson', 'org.prism_mc.prism.libs.jackson'
@@ -46,12 +46,18 @@ shadowJar {
     relocate 'org.spongepowered.configurate', 'org.prism_mc.prism.libs.configurate'
 }
 
-artifacts {
-    archives shadowJar
-}
+assemble.dependsOn shadowJar
 
 runServer {
-    minecraftVersion(project.property('paper-server-version'))
+    javaLauncher.set(javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    })
+    def serverJarFile = file("run/paper-${project.property('paper-server-version')}.jar")
+    if (serverJarFile.exists()) {
+        serverJar(serverJarFile)
+    } else {
+        minecraftVersion(project.property('paper-server-version'))
+    }
     pluginJars(project(':prism-paper-example-plugin').tasks.jar.archiveFile)
 }
 
