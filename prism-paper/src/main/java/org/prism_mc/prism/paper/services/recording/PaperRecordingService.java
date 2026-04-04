@@ -26,7 +26,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
-import org.bukkit.scheduler.BukkitTask;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.services.recording.RecordingService;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
@@ -75,9 +74,14 @@ public class PaperRecordingService implements RecordingService {
     private final AtomicInteger droppedActivities = new AtomicInteger();
 
     /**
-     * Cache the scheduled task.
+     * Number of currently active recording workers.
      */
-    private BukkitTask task;
+    private final AtomicInteger activeWorkers = new AtomicInteger();
+
+    /**
+     * Maximum number of parallel recording workers.
+     */
+    private final int parallelism;
 
     /**
      * The drain mode.
@@ -107,6 +111,7 @@ public class PaperRecordingService implements RecordingService {
         this.filterService = filterService;
         this.loggingService = loggingService;
         this.recordingTask = recordingTask;
+        this.parallelism = configurationService.prismConfig().recording().parallelism();
 
         int capacity = configurationService.prismConfig().recording().queueMaxCapacity();
         this.queue = capacity > 0 ? new LinkedBlockingQueue<>(capacity) : new LinkedBlockingQueue<>();
@@ -150,10 +155,7 @@ public class PaperRecordingService implements RecordingService {
 
     @Override
     public void clearTask() {
-        if (task != null) {
-            task.cancel();
-            task = null;
-        }
+        activeWorkers.decrementAndGet();
 
         int dropped = droppedActivities.getAndSet(0);
         if (dropped > 0) {
@@ -167,9 +169,9 @@ public class PaperRecordingService implements RecordingService {
     public void drainSync() {
         recordMode = RecordMode.DRAIN_SYNC;
 
-        RecordingTask recordingTask = this.recordingTask.toNew();
+        RecordingTask drainTask = this.recordingTask.toNew();
         while (!queue.isEmpty()) {
-            recordingTask.save();
+            drainTask.save();
         }
     }
 
@@ -181,30 +183,37 @@ public class PaperRecordingService implements RecordingService {
     @Override
     public void queueNextRecording(Runnable recordingTask) {
         long delay = configurationService.prismConfig().recording().delay();
-        queueNextRecording(delay);
+        scheduleWorkers(delay);
     }
 
     /**
-     * Queue the next recording with a specific delay.
+     * Schedule recording workers up to the configured parallelism.
      *
-     * @param delay The delay
+     * @param delay The delay in ticks before starting each worker
      */
-    public void queueNextRecording(long delay) {
-        if (task != null) {
-            throw new IllegalStateException("Recording tasks must be cleared before scheduling a new one.");
+    private void scheduleWorkers(long delay) {
+        if (!recordMode.equals(RecordMode.NORMAL)) {
+            return;
         }
 
-        if (recordMode.equals(RecordMode.NORMAL)) {
-            task = Bukkit.getServer()
+        while (true) {
+            int current = activeWorkers.get();
+            if (current >= parallelism) {
+                break;
+            }
+
+            if (!activeWorkers.compareAndSet(current, current + 1)) {
+                continue;
+            }
+
+            Bukkit.getServer()
                 .getScheduler()
-                .runTaskLaterAsynchronously(PrismPaper.instance().loaderPlugin(), recordingTask, delay);
+                .runTaskLaterAsynchronously(PrismPaper.instance().loaderPlugin(), this.recordingTask.toNew(), delay);
         }
     }
 
     @Override
     public void stop() {
-        this.clearTask();
-
         recordMode = RecordMode.STOPPED;
     }
 }

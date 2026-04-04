@@ -21,6 +21,7 @@
 package org.prism_mc.prism.paper.services.recording;
 
 import com.google.inject.Inject;
+import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.services.recording.RecordingService;
 import org.prism_mc.prism.api.storage.ActivityBatch;
 import org.prism_mc.prism.api.storage.StorageAdapter;
@@ -93,11 +94,16 @@ public class RecordingTask implements Runnable {
                 batch.startBatch();
 
                 while (!recordingService.queue().isEmpty()) {
+                    Activity activity = recordingService.queue().poll();
+                    if (activity == null) {
+                        break;
+                    }
+
                     batchCount++;
-                    batch.add(recordingService.queue().poll());
+                    batch.add(activity);
 
                     // Batch max exceeded, break
-                    if (batchCount > batchMax) {
+                    if (batchCount >= batchMax) {
                         loggingService.debug(
                             "Recorder: Batch max exceeded, running insert. Queue remaining: {0}",
                             recordingService.queue().size()

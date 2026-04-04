@@ -38,4 +38,22 @@ public class RecordingConfiguration {
         exceed this limit are dropped. Set to 0 for unlimited (not recommended)."""
     )
     private int queueMaxCapacity = 100000;
+
+    @Comment(
+        """
+        Number of parallel recording tasks that can drain the queue concurrently.
+        Higher values drain the queue faster but use more database connections.
+        Only increase this if your database server can handle additional concurrent
+        connections. Most shared database hosts should leave this at 1. Max: 4."""
+    )
+    private int parallelism = 1;
+
+    /**
+     * Get the parallelism value, clamped to [1, 4].
+     *
+     * @return The parallelism value
+     */
+    public int parallelism() {
+        return Math.max(1, Math.min(4, parallelism));
+    }
 }
