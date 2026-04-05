@@ -1,0 +1,20 @@
+plugins {
+    id 'prism.java-conventions'
+    id 'xyz.jpenilla.resource-factory-bukkit-convention' version '1.2.0'
+}
+
+dependencies {
+    compileOnly project.property('deps.paper-api')
+    compileOnly project(':prism-paper-api')
+}
+
+bukkitPluginYaml {
+    name.set('PrismExample')
+    version.set(project.property('version'))
+    main.set('org.prism_mc.prism.example.PrismExamplePlugin')
+    apiVersion.set(project.property('paper-api-version'))
+    depend.add('prism')
+    commands.register('prismexample') {
+        description.set('Query recent sprint-toggle activities')
+    }
+}

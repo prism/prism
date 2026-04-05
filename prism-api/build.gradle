@@ -19,9 +19,10 @@ publishing {
     }
     repositories {
         maven {
+            name = 'darkhelmet'
             def releasesRepoUrl = "https://nexus.darkhelmet.network/repository/maven-releases/"
             def snapshotsRepoUrl = "https://nexus.darkhelmet.network/repository/maven-snapshots/"
-            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            url = version.contains('-dev') ? snapshotsRepoUrl : releasesRepoUrl
             credentials(PasswordCredentials)
         }
     }

@@ -1,8 +1,30 @@
 plugins {
+    id 'java-library'
     id 'prism.java-conventions'
+    id 'maven-publish'
 }
 
 dependencies {
     compileOnly project.property('deps.paper-api')
-    implementation project(':prism-api')
+    api project(':prism-api')
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = project.property("group")
+            artifactId = 'prism-paper-api'
+            version = project.property("version")
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            name = 'darkhelmet'
+            def releasesRepoUrl = "https://nexus.darkhelmet.network/repository/maven-releases/"
+            def snapshotsRepoUrl = "https://nexus.darkhelmet.network/repository/maven-snapshots/"
+            url = version.contains('-dev') ? snapshotsRepoUrl : releasesRepoUrl
+            credentials(PasswordCredentials)
+        }
+    }
 }

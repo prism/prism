@@ -20,9 +20,33 @@
 
 package org.prism_mc.prism.api;
 
+import org.prism_mc.prism.api.actions.ActionFactory;
+import org.prism_mc.prism.api.actions.types.ActionTypeRegistry;
+import org.prism_mc.prism.api.services.recording.RecordingService;
 import org.prism_mc.prism.api.storage.StorageAdapter;
 
 public interface Prism {
+    /**
+     * Get the action factory.
+     *
+     * @return The action factory
+     */
+    ActionFactory actionFactory();
+
+    /**
+     * Get the action type registry.
+     *
+     * @return The action type registry
+     */
+    ActionTypeRegistry actionTypeRegistry();
+
+    /**
+     * Get the recording service.
+     *
+     * @return The recording service
+     */
+    RecordingService recordingService();
+
     /**
      * Get the storage adapter.
      *
