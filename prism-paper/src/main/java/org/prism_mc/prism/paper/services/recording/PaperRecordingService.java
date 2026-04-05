@@ -156,11 +156,11 @@ public class PaperRecordingService implements RecordingService {
     @Override
     public void clearTask() {
         activeWorkers.decrementAndGet();
+    }
 
-        int dropped = droppedActivities.getAndSet(0);
-        if (dropped > 0) {
-            loggingService.warn("Dropped {0} activities due to a full recording queue.", dropped);
-        }
+    @Override
+    public int resetDroppedCount() {
+        return droppedActivities.getAndSet(0);
     }
 
     /**

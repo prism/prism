@@ -38,6 +38,13 @@ public interface RecordingService {
     void clearTask();
 
     /**
+     * Reset the dropped activity counter and return the count since the last reset.
+     *
+     * @return The number of activities dropped since the last reset
+     */
+    int resetDroppedCount();
+
+    /**
      * Get the queue.
      *
      * @return the queue
