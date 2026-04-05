@@ -23,8 +23,12 @@ package org.prism_mc.prism.paper.services.filters;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
@@ -150,7 +154,7 @@ public class PaperFilterService implements FilterService {
         }
 
         // Game modes
-        List<GameMode> gameModes = new ArrayList<>();
+        Set<GameMode> gameModes = EnumSet.noneOf(GameMode.class);
         if (config.causePlayer() != null) {
             for (var gameModeString : config.causePlayer().gameModes()) {
                 try {
@@ -167,16 +171,20 @@ public class PaperFilterService implements FilterService {
             var filter = new ActivityFilter(
                 filterName,
                 behavior,
-                ListUtils.isNullOrEmpty(config.actions()) ? new ArrayList<>() : config.actions(),
-                ListUtils.isNullOrEmpty(config.namedCauses()) ? new ArrayList<>() : config.namedCauses(),
+                ListUtils.isNullOrEmpty(config.actions()) ? Collections.emptySet() : new HashSet<>(config.actions()),
+                ListUtils.isNullOrEmpty(config.namedCauses())
+                    ? Collections.emptySet()
+                    : new HashSet<>(config.namedCauses()),
                 affectedBlockTags,
                 causeBlockTags,
                 affectedEntityTypeTags,
                 causeEntityTypeTags,
                 gameModes,
                 itemTags,
-                ListUtils.isNullOrEmpty(config.permissions()) ? new ArrayList<>() : config.permissions(),
-                ListUtils.isNullOrEmpty(worldNames) ? new ArrayList<>() : worldNames
+                ListUtils.isNullOrEmpty(config.permissions())
+                    ? Collections.emptySet()
+                    : new HashSet<>(config.permissions()),
+                ListUtils.isNullOrEmpty(worldNames) ? Collections.emptySet() : new HashSet<>(worldNames)
             );
 
             if (behavior.equals(FilterBehavior.ALLOW)) {
