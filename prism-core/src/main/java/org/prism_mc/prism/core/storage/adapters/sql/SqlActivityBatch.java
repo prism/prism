@@ -232,6 +232,51 @@ public class SqlActivityBatch implements ActivityBatch {
     }
 
     /**
+     * Wraps a cache-loaded get-or-create operation, handling checked exception propagation
+     * through Caffeine's loader function. Only one thread executes the loader for a given
+     * key — concurrent callers block and receive the same result.
+     *
+     * @param cache The Caffeine cache
+     * @param key The cache key
+     * @param loader The DB loader that may throw SQLException
+     * @param <K> The key type
+     * @param <V> The value type
+     * @return The cached or newly loaded value
+     * @throws SQLException If the loader throws
+     */
+    private <K, V> V cachedGetOrCreate(
+        com.github.benmanes.caffeine.cache.Cache<K, V> cache,
+        K key,
+        SqlSupplier<V> loader
+    ) throws SQLException {
+        try {
+            return cache.get(key, k -> {
+                try {
+                    return loader.get();
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof SQLException se) {
+                throw se;
+            }
+
+            throw e;
+        }
+    }
+
+    /**
+     * A supplier that may throw SQLException.
+     *
+     * @param <T> The return type
+     */
+    @FunctionalInterface
+    private interface SqlSupplier<T> {
+        T get() throws SQLException;
+    }
+
+    /**
      * Get or create the action record and return the primary key.
      *
      * @param actionKey The action key
@@ -239,24 +284,18 @@ public class SqlActivityBatch implements ActivityBatch {
      * @throws SQLException The database exception
      */
     private int getOrCreateActionId(String actionKey) throws SQLException {
-        Integer actionKeyPk = cacheService.actionKeyPkMap().getIfPresent(actionKey);
-        if (actionKeyPk != null) {
-            return actionKeyPk;
-        }
+        return cachedGetOrCreate(cacheService.actionKeyPkMap(), actionKey, () -> {
+            UInteger intPk = dslContext
+                .select(PRISM_ACTIONS.ACTION_ID)
+                .from(PRISM_ACTIONS)
+                .where(PRISM_ACTIONS.ACTION.equal(actionKey))
+                .limit(1)
+                .fetchOne(PRISM_ACTIONS.ACTION_ID);
 
-        int primaryKey;
+            if (intPk != null) {
+                return intPk.intValue();
+            }
 
-        // Select any existing record
-        UInteger intPk = dslContext
-            .select(PRISM_ACTIONS.ACTION_ID)
-            .from(PRISM_ACTIONS)
-            .where(PRISM_ACTIONS.ACTION.equal(actionKey))
-            .fetchOne(PRISM_ACTIONS.ACTION_ID);
-
-        if (intPk != null) {
-            primaryKey = intPk.intValue();
-        } else {
-            // Create the record, handling concurrent inserts
             try {
                 intPk = dslContext
                     .insertInto(PRISM_ACTIONS, PRISM_ACTIONS.ACTION)
@@ -264,56 +303,51 @@ public class SqlActivityBatch implements ActivityBatch {
                     .returningResult(PRISM_ACTIONS.ACTION_ID)
                     .fetchOne(PRISM_ACTIONS.ACTION_ID);
             } catch (Exception e) {
-                // Likely duplicate key from concurrent insert — re-select
                 intPk = dslContext
                     .select(PRISM_ACTIONS.ACTION_ID)
                     .from(PRISM_ACTIONS)
                     .where(PRISM_ACTIONS.ACTION.equal(actionKey))
+                    .limit(1)
                     .fetchOne(PRISM_ACTIONS.ACTION_ID);
             }
 
             if (intPk != null) {
-                primaryKey = intPk.intValue();
-            } else {
-                throw new SQLException(
-                    String.format("Failed to get or create an action record. Action: %s", actionKey)
-                );
+                return intPk.intValue();
             }
-        }
 
-        cacheService.actionKeyPkMap().put(actionKey, primaryKey);
-
-        return primaryKey;
+            throw new SQLException(String.format("Failed to get or create an action record. Action: %s", actionKey));
+        });
     }
 
     /**
      * Get or create the block data record and return the primary key.
      *
+     * @param namespace The block namespace
+     * @param name The block name
      * @param blockData The block data
+     * @param translationKey The translation key
      * @return The primary key
      * @throws SQLException The database exception
      */
     private int getOrCreateBlockId(String namespace, String name, String blockData, String translationKey)
         throws SQLException {
         String blockKey = namespace + ":" + name + (blockData == null ? "" : blockData);
-        Integer blockPk = cacheService.blockDataPkMap().getIfPresent(blockKey);
-        if (blockPk != null) {
-            return blockPk;
-        }
+        return cachedGetOrCreate(cacheService.blockDataPkMap(), blockKey, () -> {
+            UInteger intPk = dslContext
+                .select(PRISM_BLOCKS.BLOCK_ID)
+                .from(PRISM_BLOCKS)
+                .where(
+                    PRISM_BLOCKS.NS.equal(namespace),
+                    PRISM_BLOCKS.NAME.equal(name),
+                    PRISM_BLOCKS.DATA.equal(blockData)
+                )
+                .limit(1)
+                .fetchOne(PRISM_BLOCKS.BLOCK_ID);
 
-        int primaryKey;
+            if (intPk != null) {
+                return intPk.intValue();
+            }
 
-        // Select the existing block
-        UInteger intPk = dslContext
-            .select(PRISM_BLOCKS.BLOCK_ID)
-            .from(PRISM_BLOCKS)
-            .where(PRISM_BLOCKS.NS.equal(namespace), PRISM_BLOCKS.NAME.equal(name), PRISM_BLOCKS.DATA.equal(blockData))
-            .fetchOne(PRISM_BLOCKS.BLOCK_ID);
-
-        if (intPk != null) {
-            primaryKey = intPk.intValue();
-        } else {
-            // Create the record, handling concurrent inserts
             try {
                 intPk = dslContext
                     .insertInto(
@@ -327,7 +361,6 @@ public class SqlActivityBatch implements ActivityBatch {
                     .returningResult(PRISM_BLOCKS.BLOCK_ID)
                     .fetchOne(PRISM_BLOCKS.BLOCK_ID);
             } catch (Exception e) {
-                // Likely duplicate key from concurrent insert — re-select
                 intPk = dslContext
                     .select(PRISM_BLOCKS.BLOCK_ID)
                     .from(PRISM_BLOCKS)
@@ -336,21 +369,18 @@ public class SqlActivityBatch implements ActivityBatch {
                         PRISM_BLOCKS.NAME.equal(name),
                         PRISM_BLOCKS.DATA.equal(blockData)
                     )
+                    .limit(1)
                     .fetchOne(PRISM_BLOCKS.BLOCK_ID);
             }
 
             if (intPk != null) {
-                primaryKey = intPk.intValue();
-            } else {
-                throw new SQLException(
-                    String.format("Failed to get or create a block record. Block: %s:%s %s", namespace, name, blockData)
-                );
+                return intPk.intValue();
             }
-        }
 
-        cacheService.blockDataPkMap().put(blockKey, primaryKey);
-
-        return primaryKey;
+            throw new SQLException(
+                String.format("Failed to get or create a block record. Block: %s:%s %s", namespace, name, blockData)
+            );
+        });
     }
 
     /**
@@ -361,23 +391,18 @@ public class SqlActivityBatch implements ActivityBatch {
      * @throws SQLException The database exception
      */
     private long getOrCreateCauseId(String causeName) throws SQLException {
-        Long causePk = cacheService.namedCausePkMap().getIfPresent(causeName);
-        if (causePk != null) {
-            return causePk;
-        }
+        return cachedGetOrCreate(cacheService.namedCausePkMap(), causeName, () -> {
+            UInteger intPk = dslContext
+                .select(PRISM_CAUSES.CAUSE_ID)
+                .from(PRISM_CAUSES)
+                .where(PRISM_CAUSES.CAUSE.equal(causeName))
+                .limit(1)
+                .fetchOne(PRISM_CAUSES.CAUSE_ID);
 
-        long primaryKey;
+            if (intPk != null) {
+                return intPk.longValue();
+            }
 
-        UInteger intPk = dslContext
-            .select(PRISM_CAUSES.CAUSE_ID)
-            .from(PRISM_CAUSES)
-            .where(PRISM_CAUSES.CAUSE.equal(causeName))
-            .fetchOne(PRISM_CAUSES.CAUSE_ID);
-
-        if (intPk != null) {
-            primaryKey = intPk.longValue();
-        } else {
-            // Create the record, handling concurrent inserts
             try {
                 intPk = dslContext
                     .insertInto(PRISM_CAUSES)
@@ -385,26 +410,22 @@ public class SqlActivityBatch implements ActivityBatch {
                     .returningResult(PRISM_CAUSES.CAUSE_ID)
                     .fetchOne(PRISM_CAUSES.CAUSE_ID);
             } catch (Exception e) {
-                // Likely duplicate key from concurrent insert — re-select
                 intPk = dslContext
                     .select(PRISM_CAUSES.CAUSE_ID)
                     .from(PRISM_CAUSES)
                     .where(PRISM_CAUSES.CAUSE.equal(causeName))
+                    .limit(1)
                     .fetchOne(PRISM_CAUSES.CAUSE_ID);
             }
 
             if (intPk != null) {
-                primaryKey = intPk.longValue();
-            } else {
-                throw new SQLException(
-                    String.format("Failed to get or create a named cause record. Cause name: %s", causeName)
-                );
+                return intPk.longValue();
             }
-        }
 
-        cacheService.namedCausePkMap().put(causeName, primaryKey);
-
-        return primaryKey;
+            throw new SQLException(
+                String.format("Failed to get or create a named cause record. Cause name: %s", causeName)
+            );
+        });
     }
 
     /**
@@ -416,24 +437,18 @@ public class SqlActivityBatch implements ActivityBatch {
      * @throws SQLException The database exception
      */
     private int getOrCreateEntityTypeId(String entityType, String translationKey) throws SQLException {
-        Integer entityPk = cacheService.entityTypePkMap().getIfPresent(entityType);
-        if (entityPk != null) {
-            return entityPk;
-        }
+        return cachedGetOrCreate(cacheService.entityTypePkMap(), entityType, () -> {
+            UInteger intPk = dslContext
+                .select(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
+                .from(PRISM_ENTITY_TYPES)
+                .where(PRISM_ENTITY_TYPES.ENTITY_TYPE.equal(entityType))
+                .limit(1)
+                .fetchOne(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID);
 
-        int primaryKey;
+            if (intPk != null) {
+                return intPk.intValue();
+            }
 
-        // Select the existing record
-        UInteger intPk = dslContext
-            .select(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
-            .from(PRISM_ENTITY_TYPES)
-            .where(PRISM_ENTITY_TYPES.ENTITY_TYPE.equal(entityType))
-            .fetchOne(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID);
-
-        if (intPk != null) {
-            primaryKey = intPk.intValue();
-        } else {
-            // Create the record, handling concurrent inserts
             try {
                 intPk = dslContext
                     .insertInto(PRISM_ENTITY_TYPES, PRISM_ENTITY_TYPES.ENTITY_TYPE, PRISM_ENTITY_TYPES.TRANSLATION_KEY)
@@ -441,26 +456,22 @@ public class SqlActivityBatch implements ActivityBatch {
                     .returningResult(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
                     .fetchOne(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID);
             } catch (Exception e) {
-                // Likely duplicate key from concurrent insert — re-select
                 intPk = dslContext
                     .select(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID)
                     .from(PRISM_ENTITY_TYPES)
                     .where(PRISM_ENTITY_TYPES.ENTITY_TYPE.equal(entityType))
+                    .limit(1)
                     .fetchOne(PRISM_ENTITY_TYPES.ENTITY_TYPE_ID);
             }
 
             if (intPk != null) {
-                primaryKey = intPk.intValue();
-            } else {
-                throw new SQLException(
-                    String.format("Failed to get or create a entity type record. Material: %s", entityType)
-                );
+                return intPk.intValue();
             }
-        }
 
-        cacheService.entityTypePkMap().put(entityType, primaryKey);
-
-        return primaryKey;
+            throw new SQLException(
+                String.format("Failed to get or create a entity type record. Material: %s", entityType)
+            );
+        });
     }
 
     /**
@@ -472,24 +483,18 @@ public class SqlActivityBatch implements ActivityBatch {
      * @throws SQLException The database exception
      */
     private int getOrCreateItemId(String material, String data) throws SQLException {
-        Integer itemPk = cacheService.itemDataPkMap().getIfPresent(data);
-        if (itemPk != null) {
-            return itemPk;
-        }
+        return cachedGetOrCreate(cacheService.itemDataPkMap(), data, () -> {
+            UInteger intPk = dslContext
+                .select(PRISM_ITEMS.ITEM_ID)
+                .from(PRISM_ITEMS)
+                .where(PRISM_ITEMS.MATERIAL.equal(material), PRISM_ITEMS.DATA.equal(data))
+                .limit(1)
+                .fetchOne(PRISM_ITEMS.ITEM_ID);
 
-        int primaryKey;
+            if (intPk != null) {
+                return intPk.intValue();
+            }
 
-        // Select the existing item
-        UInteger intPk = dslContext
-            .select(PRISM_ITEMS.ITEM_ID)
-            .from(PRISM_ITEMS)
-            .where(PRISM_ITEMS.MATERIAL.equal(material), PRISM_ITEMS.DATA.equal(data))
-            .fetchOne(PRISM_ITEMS.ITEM_ID);
-
-        if (intPk != null) {
-            primaryKey = intPk.intValue();
-        } else {
-            // Create the record, handling concurrent inserts
             try {
                 intPk = dslContext
                     .insertInto(PRISM_ITEMS, PRISM_ITEMS.MATERIAL, PRISM_ITEMS.DATA)
@@ -497,30 +502,26 @@ public class SqlActivityBatch implements ActivityBatch {
                     .returningResult(PRISM_ITEMS.ITEM_ID)
                     .fetchOne(PRISM_ITEMS.ITEM_ID);
             } catch (Exception e) {
-                // Likely duplicate key from concurrent insert — re-select
                 intPk = dslContext
                     .select(PRISM_ITEMS.ITEM_ID)
                     .from(PRISM_ITEMS)
                     .where(PRISM_ITEMS.MATERIAL.equal(material), PRISM_ITEMS.DATA.equal(data))
+                    .limit(1)
                     .fetchOne(PRISM_ITEMS.ITEM_ID);
             }
 
             if (intPk != null) {
-                primaryKey = intPk.intValue();
-            } else {
-                throw new SQLException(String.format("Failed to get or create an item record. Material: %s", material));
+                return intPk.intValue();
             }
-        }
 
-        cacheService.itemDataPkMap().put(data, primaryKey);
-
-        return primaryKey;
+            throw new SQLException(String.format("Failed to get or create an item record. Material: %s", material));
+        });
     }
 
     /**
      * Get or create the player record and return the primary key.
      *
-     * <p>Note: This will update the player name.</p>
+     * <p>Note: This will update the player name on cache miss.</p>
      *
      * @param playerUuid The player uuid
      * @param playerName The player name
@@ -528,39 +529,29 @@ public class SqlActivityBatch implements ActivityBatch {
      * @throws SQLException The database exception
      */
     private long getOrCreatePlayerId(UUID playerUuid, String playerName) throws SQLException {
-        Long playerPk = cacheService.playerUuidPkMap().getIfPresent(playerUuid);
-        if (playerPk != null) {
-            return playerPk;
-        }
+        return cachedGetOrCreate(cacheService.playerUuidPkMap(), playerUuid, () -> {
+            // Create the player or update the name
+            dslContext
+                .insertInto(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER_UUID, PRISM_PLAYERS.PLAYER)
+                .values(playerUuid.toString(), playerName)
+                .onConflict(PRISM_PLAYERS.PLAYER_UUID)
+                .doUpdate()
+                .set(PRISM_PLAYERS.PLAYER, playerName)
+                .execute();
 
-        long primaryKey;
+            // Get the primary key
+            var result = dslContext
+                .select(PRISM_PLAYERS.PLAYER_ID)
+                .from(PRISM_PLAYERS)
+                .where(PRISM_PLAYERS.PLAYER_UUID.eq(playerUuid.toString()))
+                .fetchOne();
 
-        // Create the player or update the name
-        dslContext
-            .insertInto(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER_UUID, PRISM_PLAYERS.PLAYER)
-            .values(playerUuid.toString(), playerName)
-            .onConflict(PRISM_PLAYERS.PLAYER_UUID)
-            .doUpdate()
-            .set(PRISM_PLAYERS.PLAYER, playerName)
-            .execute();
+            if (result != null) {
+                return result.value1().longValue();
+            }
 
-        // Get the primary key.
-        // Every but postgres needs a second query to get the pk, so we just do this for everyone.
-        var result = dslContext
-            .select(PRISM_PLAYERS.PLAYER_ID)
-            .from(PRISM_PLAYERS)
-            .where(PRISM_PLAYERS.PLAYER_UUID.eq(playerUuid.toString()))
-            .fetchOne();
-
-        if (result != null) {
-            primaryKey = result.value1().longValue();
-        } else {
             throw new SQLException(String.format("Failed to get or create a player record. Player: %s", playerUuid));
-        }
-
-        cacheService.playerUuidPkMap().put(playerUuid, primaryKey);
-
-        return primaryKey;
+        });
     }
 
     /**
@@ -578,26 +569,20 @@ public class SqlActivityBatch implements ActivityBatch {
             return getOrCreateWorldIdByName(worldUuid, worldName);
         }
 
-        Integer worldPk = cacheService.worldUuidPkMap().getIfPresent(worldUuid);
-        if (worldPk != null) {
-            return worldPk;
-        }
-
-        int primaryKey;
-
-        // Select any existing record
         // Note: We check *then* insert instead of using on duplicate key because ODK would
         // generate a new auto-increment primary key and update it every time, leading to ballooning PKs
-        UInteger intPk = dslContext
-            .select(PRISM_WORLDS.WORLD_ID)
-            .from(PRISM_WORLDS)
-            .where(PRISM_WORLDS.WORLD_UUID.equal(worldUuid.toString()))
-            .fetchOne(PRISM_WORLDS.WORLD_ID);
+        return cachedGetOrCreate(cacheService.worldUuidPkMap(), worldUuid, () -> {
+            UInteger intPk = dslContext
+                .select(PRISM_WORLDS.WORLD_ID)
+                .from(PRISM_WORLDS)
+                .where(PRISM_WORLDS.WORLD_UUID.equal(worldUuid.toString()))
+                .limit(1)
+                .fetchOne(PRISM_WORLDS.WORLD_ID);
 
-        if (intPk != null) {
-            primaryKey = intPk.intValue();
-        } else {
-            // Create the record, handling concurrent inserts
+            if (intPk != null) {
+                return intPk.intValue();
+            }
+
             try {
                 intPk = dslContext
                     .insertInto(PRISM_WORLDS, PRISM_WORLDS.WORLD_UUID, PRISM_WORLDS.WORLD)
@@ -605,24 +590,20 @@ public class SqlActivityBatch implements ActivityBatch {
                     .returningResult(PRISM_WORLDS.WORLD_ID)
                     .fetchOne(PRISM_WORLDS.WORLD_ID);
             } catch (Exception e) {
-                // Likely duplicate key from concurrent insert — re-select
                 intPk = dslContext
                     .select(PRISM_WORLDS.WORLD_ID)
                     .from(PRISM_WORLDS)
                     .where(PRISM_WORLDS.WORLD_UUID.equal(worldUuid.toString()))
+                    .limit(1)
                     .fetchOne(PRISM_WORLDS.WORLD_ID);
             }
 
             if (intPk != null) {
-                primaryKey = intPk.intValue();
-            } else {
-                throw new SQLException(String.format("Failed to get or create a world record. World: %s", worldUuid));
+                return intPk.intValue();
             }
-        }
 
-        cacheService.worldUuidPkMap().put(worldUuid, primaryKey);
-
-        return primaryKey;
+            throw new SQLException(String.format("Failed to get or create a world record. World: %s", worldUuid));
+        });
     }
 
     /**
@@ -642,48 +623,20 @@ public class SqlActivityBatch implements ActivityBatch {
         UUID lastUuid = cacheService.worldNameUuidMap().put(worldName, worldUuid);
         boolean uuidChanged = lastUuid != null && !lastUuid.equals(worldUuid);
 
-        Integer worldPk = cacheService.worldNamePkMap().getIfPresent(worldName);
-        if (worldPk != null) {
-            if (uuidChanged) {
-                // Update the UUID in the DB to reflect the current world
-                try {
-                    dslContext
-                        .update(PRISM_WORLDS)
-                        .set(PRISM_WORLDS.WORLD_UUID, worldUuid.toString())
-                        .where(PRISM_WORLDS.WORLD_ID.equal(UInteger.valueOf(worldPk)))
-                        .execute();
-                } catch (Exception e) {
-                    // Ignore unique constraint violations
-                }
+        int primaryKey = cachedGetOrCreate(cacheService.worldNamePkMap(), worldName, () -> {
+            UInteger intPk = dslContext
+                .select(PRISM_WORLDS.WORLD_ID)
+                .from(PRISM_WORLDS)
+                .where(PRISM_WORLDS.WORLD.equal(worldName))
+                .limit(1)
+                .fetchOne(PRISM_WORLDS.WORLD_ID);
+
+            if (intPk != null) {
+                // Update the UUID to the current one since it may have changed
+                updateWorldUuid(intPk, worldUuid);
+                return intPk.intValue();
             }
-            return worldPk;
-        }
 
-        int primaryKey;
-
-        // Select any existing record by name
-        UInteger intPk = dslContext
-            .select(PRISM_WORLDS.WORLD_ID)
-            .from(PRISM_WORLDS)
-            .where(PRISM_WORLDS.WORLD.equal(worldName))
-            .fetchOne(PRISM_WORLDS.WORLD_ID);
-
-        if (intPk != null) {
-            primaryKey = intPk.intValue();
-
-            // Update the UUID to the current one since it may have changed
-            try {
-                dslContext
-                    .update(PRISM_WORLDS)
-                    .set(PRISM_WORLDS.WORLD_UUID, worldUuid.toString())
-                    .where(PRISM_WORLDS.WORLD_ID.equal(intPk))
-                    .execute();
-            } catch (Exception e) {
-                // Ignore unique constraint violations - the UUID is already in use
-                // by another world record, which is harmless
-            }
-        } else {
-            // Create the record, handling concurrent inserts
             try {
                 intPk = dslContext
                     .insertInto(PRISM_WORLDS, PRISM_WORLDS.WORLD_UUID, PRISM_WORLDS.WORLD)
@@ -691,24 +644,45 @@ public class SqlActivityBatch implements ActivityBatch {
                     .returningResult(PRISM_WORLDS.WORLD_ID)
                     .fetchOne(PRISM_WORLDS.WORLD_ID);
             } catch (Exception e) {
-                // Likely duplicate key from concurrent insert — re-select
                 intPk = dslContext
                     .select(PRISM_WORLDS.WORLD_ID)
                     .from(PRISM_WORLDS)
                     .where(PRISM_WORLDS.WORLD.equal(worldName))
+                    .limit(1)
                     .fetchOne(PRISM_WORLDS.WORLD_ID);
             }
 
             if (intPk != null) {
-                primaryKey = intPk.intValue();
-            } else {
-                throw new SQLException(String.format("Failed to get or create a world record. World: %s", worldName));
+                return intPk.intValue();
             }
+
+            throw new SQLException(String.format("Failed to get or create a world record. World: %s", worldName));
+        });
+
+        // If the UUID changed and we got a cache hit, update the DB
+        if (uuidChanged) {
+            updateWorldUuid(UInteger.valueOf(primaryKey), worldUuid);
         }
 
-        cacheService.worldNamePkMap().put(worldName, primaryKey);
-
         return primaryKey;
+    }
+
+    /**
+     * Update the UUID for an existing world record.
+     *
+     * @param worldId The world primary key
+     * @param worldUuid The new world UUID
+     */
+    private void updateWorldUuid(UInteger worldId, UUID worldUuid) {
+        try {
+            dslContext
+                .update(PRISM_WORLDS)
+                .set(PRISM_WORLDS.WORLD_UUID, worldUuid.toString())
+                .where(PRISM_WORLDS.WORLD_ID.equal(worldId))
+                .execute();
+        } catch (Exception e) {
+            // Ignore unique constraint violations
+        }
     }
 
     @Override
