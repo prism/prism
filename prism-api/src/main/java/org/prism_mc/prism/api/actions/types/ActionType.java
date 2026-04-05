@@ -56,6 +56,11 @@ public abstract class ActionType {
     protected final boolean usesDescriptor;
 
     /**
+     * Whether activities of this type should be aggregated.
+     */
+    protected final boolean aggregatable;
+
+    /**
      * Construct a new action type.
      *
      * @param key The key
@@ -63,7 +68,7 @@ public abstract class ActionType {
      * @param reversible If action is reversible
      */
     public ActionType(String key, ActionResultType resultType, boolean reversible) {
-        this(key, resultType, reversible, true, null);
+        this(key, resultType, reversible, true, null, false);
     }
 
     /**
@@ -75,17 +80,17 @@ public abstract class ActionType {
      * @param usesDescriptor Whether the action uses a descriptor
      */
     public ActionType(String key, ActionResultType resultType, boolean reversible, boolean usesDescriptor) {
-        this(key, resultType, reversible, usesDescriptor, null);
+        this(key, resultType, reversible, usesDescriptor, null, false);
     }
 
     /**
      * Construct a new action type.
      *
      * @param key The key
-     * @param metadata The metadata
      * @param resultType The result type
      * @param reversible If action is reversible
      * @param usesDescriptor Whether the action uses a descriptor
+     * @param metadata The metadata
      */
     public ActionType(
         String key,
@@ -94,11 +99,33 @@ public abstract class ActionType {
         boolean usesDescriptor,
         Metadata metadata
     ) {
+        this(key, resultType, reversible, usesDescriptor, metadata, false);
+    }
+
+    /**
+     * Construct a new action type.
+     *
+     * @param key The key
+     * @param resultType The result type
+     * @param reversible If action is reversible
+     * @param usesDescriptor Whether the action uses a descriptor
+     * @param metadata The metadata
+     * @param aggregatable Whether activities should be aggregated
+     */
+    public ActionType(
+        String key,
+        ActionResultType resultType,
+        boolean reversible,
+        boolean usesDescriptor,
+        Metadata metadata,
+        boolean aggregatable
+    ) {
         this.key = key;
         this.metadata = metadata;
         this.resultType = resultType;
         this.reversible = reversible;
         this.usesDescriptor = usesDescriptor;
+        this.aggregatable = aggregatable;
     }
 
     /**

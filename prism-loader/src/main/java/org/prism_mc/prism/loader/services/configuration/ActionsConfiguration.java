@@ -139,16 +139,18 @@ public class ActionsConfiguration {
     @Comment(
         """
         hopper-insert is when a hopper inserts an item into an inventory.
-        We *strongly* recommend using robust inventory/land protection plugins instead of enabling this
-        action because hoppers move one item at a time and can lead to MAJOR database spam, especially in farms."""
+        This event is aggregated. See the docs for more details.
+        If NOT using event aggregation, these can become massive database spam from farms.
+        We *strongly* recommend using robust inventory/land protection plugins instead."""
     )
     private boolean hopperInsert = false;
 
     @Comment(
         """
         hopper-remove is when a hopper removes an item from an inventory.
-        We *strongly* recommend using robust inventory/land protection plugins instead of enabling this
-        action because hoppers move one item at a time and can lead to MAJOR database spam, especially in farms."""
+        This event is aggregated. See the docs for more details.
+        If NOT using event aggregation, these can become massive database spam from farms.
+        We *strongly* recommend using robust inventory/land protection plugins instead."""
     )
     private boolean hopperRemove = false;
 
@@ -159,7 +161,12 @@ public class ActionsConfiguration {
     )
     private boolean inventoryOpen = false;
 
-    @Comment("item-dispense is when a block dispenses an item.")
+    @Comment(
+        """
+        item-dispense is when a block dispenses an item.
+        This event is aggregated. See the docs for more details.
+        """
+    )
     private boolean itemDispense = true;
 
     @Comment("item-drop is when a player or block drops an item on the ground.")

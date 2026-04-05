@@ -38,6 +38,11 @@ public interface RecordingService {
     void clearTask();
 
     /**
+     * Flush aggregated activities into the recording queue.
+     */
+    void flushAggregator();
+
+    /**
      * Reset the dropped activity counter and return the count since the last reset.
      *
      * @return The number of activities dropped since the last reset

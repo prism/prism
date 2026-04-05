@@ -85,6 +85,8 @@ public class RecordingTask implements Runnable {
      * Saves anything in the queue, or as many as we can.
      */
     public void save() {
+        recordingService.flushAggregator();
+
         // Reset the drop counter so we only track drops during this cycle
         recordingService.resetDroppedCount();
 

@@ -48,6 +48,23 @@ public class RecordingConfiguration {
     )
     private int parallelism = 1;
 
+    @Comment(
+        """
+        When enabled, certain high-frequency actions (e.g. hopper-insert, hopper-remove)
+        are aggregated into a single record per location/item type. This dramatically
+        reduces database writes for automated systems like hopper farms."""
+    )
+    private boolean aggregateActivities = true;
+
+    @Comment(
+        """
+        How long (in ticks) aggregatable activities are held before being flushed to the
+        database. Longer intervals aggregate more events into fewer records but delay when
+        they appear in lookups. Default is 520 ticks (26 seconds), just above the time for
+        a hopper to move a full stack of 64 items."""
+    )
+    private long aggregationInterval = 520;
+
     /**
      * Get the parallelism value, clamped to [1, 4].
      *

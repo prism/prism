@@ -82,10 +82,25 @@ public class PaperActionTypeRegistry extends AbstractActionTypeRegistry {
         ActionResultType.CREATES,
         true
     );
-    public static final ActionType HOPPER_INSERT = new ItemActionType("hopper-insert", ActionResultType.CREATES, false);
-    public static final ActionType HOPPER_REMOVE = new ItemActionType("hopper-remove", ActionResultType.REMOVES, true);
+    public static final ActionType HOPPER_INSERT = new ItemActionType(
+        "hopper-insert",
+        ActionResultType.CREATES,
+        false,
+        true
+    );
+    public static final ActionType HOPPER_REMOVE = new ItemActionType(
+        "hopper-remove",
+        ActionResultType.REMOVES,
+        true,
+        true
+    );
     public static final ActionType INVENTORY_OPEN = new BlockActionType("inventory-open", ActionResultType.NONE, false);
-    public static final ActionType ITEM_DISPENSE = new ItemActionType("item-dispense", ActionResultType.NONE, false);
+    public static final ActionType ITEM_DISPENSE = new ItemActionType(
+        "item-dispense",
+        ActionResultType.NONE,
+        false,
+        true
+    );
     public static final ActionType ITEM_DROP = new ItemActionType("item-drop", ActionResultType.REMOVES, true);
     public static final ActionType ITEM_INSERT = new ItemActionType("item-insert", ActionResultType.CREATES, false);
     public static final ActionType ITEM_PICKUP = new ItemActionType("item-pickup", ActionResultType.NONE, false);
