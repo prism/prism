@@ -69,6 +69,11 @@ public class PaperRecordingService implements RecordingService {
     private final LinkedBlockingQueue<Activity> queue;
 
     /**
+     * The activity aggregator.
+     */
+    private final ActivityAggregator aggregator;
+
+    /**
      * Count of activities dropped due to a full queue since the last drain.
      */
     private final AtomicInteger droppedActivities = new AtomicInteger();
@@ -112,6 +117,7 @@ public class PaperRecordingService implements RecordingService {
         this.loggingService = loggingService;
         this.recordingTask = recordingTask;
         this.parallelism = configurationService.prismConfig().recording().parallelism();
+        this.aggregator = new ActivityAggregator(configurationService.prismConfig().recording().aggregationInterval());
 
         int capacity = configurationService.prismConfig().recording().queueMaxCapacity();
         this.queue = capacity > 0 ? new LinkedBlockingQueue<>(capacity) : new LinkedBlockingQueue<>();
@@ -139,6 +145,14 @@ public class PaperRecordingService implements RecordingService {
             return false;
         }
 
+        if (
+            configurationService.prismConfig().recording().aggregateActivities() &&
+            activity.action().type().aggregatable()
+        ) {
+            aggregator.aggregate(activity);
+            return true;
+        }
+
         if (!queue.offer(activity)) {
             if (droppedActivities.getAndIncrement() == 0) {
                 loggingService.warn(
@@ -163,11 +177,18 @@ public class PaperRecordingService implements RecordingService {
         return droppedActivities.getAndSet(0);
     }
 
+    @Override
+    public void flushAggregator() {
+        aggregator.flush(queue);
+    }
+
     /**
      * Drains the queue sync.
      */
     public void drainSync() {
         recordMode = RecordMode.DRAIN_SYNC;
+
+        aggregator.flushAll(queue);
 
         RecordingTask drainTask = this.recordingTask.toNew();
         while (!queue.isEmpty()) {

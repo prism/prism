@@ -42,6 +42,18 @@ public class ItemActionType extends ActionType {
         super(key, resultType, reversible);
     }
 
+    /**
+     * Construct a new item action type.
+     *
+     * @param key The key
+     * @param resultType The result type
+     * @param reversible If action is reversible
+     * @param aggregatable Whether activities should be aggregated
+     */
+    public ItemActionType(String key, ActionResultType resultType, boolean reversible, boolean aggregatable) {
+        super(key, resultType, reversible, true, null, aggregatable);
+    }
+
     @Override
     public Action createAction(ActionData actionData) {
         ItemStack itemStack;
