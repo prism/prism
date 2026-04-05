@@ -85,6 +85,9 @@ public class RecordingTask implements Runnable {
      * Saves anything in the queue, or as many as we can.
      */
     public void save() {
+        // Reset the drop counter so we only track drops during this cycle
+        recordingService.resetDroppedCount();
+
         if (!recordingService.queue().isEmpty()) {
             try {
                 int batchCount = 0;
@@ -117,6 +120,11 @@ public class RecordingTask implements Runnable {
             } catch (Exception e) {
                 loggingService.handleException(e);
             }
+        }
+
+        int dropped = recordingService.resetDroppedCount();
+        if (dropped > 0) {
+            loggingService.warn("Dropped {0} activities due to a full recording queue.", dropped);
         }
 
         recordingService.clearTask();
