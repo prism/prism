@@ -36,6 +36,7 @@ import net.kyori.moonshine.strategy.supertype.StandardSupertypeThenInterfaceSupe
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
+import org.prism_mc.prism.api.actions.ActionFactory;
 import org.prism_mc.prism.api.actions.types.ActionTypeRegistry;
 import org.prism_mc.prism.api.activities.AbstractActivity;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
@@ -249,6 +250,10 @@ public class PrismModule extends AbstractModule {
         bind(TaskChainProvider.class).toInstance(new TaskChainProvider(prism.loader()));
 
         // Actions
+        bind(org.prism_mc.prism.paper.api.actions.PrismPaperActionFactory.class)
+            .to(org.prism_mc.prism.paper.actions.factory.PaperActionFactory.class)
+            .in(Singleton.class);
+        bind(ActionFactory.class).to(org.prism_mc.prism.paper.api.actions.PrismPaperActionFactory.class);
         bind(ActionTypeRegistry.class).to(PaperActionTypeRegistry.class).in(Singleton.class);
 
         // Service - Alerts

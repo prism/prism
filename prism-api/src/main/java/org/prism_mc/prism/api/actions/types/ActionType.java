@@ -22,9 +22,11 @@ package org.prism_mc.prism.api.actions.types;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import org.jetbrains.annotations.Nullable;
 import org.prism_mc.prism.api.actions.Action;
 import org.prism_mc.prism.api.actions.ActionData;
 import org.prism_mc.prism.api.actions.metadata.Metadata;
+import org.prism_mc.prism.api.services.modifications.ModificationHandler;
 
 @Getter
 @EqualsAndHashCode
@@ -59,6 +61,22 @@ public abstract class ActionType {
      * Whether activities of this type should be aggregated.
      */
     protected final boolean aggregatable;
+
+    /**
+     * Custom modification handler for rollback/restore logic.
+     */
+    @Nullable
+    @EqualsAndHashCode.Exclude
+    protected ModificationHandler modificationHandler;
+
+    /**
+     * Set a custom modification handler for rollback/restore logic.
+     *
+     * @param modificationHandler The handler, or null to use default logic
+     */
+    public void setModificationHandler(@Nullable ModificationHandler modificationHandler) {
+        this.modificationHandler = modificationHandler;
+    }
 
     /**
      * Construct a new action type.

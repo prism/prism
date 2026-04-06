@@ -223,4 +223,29 @@ public class PaperActionTypeRegistry extends AbstractActionTypeRegistry {
         registerAction(WORLDEDIT_PLACE);
         registerAction(XP_PICKUP);
     }
+
+    @Override
+    protected ActionType createGenericActionType(String key) {
+        return new GenericActionType(key, ActionResultType.NONE, false);
+    }
+
+    @Override
+    protected ActionType createBlockActionType(String key, ActionResultType resultType, boolean reversible) {
+        return new BlockActionType(key, resultType, reversible);
+    }
+
+    @Override
+    protected ActionType createEntityActionType(String key, ActionResultType resultType, boolean reversible) {
+        return new EntityActionType(key, resultType, reversible);
+    }
+
+    @Override
+    protected ActionType createItemActionType(String key, ActionResultType resultType, boolean reversible) {
+        return new ItemActionType(key, resultType, reversible);
+    }
+
+    @Override
+    protected ActionType createPlayerActionType(String key, ActionResultType resultType, boolean reversible) {
+        return new PlayerActionType(key, resultType, reversible);
+    }
 }

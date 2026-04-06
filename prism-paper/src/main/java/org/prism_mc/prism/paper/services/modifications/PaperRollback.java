@@ -72,7 +72,12 @@ public class PaperRollback extends AbstractWorldModificationQueue implements Rol
 
     @Override
     protected ModificationResult applyModification(Activity activity) {
-        return activity.action().applyRollback(modificationRuleset, owner(), activity, mode);
+        var handler = activity.action().type().modificationHandler();
+        if (handler == null) {
+            handler = activity.action();
+        }
+
+        return handler.applyRollback(modificationRuleset, owner(), activity, mode);
     }
 
     @Override

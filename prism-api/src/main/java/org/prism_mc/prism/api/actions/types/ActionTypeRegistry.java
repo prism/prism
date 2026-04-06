@@ -22,6 +22,7 @@ package org.prism_mc.prism.api.actions.types;
 
 import java.util.Collection;
 import java.util.Optional;
+import org.prism_mc.prism.api.services.modifications.ModificationHandler;
 
 public interface ActionTypeRegistry {
     /**
@@ -53,4 +54,116 @@ public interface ActionTypeRegistry {
      * @param actionType The action type
      */
     void registerAction(ActionType actionType);
+
+    /**
+     * Register a new generic (non-reversible, descriptor-only) action type.
+     *
+     * @param key The unique action type key (e.g. "myplugin-event")
+     * @return The registered action type
+     */
+    ActionType registerGenericAction(String key);
+
+    /**
+     * Register a new block action type.
+     *
+     * @param key The unique action type key (e.g. "myplugin-break")
+     * @param resultType The result type (CREATES, REMOVES, REPLACES, or NONE)
+     * @param reversible Whether this action supports rollback/restore
+     * @return The registered action type
+     */
+    ActionType registerBlockAction(String key, ActionResultType resultType, boolean reversible);
+
+    /**
+     * Register a new block action type with a custom modification handler.
+     *
+     * @param key The unique action type key (e.g. "myplugin-break")
+     * @param resultType The result type (CREATES, REMOVES, REPLACES, or NONE)
+     * @param reversible Whether this action supports rollback/restore
+     * @param handler Custom handler for rollback/restore logic
+     * @return The registered action type
+     */
+    ActionType registerBlockAction(
+        String key,
+        ActionResultType resultType,
+        boolean reversible,
+        ModificationHandler handler
+    );
+
+    /**
+     * Register a new entity action type.
+     *
+     * @param key The unique action type key (e.g. "myplugin-spawn")
+     * @param resultType The result type (CREATES, REMOVES, REPLACES, or NONE)
+     * @param reversible Whether this action supports rollback/restore
+     * @return The registered action type
+     */
+    ActionType registerEntityAction(String key, ActionResultType resultType, boolean reversible);
+
+    /**
+     * Register a new entity action type with a custom modification handler.
+     *
+     * @param key The unique action type key (e.g. "myplugin-spawn")
+     * @param resultType The result type (CREATES, REMOVES, REPLACES, or NONE)
+     * @param reversible Whether this action supports rollback/restore
+     * @param handler Custom handler for rollback/restore logic
+     * @return The registered action type
+     */
+    ActionType registerEntityAction(
+        String key,
+        ActionResultType resultType,
+        boolean reversible,
+        ModificationHandler handler
+    );
+
+    /**
+     * Register a new item action type.
+     *
+     * @param key The unique action type key (e.g. "myplugin-craft")
+     * @param resultType The result type (CREATES, REMOVES, REPLACES, or NONE)
+     * @param reversible Whether this action supports rollback/restore
+     * @return The registered action type
+     */
+    ActionType registerItemAction(String key, ActionResultType resultType, boolean reversible);
+
+    /**
+     * Register a new item action type with a custom modification handler.
+     *
+     * @param key The unique action type key (e.g. "myplugin-craft")
+     * @param resultType The result type (CREATES, REMOVES, REPLACES, or NONE)
+     * @param reversible Whether this action supports rollback/restore
+     * @param handler Custom handler for rollback/restore logic
+     * @return The registered action type
+     */
+    ActionType registerItemAction(
+        String key,
+        ActionResultType resultType,
+        boolean reversible,
+        ModificationHandler handler
+    );
+
+    /**
+     * Register a new player action type.
+     *
+     * @param key The unique action type key (e.g. "myplugin-action")
+     * @param resultType The result type (CREATES, REMOVES, REPLACES, or NONE)
+     * @param reversible Whether this action supports rollback/restore
+     * @return The registered action type
+     */
+    ActionType registerPlayerAction(String key, ActionResultType resultType, boolean reversible);
+
+    /**
+     * Register a new player action type with a custom modification handler.
+     *
+     * @param key The unique action type key (e.g. "myplugin-action")
+     * @param resultType The result type (CREATES, REMOVES, REPLACES, or NONE)
+     * @param reversible Whether this action supports rollback/restore
+     * @param handler Custom handler for rollback/restore logic
+     * @return The registered action type
+     */
+    ActionType registerPlayerAction(
+        String key,
+        ActionResultType resultType,
+        boolean reversible,
+        ModificationHandler handler
+    );
 }

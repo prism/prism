@@ -46,8 +46,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.prism_mc.prism.api.Prism;
 import org.prism_mc.prism.api.actions.types.ActionTypeRegistry;
 import org.prism_mc.prism.api.services.recording.RecordingService;
 import org.prism_mc.prism.api.storage.StorageAdapter;
@@ -57,6 +57,8 @@ import org.prism_mc.prism.loader.services.dependencies.DependencyService;
 import org.prism_mc.prism.loader.services.dependencies.loader.PluginLoader;
 import org.prism_mc.prism.loader.services.scheduler.ThreadPoolScheduler;
 import org.prism_mc.prism.paper.actions.types.PaperActionTypeRegistry;
+import org.prism_mc.prism.paper.api.PrismPaperApi;
+import org.prism_mc.prism.paper.api.actions.PrismPaperActionFactory;
 import org.prism_mc.prism.paper.commands.AboutCommand;
 import org.prism_mc.prism.paper.commands.CacheCommand;
 import org.prism_mc.prism.paper.commands.ConfigsCommand;
@@ -140,7 +142,7 @@ import org.prism_mc.prism.paper.services.recording.PaperRecordingService;
 import org.prism_mc.prism.paper.services.scheduling.SchedulingService;
 import org.prism_mc.prism.paper.utils.VersionUtils;
 
-public class PrismPaper implements Prism {
+public class PrismPaper implements PrismPaperApi {
 
     /**
      *  Get this instance.
@@ -167,6 +169,7 @@ public class PrismPaper implements Prism {
     /**
      * The recording service.
      */
+    @Getter
     private RecordingService recordingService;
 
     /**
@@ -180,6 +183,12 @@ public class PrismPaper implements Prism {
      */
     @Getter
     private StorageAdapter storageAdapter;
+
+    /**
+     * The action factory.
+     */
+    @Getter
+    private PrismPaperActionFactory actionFactory;
 
     /**
      * The action type registry.
@@ -245,6 +254,7 @@ public class PrismPaper implements Prism {
             return;
         }
 
+        actionFactory = injectorProvider.injector().getInstance(PrismPaperActionFactory.class);
         actionTypeRegistry = injectorProvider.injector().getInstance(ActionTypeRegistry.class);
 
         String pluginName = this.loaderPlugin().getDescription().getName();
@@ -256,6 +266,9 @@ public class PrismPaper implements Prism {
             recordingService = injectorProvider.injector().getInstance(PaperRecordingService.class);
             purgeService = injectorProvider.injector().getInstance(PurgeService.class);
             injectorProvider.injector().getInstance(SchedulingService.class);
+
+            // Register the API as a Bukkit service for third-party plugins
+            Bukkit.getServicesManager().register(PrismPaperApi.class, this, loaderPlugin(), ServicePriority.Normal);
 
             // Initialize WorldEdit integration if available (for block logging)
             if (Bukkit.getPluginManager().getPlugin("WorldEdit") != null) {
@@ -605,6 +618,8 @@ public class PrismPaper implements Prism {
      * On disable.
      */
     public void onDisable() {
+        Bukkit.getServicesManager().unregisterAll(loaderPlugin());
+
         if (recordingService != null) {
             if (!recordingService.queue().isEmpty()) {
                 loader()

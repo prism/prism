@@ -13,6 +13,8 @@ dependencies {
         exclude(group: "net.kyori")
     }
 
+    implementation project(':prism-api')
+    implementation project(':prism-paper-api')
     implementation project(':prism-loader')
 
     // SLF4J for standalone CLI use (HikariCP requires it).
@@ -50,6 +52,7 @@ artifacts {
 
 runServer {
     minecraftVersion(project.property('paper-server-version'))
+    pluginJars(project(':prism-paper-example-plugin').tasks.jar.archiveFile)
 }
 
 bukkitPluginYaml {

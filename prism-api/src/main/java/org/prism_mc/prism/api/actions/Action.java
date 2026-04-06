@@ -24,42 +24,9 @@ import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.Nullable;
 import org.prism_mc.prism.api.actions.metadata.Metadata;
 import org.prism_mc.prism.api.actions.types.ActionType;
-import org.prism_mc.prism.api.activities.Activity;
-import org.prism_mc.prism.api.services.modifications.ModificationQueueMode;
-import org.prism_mc.prism.api.services.modifications.ModificationResult;
-import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
+import org.prism_mc.prism.api.services.modifications.ModificationHandler;
 
-public interface Action {
-    /**
-     * Apply the rollback. If the action type is not reversible, this does nothing.
-     *
-     * @param modificationRuleset The modification ruleset
-     * @param owner The owner of this modification
-     * @param activityContext The activity as a context
-     * @param mode Modification mode
-     */
-    ModificationResult applyRollback(
-        ModificationRuleset modificationRuleset,
-        Object owner,
-        Activity activityContext,
-        ModificationQueueMode mode
-    );
-
-    /**
-     * Apply the restore. If the action type is not reversible, this does nothing.
-     *
-     * @param modificationRuleset The modification ruleset
-     * @param owner The owner of this modification
-     * @param activityContext The activity as a context
-     * @param mode Modification mode
-     */
-    ModificationResult applyRestore(
-        ModificationRuleset modificationRuleset,
-        Object owner,
-        Activity activityContext,
-        ModificationQueueMode mode
-    );
-
+public interface Action extends ModificationHandler {
     /**
      * Get the descriptor.
      *
