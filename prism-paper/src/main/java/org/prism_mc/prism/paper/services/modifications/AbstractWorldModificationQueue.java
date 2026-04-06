@@ -125,6 +125,17 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
     protected final List<ModificationResult> results = new ArrayList<>();
 
     /**
+     * Incrementally tracked bounding box min/max from result coordinates.
+     */
+    private double bbMinX = Double.MAX_VALUE;
+    private double bbMinY = Double.MAX_VALUE;
+    private double bbMinZ = Double.MAX_VALUE;
+    private double bbMaxX = -Double.MAX_VALUE;
+    private double bbMaxY = -Double.MAX_VALUE;
+    private double bbMaxZ = -Double.MAX_VALUE;
+    private boolean bbHasCoordinates = false;
+
+    /**
      * Construct a new world modification.
      *
      * @param loggingService The logging service
@@ -250,6 +261,9 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
             return new BoundingBox();
         }
 
+        // Expand by 1 block so entities on/adjacent to affected blocks are included
+        boundingBox.expand(1);
+
         return boundingBox;
     }
 
@@ -269,41 +283,36 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
     }
 
     /**
-     * Compute a bounding box from the min/max coordinates of actual modification results.
+     * Update the incrementally tracked bounding box with a new result's coordinate.
+     *
+     * @param result The modification result
+     */
+    private void trackBoundingBox(ModificationResult result) {
+        Coordinate coordinate = result.activity().coordinate();
+        if (coordinate == null) {
+            return;
+        }
+
+        bbHasCoordinates = true;
+        bbMinX = Math.min(bbMinX, coordinate.x());
+        bbMinY = Math.min(bbMinY, coordinate.y());
+        bbMinZ = Math.min(bbMinZ, coordinate.z());
+        bbMaxX = Math.max(bbMaxX, coordinate.x());
+        bbMaxY = Math.max(bbMaxY, coordinate.y());
+        bbMaxZ = Math.max(bbMaxZ, coordinate.z());
+    }
+
+    /**
+     * Get the bounding box from the incrementally tracked min/max coordinates.
      *
      * @return A bounding box, or null if no results have coordinates
      */
     private BoundingBox boundingBoxFromResults() {
-        double minX = Double.MAX_VALUE;
-        double minY = Double.MAX_VALUE;
-        double minZ = Double.MAX_VALUE;
-        double maxX = -Double.MAX_VALUE;
-        double maxY = -Double.MAX_VALUE;
-        double maxZ = -Double.MAX_VALUE;
-        boolean found = false;
-
-        if (!results.isEmpty()) {
-            for (ModificationResult result : results) {
-                Coordinate coordinate = result.activity().coordinate();
-                if (coordinate == null) {
-                    continue;
-                }
-
-                found = true;
-                minX = Math.min(minX, coordinate.x());
-                minY = Math.min(minY, coordinate.y());
-                minZ = Math.min(minZ, coordinate.z());
-                maxX = Math.max(maxX, coordinate.x());
-                maxY = Math.max(maxY, coordinate.y());
-                maxZ = Math.max(maxZ, coordinate.z());
-            }
-        }
-
-        if (!found) {
+        if (!bbHasCoordinates) {
             return null;
         }
 
-        return new BoundingBox(minX, minY, minZ, maxX, maxY, maxZ);
+        return new BoundingBox(bbMinX, bbMinY, bbMinZ, bbMaxX, bbMaxY, bbMaxZ);
     }
 
     /**
@@ -382,6 +391,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                                 }
 
                                 results.add(result);
+                                trackBoundingBox(result);
 
                                 if (result.status().equals(ModificationResultStatus.PLANNED)) {
                                     countPlanned++;
