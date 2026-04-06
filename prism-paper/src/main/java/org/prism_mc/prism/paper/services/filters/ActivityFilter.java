@@ -20,9 +20,7 @@
 
 package org.prism_mc.prism.paper.services.filters;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.bukkit.Bukkit;
+import java.util.Set;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
@@ -49,7 +47,7 @@ public class ActivityFilter {
     /**
      * Actions.
      */
-    private final List<String> actions;
+    private final Set<String> actions;
 
     /**
      * The behavior of this filter.
@@ -59,7 +57,7 @@ public class ActivityFilter {
     /**
      * Causes.
      */
-    private final List<String> namedCauses;
+    private final Set<String> namedCauses;
 
     /**
      * The affected block tags.
@@ -84,7 +82,7 @@ public class ActivityFilter {
     /**
      * The player's game mode(s).
      */
-    private final List<GameMode> gameModes;
+    private final Set<GameMode> gameModes;
 
     /**
      * The item tags.
@@ -94,12 +92,12 @@ public class ActivityFilter {
     /**
      * All permissions.
      */
-    private final List<String> permissions;
+    private final Set<String> permissions;
 
     /**
      * All world names.
      */
-    private final List<String> worldNames;
+    private final Set<String> worldNames;
 
     /**
      * Construct a new activity filter.
@@ -120,16 +118,16 @@ public class ActivityFilter {
     public ActivityFilter(
         @NotNull String name,
         @NotNull FilterBehavior behavior,
-        @NotNull List<String> actions,
-        @NotNull List<String> namedCauses,
+        @NotNull Set<String> actions,
+        @NotNull Set<String> namedCauses,
         @NotNull CustomTag<Material> affectedBlockTags,
         @NotNull CustomTag<Material> causeBlockTags,
         @NotNull CustomTag<EntityType> affectedEntityTypeTags,
         @NotNull CustomTag<EntityType> causeEntityTypeTags,
-        @NotNull List<GameMode> gameModes,
+        @NotNull Set<GameMode> gameModes,
         @NotNull CustomTag<Material> itemTags,
-        @NotNull List<String> permissions,
-        @NotNull List<String> worldNames
+        @NotNull Set<String> permissions,
+        @NotNull Set<String> worldNames
     ) {
         this.name = name;
         this.actions = actions;
@@ -154,74 +152,128 @@ public class ActivityFilter {
      * @return True if the filter allows it
      */
     public boolean shouldRecord(Activity activity, LoggingService loggingService, boolean debug) {
-        List<ConditionResult> results = new ArrayList<>();
-
         if (debug) {
             loggingService.debug("Filter ({0}) Check for Activity: {1}", name, activity);
             loggingService.debug("Behavior: {0}", behavior);
         }
 
+        int total = 0;
+        int matched = 0;
+        int notMatched = 0;
+
         var actionResult = actionsMatch(activity);
-        results.add(actionResult);
+        total++;
+        if (actionResult == ConditionResult.MATCHED) {
+            matched++;
+        } else if (actionResult == ConditionResult.NOT_MATCHED) {
+            notMatched++;
+        }
         if (debug && !actions.isEmpty()) {
             loggingService.debug("Action result: {0}", actionResult);
         }
 
         var namedCauseResult = namedCausesMatch(activity);
-        results.add(namedCauseResult);
+        total++;
+        if (namedCauseResult == ConditionResult.MATCHED) {
+            matched++;
+        } else if (namedCauseResult == ConditionResult.NOT_MATCHED) {
+            notMatched++;
+        }
         if (debug && !namedCauses.isEmpty()) {
             loggingService.debug("Named Cause result: {0}", namedCauseResult);
         }
 
         var affectedBlockResult = affectedBlocksMatched(activity);
-        results.add(affectedBlockResult);
+        total++;
+        if (affectedBlockResult == ConditionResult.MATCHED) {
+            matched++;
+        } else if (affectedBlockResult == ConditionResult.NOT_MATCHED) {
+            notMatched++;
+        }
         if (debug && !affectedBlockTags.isEmpty()) {
             loggingService.debug("Affected Blocks result: {0}", affectedBlockResult);
         }
 
         var causeBlockResult = causeBlocksMatched(activity);
-        results.add(causeBlockResult);
+        total++;
+        if (causeBlockResult == ConditionResult.MATCHED) {
+            matched++;
+        } else if (causeBlockResult == ConditionResult.NOT_MATCHED) {
+            notMatched++;
+        }
         if (debug && !causeBlockTags.isEmpty()) {
             loggingService.debug("Cause Blocks result: {0}", causeBlockResult);
         }
 
         var affectedEntityTypeResult = affectedEntityTypesMatched(activity);
-        results.add(affectedEntityTypeResult);
+        total++;
+        if (affectedEntityTypeResult == ConditionResult.MATCHED) {
+            matched++;
+        } else if (affectedEntityTypeResult == ConditionResult.NOT_MATCHED) {
+            notMatched++;
+        }
         if (debug && !affectedEntityTypeTags.isEmpty()) {
             loggingService.debug("Affected Entity Type result: {0}", affectedEntityTypeResult);
         }
 
         var causeEntityTypeResult = causeEntityTypesMatched(activity);
-        results.add(causeEntityTypeResult);
+        total++;
+        if (causeEntityTypeResult == ConditionResult.MATCHED) {
+            matched++;
+        } else if (causeEntityTypeResult == ConditionResult.NOT_MATCHED) {
+            notMatched++;
+        }
         if (debug && !causeEntityTypeTags.isEmpty()) {
             loggingService.debug("Cause Entity Type result: {0}", causeEntityTypeResult);
         }
 
         var gameModeResult = gameModesMatched(activity);
-        results.add(gameModeResult);
+        total++;
+        if (gameModeResult == ConditionResult.MATCHED) {
+            matched++;
+        } else if (gameModeResult == ConditionResult.NOT_MATCHED) {
+            notMatched++;
+        }
         if (debug && !gameModes.isEmpty()) {
             loggingService.debug("Game mode result: {0}", gameModeResult);
         }
 
         var itemsResult = itemsMatched(activity);
-        results.add(itemsResult);
+        total++;
+        if (itemsResult == ConditionResult.MATCHED) {
+            matched++;
+        } else if (itemsResult == ConditionResult.NOT_MATCHED) {
+            notMatched++;
+        }
         if (debug && !itemTags.isEmpty()) {
             loggingService.debug("Items result: {0}", itemsResult);
         }
 
         var permissionResult = permissionsMatch(activity);
-        results.add(permissionResult);
+        total++;
+        if (permissionResult == ConditionResult.MATCHED) {
+            matched++;
+        } else if (permissionResult == ConditionResult.NOT_MATCHED) {
+            notMatched++;
+        }
         if (debug && !permissions.isEmpty()) {
             loggingService.debug("Permission result: {0}", permissionResult);
         }
 
         var worldsResult = worldsMatch(activity);
-        results.add(worldsResult);
+        total++;
+        if (worldsResult == ConditionResult.MATCHED) {
+            matched++;
+        } else if (worldsResult == ConditionResult.NOT_MATCHED) {
+            notMatched++;
+        }
         if (debug && !worldNames.isEmpty()) {
             loggingService.debug("Worlds result: {0}", worldsResult);
         }
 
-        var finalDecision = getFinalDecision(results, loggingService, debug);
+        int nonApplicable = total - matched - notMatched;
+
+        var finalDecision = getFinalDecision(total, nonApplicable, matched, notMatched, loggingService, debug);
         if (debug) {
             loggingService.debug("Final decision: {0}", finalDecision);
         }
@@ -232,32 +284,26 @@ public class ActivityFilter {
     /**
      * Make a final decision.
      *
-     * @param results All filter condition results
+     * @param total Total number of conditions
+     * @param nonApplicable Count of non-applicable conditions
+     * @param matched Count of matched conditions
+     * @param notMatched Count of not-matched conditions
+     * @param loggingService The logging service
+     * @param debug Whether debug mode is enabled
      * @return The decision
      */
-    private boolean getFinalDecision(List<ConditionResult> results, LoggingService loggingService, boolean debug) {
-        int nonApplicable = 0;
-        int matched = 0;
-        int notMatched = 0;
-
-        // Count each result type
-        for (ConditionResult result : results) {
-            if (result.equals(ConditionResult.NOT_APPLICABLE)) {
-                nonApplicable++;
-            } else if (result.equals(ConditionResult.NOT_MATCHED)) {
-                notMatched++;
-            } else if (result.equals(ConditionResult.MATCHED)) {
-                matched++;
-            }
-        }
-
-        // Check if all were non-applicable
-        var allNotApplicable = nonApplicable == results.size();
-
+    private boolean getFinalDecision(
+        int total,
+        int nonApplicable,
+        int matched,
+        int notMatched,
+        LoggingService loggingService,
+        boolean debug
+    ) {
         if (debug) {
             loggingService.debug(
                 "All: {0}; Not Applicable: {1}; Matched: {2}; Not Matched: {3}",
-                results.size(),
+                total,
                 nonApplicable,
                 matched,
                 notMatched
@@ -265,7 +311,7 @@ public class ActivityFilter {
         }
 
         // No filters applied, allow
-        if (allNotApplicable) {
+        if (nonApplicable == total) {
             return true;
         }
 
@@ -296,7 +342,7 @@ public class ActivityFilter {
      * @return True if mode is "allow"
      */
     private boolean allowing() {
-        return behavior.equals(FilterBehavior.ALLOW);
+        return behavior == FilterBehavior.ALLOW;
     }
 
     /**
@@ -305,7 +351,7 @@ public class ActivityFilter {
      * @return True if mode is "ignore"
      */
     private boolean ignoring() {
-        return behavior.equals(FilterBehavior.IGNORE);
+        return behavior == FilterBehavior.IGNORE;
     }
 
     /**
@@ -509,7 +555,7 @@ public class ActivityFilter {
         }
 
         if (activity.cause().container() instanceof PaperPlayerContainer paperPlayerContainer) {
-            var player = Bukkit.getServer().getPlayer(paperPlayerContainer.name());
+            var player = paperPlayerContainer.player();
             if (player != null) {
                 for (String permission : permissions) {
                     if (player.hasPermission(permission)) {
