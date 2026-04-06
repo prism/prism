@@ -20,9 +20,9 @@ publishing {
     }
     repositories {
         maven {
-            name = 'darkhelmet'
-            def releasesRepoUrl = "https://nexus.darkhelmet.network/repository/maven-releases/"
-            def snapshotsRepoUrl = "https://nexus.darkhelmet.network/repository/maven-snapshots/"
+            name = 'prism'
+            def releasesRepoUrl = "https://nexus.prism-mc.org/repository/maven-releases/"
+            def snapshotsRepoUrl = "https://nexus.prism-mc.org/repository/maven-snapshots/"
             url = version.contains('-dev') ? snapshotsRepoUrl : releasesRepoUrl
             credentials(PasswordCredentials)
         }
