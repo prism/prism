@@ -21,6 +21,8 @@
 package org.prism_mc.prism.paper.services.recording;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.services.recording.RecordingService;
 import org.prism_mc.prism.api.storage.ActivityBatch;
@@ -92,33 +94,21 @@ public class RecordingTask implements Runnable {
 
         if (!recordingService.queue().isEmpty()) {
             try {
-                int batchCount = 0;
                 int batchMax = storageConfig.primaryDataSource().batchMax();
 
-                ActivityBatch batch = storageAdapter.createActivityBatch();
-                batch.startBatch();
+                List<Activity> drained = new ArrayList<>(batchMax);
+                recordingService.queue().drainTo(drained, batchMax);
 
-                while (!recordingService.queue().isEmpty()) {
-                    Activity activity = recordingService.queue().poll();
-                    if (activity == null) {
-                        break;
+                if (!drained.isEmpty()) {
+                    ActivityBatch batch = storageAdapter.createActivityBatch();
+                    batch.startBatch();
+
+                    for (Activity activity : drained) {
+                        batch.add(activity);
                     }
 
-                    batchCount++;
-                    batch.add(activity);
-
-                    // Batch max exceeded, break
-                    if (batchCount >= batchMax) {
-                        loggingService.debug(
-                            "Recorder: Batch max exceeded, running insert. Queue remaining: {0}",
-                            recordingService.queue().size()
-                        );
-
-                        break;
-                    }
+                    batch.commitBatch();
                 }
-
-                batch.commitBatch();
             } catch (Exception e) {
                 loggingService.handleException(e);
             }
