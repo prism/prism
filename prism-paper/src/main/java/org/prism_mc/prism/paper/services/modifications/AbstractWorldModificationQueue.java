@@ -329,6 +329,11 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
     @Override
     public void apply() {
         countModificationsRead = 0;
+        countApplied = 0;
+        countPartial = 0;
+        countPlanned = 0;
+        countSkipped = 0;
+        results.clear();
         this.mode = ModificationQueueMode.COMPLETING;
         execute();
     }
