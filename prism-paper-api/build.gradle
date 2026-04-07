@@ -9,12 +9,15 @@ dependencies {
     api project(':prism-api')
 }
 
+def projectVersion = project.property("version")
+def publishVersion = projectVersion.contains('-dev') ? projectVersion.replaceAll('-dev\\d+', '-SNAPSHOT') : projectVersion
+
 publishing {
     publications {
         maven(MavenPublication) {
             groupId = project.property("group")
             artifactId = 'prism-paper-api'
-            version = project.property("version")
+            version = publishVersion
             from components.java
         }
     }
@@ -23,7 +26,7 @@ publishing {
             name = 'prism'
             def releasesRepoUrl = "https://nexus.prism-mc.org/repository/maven-releases/"
             def snapshotsRepoUrl = "https://nexus.prism-mc.org/repository/maven-snapshots/"
-            url = version.contains('-dev') ? snapshotsRepoUrl : releasesRepoUrl
+            url = publishVersion.contains('-SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
             credentials(PasswordCredentials)
         }
     }
