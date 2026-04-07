@@ -191,9 +191,15 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                 query.maxCoordinate() != null
             ) {
                 World world = Bukkit.getWorld(query.worldUuid());
-                builder.drainedLava(
-                    BlockUtils.removeBlocksByMaterial(world, modificationBoundingBox(), List.of(Material.LAVA)).size()
-                );
+                if (world != null) {
+                    builder.drainedLava(
+                        BlockUtils.removeBlocksByMaterial(
+                            world,
+                            modificationBoundingBox(),
+                            List.of(Material.LAVA)
+                        ).size()
+                    );
+                }
             }
 
             if (
@@ -203,9 +209,10 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                 query.maxCoordinate() != null
             ) {
                 World world = Bukkit.getWorld(query.worldUuid());
-                int count = EntityUtils.removeDropsInRange(world, modificationBoundingBox());
-
-                builder.removedDrops(count);
+                if (world != null) {
+                    int count = EntityUtils.removeDropsInRange(world, modificationBoundingBox());
+                    builder.removedDrops(count);
+                }
             }
 
             if (
@@ -221,9 +228,11 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                     .toList();
 
                 World world = Bukkit.getWorld(query.worldUuid());
-                builder.removedBlocks(
-                    BlockUtils.removeBlocksByMaterial(world, modificationBoundingBox(), materials).size()
-                );
+                if (world != null) {
+                    builder.removedBlocks(
+                        BlockUtils.removeBlocksByMaterial(world, modificationBoundingBox(), materials).size()
+                    );
+                }
             }
         }
     }
@@ -234,9 +243,10 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
     protected void postProcess(ModificationQueueResult.ModificationQueueResultBuilder builder) {
         if (modificationRuleset.moveEntities() && query.worldUuid() != null && !results.isEmpty()) {
             World world = Bukkit.getWorld(query.worldUuid());
-            int count = EntityUtils.moveEntitiesToGround(world, modificationBoundingBox());
-
-            builder.movedEntities(count);
+            if (world != null) {
+                int count = EntityUtils.moveEntitiesToGround(world, modificationBoundingBox());
+                builder.movedEntities(count);
+            }
         }
     }
 

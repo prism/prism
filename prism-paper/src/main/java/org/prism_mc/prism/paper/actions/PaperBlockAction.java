@@ -369,6 +369,10 @@ public class PaperBlockAction extends PaperAction implements BlockAction {
      */
     protected Location location(UUID worldUuid, Coordinate coordinate) {
         World world = Bukkit.getWorld(worldUuid);
+        if (world == null) {
+            throw new IllegalStateException("World " + worldUuid + " is not loaded");
+        }
+
         return new Location(world, coordinate.x(), coordinate.y(), coordinate.z());
     }
 
