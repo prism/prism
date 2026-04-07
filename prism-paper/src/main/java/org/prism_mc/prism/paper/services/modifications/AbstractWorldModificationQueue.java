@@ -30,6 +30,7 @@ import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.BoundingBox;
 import org.prism_mc.prism.api.activities.Activity;
@@ -40,10 +41,12 @@ import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
 import org.prism_mc.prism.api.services.modifications.ModificationResult;
 import org.prism_mc.prism.api.services.modifications.ModificationResultStatus;
 import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
+import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.api.util.Coordinate;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 import org.prism_mc.prism.paper.PrismPaper;
+import org.prism_mc.prism.paper.services.messages.MessageService;
 import org.prism_mc.prism.paper.utils.BlockUtils;
 import org.prism_mc.prism.paper.utils.EntityUtils;
 
@@ -58,6 +61,16 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      * The configuration service.
      */
     protected ConfigurationService configurationService;
+
+    /**
+     * The message service.
+     */
+    protected final MessageService messageService;
+
+    /**
+     * The storage adapter.
+     */
+    protected final StorageAdapter storageAdapter;
 
     /**
      * The modification ruleset.
@@ -140,6 +153,8 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      *
      * @param loggingService The logging service
      * @param configurationService The configuration service
+     * @param messageService The message service
+     * @param storageAdapter The storage adapter
      * @param modificationRuleset Modification rule set
      * @param owner The owner
      * @param query The query
@@ -149,6 +164,8 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
     public AbstractWorldModificationQueue(
         LoggingService loggingService,
         ConfigurationService configurationService,
+        MessageService messageService,
+        StorageAdapter storageAdapter,
         ModificationRuleset modificationRuleset,
         Object owner,
         ActivityQuery query,
@@ -158,6 +175,8 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
         modificationsQueue.addAll(modifications);
         this.loggingService = loggingService;
         this.configurationService = configurationService;
+        this.messageService = messageService;
+        this.storageAdapter = storageAdapter;
         this.modificationRuleset = modificationRuleset;
         this.owner = owner;
         this.query = query;
@@ -444,11 +463,45 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
     }
 
     /**
+     * Whether activities should be marked as reversed (true) or unreversed (false).
+     *
+     * @return True for rollback, false for restore
+     */
+    protected abstract boolean markReversedState();
+
+    /**
      * Called when the modification queue has ended.
      *
      * @param result The result
      */
     protected void onEnd(ModificationQueueResult result) {
+        if (result.mode().equals(ModificationQueueMode.COMPLETING)) {
+            // Get PKs of all applied activities
+            List<Long> primarykeys = result
+                .results()
+                .stream()
+                .filter(r -> r.status().equals(ModificationResultStatus.APPLIED))
+                .map(r -> (long) ((Activity) r.activity()).primaryKey())
+                .toList();
+
+            // Run the database update off the main thread to avoid blocking ticks
+            Bukkit.getScheduler()
+                .runTaskAsynchronously(PrismPaper.instance().loaderPlugin(), () -> {
+                    try {
+                        storageAdapter.markReversed(primarykeys, markReversedState());
+                    } catch (Exception e) {
+                        loggingService.handleException(e);
+
+                        if (owner() instanceof CommandSender sender) {
+                            Bukkit.getScheduler()
+                                .runTask(PrismPaper.instance().loaderPlugin(), () -> {
+                                    messageService.errorQueueReversedFailure(sender);
+                                });
+                        }
+                    }
+                });
+        }
+
         // Execute the callback, letting the caller know we've ended
         onEndCallback.accept(result);
     }

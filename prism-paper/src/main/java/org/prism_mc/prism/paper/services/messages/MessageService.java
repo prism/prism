@@ -150,6 +150,9 @@ public interface MessageService {
     @Message("prism.error.queue-not-free")
     void errorQueueNotFree(CommandSender receiver);
 
+    @Message("prism.error.queue-reversed-failure")
+    void errorQueueReversedFailure(CommandSender receiver);
+
     @Message("prism.error.queue-result-missing")
     void errorQueueResultMissing(CommandSender receiver);
 
