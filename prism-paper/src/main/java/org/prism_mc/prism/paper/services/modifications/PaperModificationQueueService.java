@@ -31,7 +31,6 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import org.bukkit.Location;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.prism_mc.prism.api.activities.Activity;
@@ -196,8 +195,7 @@ public class PaperModificationQueueService implements ModificationQueueService {
 
                 if (result.stateChange() instanceof BlockStateChange blockStateChange) {
                     Location loc = blockStateChange.oldState().getLocation();
-                    BlockData liveBlockData = loc.getWorld().getBlockData(loc);
-                    player.sendBlockChange(loc, liveBlockData);
+                    player.sendBlockChange(loc, blockStateChange.oldState().getBlockData());
                 }
 
                 iterator.remove();
