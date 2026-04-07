@@ -73,6 +73,7 @@ import org.prism_mc.prism.paper.commands.ReportCommand;
 import org.prism_mc.prism.paper.commands.RestoreCommand;
 import org.prism_mc.prism.paper.commands.RollbackCommand;
 import org.prism_mc.prism.paper.commands.TeleportCommand;
+import org.prism_mc.prism.paper.commands.UndoCommand;
 import org.prism_mc.prism.paper.commands.VaultCommand;
 import org.prism_mc.prism.paper.commands.WandCommand;
 import org.prism_mc.prism.paper.integrations.worldedit.WorldEditIntegration;
@@ -563,6 +564,7 @@ public class PrismPaper implements PrismPaperApi {
             commandManager.registerCommand(injectorProvider.injector().getInstance(RestoreCommand.class));
             commandManager.registerCommand(injectorProvider.injector().getInstance(RollbackCommand.class));
             commandManager.registerCommand(injectorProvider.injector().getInstance(TeleportCommand.class));
+            commandManager.registerCommand(injectorProvider.injector().getInstance(UndoCommand.class));
             commandManager.registerCommand(injectorProvider.injector().getInstance(WandCommand.class));
         }
     }

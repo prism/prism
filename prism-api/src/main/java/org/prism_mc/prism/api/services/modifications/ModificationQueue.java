@@ -20,6 +20,8 @@
 
 package org.prism_mc.prism.api.services.modifications;
 
+import org.prism_mc.prism.api.activities.ActivityQuery;
+
 public interface ModificationQueue {
     /**
      * Apply the modifications.
@@ -37,6 +39,13 @@ public interface ModificationQueue {
      * @return The owner
      */
     Object owner();
+
+    /**
+     * Get the query used to create this queue.
+     *
+     * @return The activity query
+     */
+    ActivityQuery query();
 
     /**
      * The size of the current queue.
