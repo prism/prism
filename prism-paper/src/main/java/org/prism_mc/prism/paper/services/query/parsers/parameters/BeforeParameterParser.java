@@ -27,6 +27,7 @@ import org.prism_mc.prism.paper.api.activities.PaperActivityQuery;
 import org.prism_mc.prism.paper.services.messages.MessageService;
 import org.prism_mc.prism.paper.services.query.ParameterContext;
 import org.prism_mc.prism.paper.services.query.parsers.single.StringQueryArgumentParser;
+import org.prism_mc.prism.paper.utils.DateUtils;
 
 public class BeforeParameterParser extends StringQueryArgumentParser {
 
@@ -50,7 +51,7 @@ public class BeforeParameterParser extends StringQueryArgumentParser {
         var optionalParameter = parseSingleParameter(arguments, builder);
 
         if (optionalParameter.isPresent()) {
-            Long parsedTimestamp = parseTimestamp(optionalParameter.get());
+            Long parsedTimestamp = DateUtils.parseTimestamp(optionalParameter.get());
             if (parsedTimestamp != null) {
                 builder.before(parsedTimestamp);
             } else {

@@ -21,9 +21,6 @@
 package org.prism_mc.prism.paper.services.query.parsers;
 
 import dev.triumphteam.cmd.core.argument.keyed.Arguments;
-import java.util.Calendar;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import lombok.Getter;
 import org.bukkit.command.CommandSender;
 import org.prism_mc.prism.loader.services.configuration.DefaultsConfiguration;
@@ -200,45 +197,5 @@ public abstract class QueryArgumentParser<T> {
         }
 
         return new String[] {};
-    }
-
-    /**
-     * Parses a string duration into a unix timestamp.
-     *
-     * @return The timestamp
-     */
-    protected Long parseTimestamp(String value) {
-        final Pattern pattern = Pattern.compile("([0-9]+)([shmdw])");
-        final Matcher matcher = pattern.matcher(value);
-
-        final Calendar cal = Calendar.getInstance();
-        while (matcher.find()) {
-            if (matcher.groupCount() == 2) {
-                final int time = Integer.parseInt(matcher.group(1));
-                final String duration = matcher.group(2);
-
-                switch (duration) {
-                    case "w":
-                        cal.add(Calendar.WEEK_OF_YEAR, -1 * time);
-                        break;
-                    case "d":
-                        cal.add(Calendar.DAY_OF_MONTH, -1 * time);
-                        break;
-                    case "h":
-                        cal.add(Calendar.HOUR, -1 * time);
-                        break;
-                    case "m":
-                        cal.add(Calendar.MINUTE, -1 * time);
-                        break;
-                    case "s":
-                        cal.add(Calendar.SECOND, -1 * time);
-                        break;
-                }
-
-                return cal.getTime().getTime() / 1000;
-            }
-        }
-
-        return null;
     }
 }

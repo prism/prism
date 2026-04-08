@@ -95,6 +95,7 @@ import org.prism_mc.prism.paper.services.messages.resolvers.PaginationResultPlac
 import org.prism_mc.prism.paper.services.messages.resolvers.PurgeCycleResultPlaceholderResolver;
 import org.prism_mc.prism.paper.services.messages.resolvers.StringPlaceholderResolver;
 import org.prism_mc.prism.paper.services.messages.resolvers.WandModePlaceholderResolver;
+import org.prism_mc.prism.paper.services.modifications.AutoRollbackService;
 import org.prism_mc.prism.paper.services.modifications.PaperModificationQueueService;
 import org.prism_mc.prism.paper.services.modifications.PaperRestore;
 import org.prism_mc.prism.paper.services.modifications.PaperRollback;
@@ -284,6 +285,7 @@ public class PrismModule extends AbstractModule {
         bind(ActivityPlaceholderResolver.class).in(Singleton.class);
 
         // Service - Modifications
+        bind(AutoRollbackService.class).in(Singleton.class);
         bind(ModificationQueueService.class).to(PaperModificationQueueService.class).in(Singleton.class);
 
         // Service - Nbt
