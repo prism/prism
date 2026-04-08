@@ -29,25 +29,21 @@ import org.prism_mc.prism.api.activities.ActivityQuery;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueMode;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
 import org.prism_mc.prism.api.services.modifications.ModificationResult;
-import org.prism_mc.prism.api.services.modifications.ModificationResultStatus;
 import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
 import org.prism_mc.prism.api.services.modifications.Restore;
 import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
+import org.prism_mc.prism.paper.services.messages.MessageService;
 
 public class PaperRestore extends AbstractWorldModificationQueue implements Restore {
-
-    /**
-     * The storage adapter.
-     */
-    private final StorageAdapter storageAdapter;
 
     /**
      * Construct a new restore.
      *
      * @param loggingService The logging service
      * @param configurationService The configuration service
+     * @param messageService The message service
      * @param storageAdapter The storage adapter
      * @param modificationRuleset The ruleset
      * @param owner The owner
@@ -59,6 +55,7 @@ public class PaperRestore extends AbstractWorldModificationQueue implements Rest
     public PaperRestore(
         LoggingService loggingService,
         ConfigurationService configurationService,
+        MessageService messageService,
         StorageAdapter storageAdapter,
         @Assisted ModificationRuleset modificationRuleset,
         @Assisted Object owner,
@@ -66,8 +63,17 @@ public class PaperRestore extends AbstractWorldModificationQueue implements Rest
         @Assisted final List<Activity> modifications,
         @Assisted Consumer<ModificationQueueResult> onEnd
     ) {
-        super(loggingService, configurationService, modificationRuleset, owner, query, modifications, onEnd);
-        this.storageAdapter = storageAdapter;
+        super(
+            loggingService,
+            configurationService,
+            messageService,
+            storageAdapter,
+            modificationRuleset,
+            owner,
+            query,
+            modifications,
+            onEnd
+        );
     }
 
     @Override
@@ -81,24 +87,8 @@ public class PaperRestore extends AbstractWorldModificationQueue implements Rest
     }
 
     @Override
-    protected void onEnd(ModificationQueueResult result) {
-        if (result.mode().equals(ModificationQueueMode.COMPLETING)) {
-            // Get PKs of all applied activities
-            List<Long> primarykeys = result
-                .results()
-                .stream()
-                .filter(r -> r.status().equals(ModificationResultStatus.APPLIED))
-                .map(r -> (long) ((Activity) r.activity()).primaryKey())
-                .toList();
-
-            try {
-                storageAdapter.markReversed(primarykeys, false);
-            } catch (Exception e) {
-                loggingService.handleException(e);
-            }
-        }
-
-        super.onEnd(result);
+    protected boolean markReversedState() {
+        return false;
     }
 
     @Override
