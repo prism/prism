@@ -33,6 +33,15 @@ public class RecordingConfiguration {
 
     @Comment(
         """
+        Max seconds to spend draining the queue on shutdown. Set to 0 to disable.
+        Any services with stall detection will assume the server is frozen and may
+        attempt to kill the process. The longer the queue drain timeout is, the more
+        likely that may be. That may cause more harm than good."""
+    )
+    private int drainTimeoutSeconds = 10;
+
+    @Comment(
+        """
         Maximum number of activities that can be queued in memory. Acts as a safety cap
         to prevent out-of-memory errors when the database can't keep up. Activities that
         exceed this limit are dropped. Set to 0 for unlimited (not recommended)."""
