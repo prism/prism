@@ -22,8 +22,6 @@ package org.prism_mc.prism.paper.services.modifications;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
 import lombok.Getter;
@@ -67,7 +65,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
     /**
      * Manage a queue of pending modifications.
      */
-    protected final List<Activity> modificationsQueue = Collections.synchronizedList(new LinkedList<>());
+    protected final List<Activity> modificationsQueue = Collections.synchronizedList(new ArrayList<>());
 
     /**
      * The onEnd handler.
@@ -370,58 +368,55 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                         loggingService.debug("New modification run beginning...");
 
                         int iterationCount = 0;
-                        final int currentQueueOffset = countModificationsRead;
+                        int index = countModificationsRead;
 
-                        if (currentQueueOffset < modificationsQueue.size()) {
-                            for (
-                                final Iterator<Activity> iterator = modificationsQueue.listIterator(currentQueueOffset);
-                                iterator.hasNext();
-                            ) {
-                                final Activity activity = iterator.next();
+                        while (index < modificationsQueue.size()) {
+                            final Activity activity = modificationsQueue.get(index);
 
-                                // Simulate queue pointer advancement for previews
-                                if (mode.equals(ModificationQueueMode.PLANNING)) {
-                                    countModificationsRead++;
+                            // Simulate queue pointer advancement for previews
+                            if (mode.equals(ModificationQueueMode.PLANNING)) {
+                                countModificationsRead++;
+                            }
+
+                            // Limit the absolute max number of steps per execution of this task
+                            if (++iterationCount >= modificationRuleset.maxPerTask()) {
+                                break;
+                            }
+
+                            ModificationResult result = ModificationResult.builder().activity(activity).build();
+
+                            // Delegate reversible modifications to the actions
+                            if (activity.action().type().reversible()) {
+                                try {
+                                    result = applyModification(activity);
+                                } catch (Throwable t) {
+                                    result = ModificationResult.builder().activity(activity).errored().build();
+
+                                    loggingService.handleThrowable(
+                                        String.format("A modification error occurred. %s", activity),
+                                        t
+                                    );
                                 }
+                            }
 
-                                // Limit the absolute max number of steps per execution of this task
-                                if (++iterationCount >= modificationRuleset.maxPerTask()) {
-                                    break;
-                                }
+                            results.add(result);
+                            trackBoundingBox(result);
 
-                                ModificationResult result = ModificationResult.builder().activity(activity).build();
+                            if (result.status().equals(ModificationResultStatus.PLANNED)) {
+                                countPlanned++;
+                            } else if (result.status().equals(ModificationResultStatus.APPLIED)) {
+                                countApplied++;
+                            } else if (result.status().equals(ModificationResultStatus.PARTIAL)) {
+                                countPartial++;
+                            } else {
+                                countSkipped++;
+                            }
 
-                                // Delegate reversible modifications to the actions
-                                if (activity.action().type().reversible()) {
-                                    try {
-                                        result = applyModification(activity);
-                                    } catch (Throwable t) {
-                                        result = ModificationResult.builder().activity(activity).errored().build();
-
-                                        loggingService.handleThrowable(
-                                            String.format("A modification error occurred. %s", activity),
-                                            t
-                                        );
-                                    }
-                                }
-
-                                results.add(result);
-                                trackBoundingBox(result);
-
-                                if (result.status().equals(ModificationResultStatus.PLANNED)) {
-                                    countPlanned++;
-                                } else if (result.status().equals(ModificationResultStatus.APPLIED)) {
-                                    countApplied++;
-                                } else if (result.status().equals(ModificationResultStatus.PARTIAL)) {
-                                    countPartial++;
-                                } else {
-                                    countSkipped++;
-                                }
-
-                                // Remove from the queue if we're not previewing
-                                if (mode.equals(ModificationQueueMode.COMPLETING)) {
-                                    iterator.remove();
-                                }
+                            // Remove from the queue if we're not previewing
+                            if (mode.equals(ModificationQueueMode.COMPLETING)) {
+                                modificationsQueue.remove(index);
+                            } else {
+                                index++;
                             }
                         }
 
