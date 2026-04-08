@@ -251,6 +251,9 @@ public interface MessageService {
     @Message("prism.modifications-planned-success")
     void modificationsAppliedSuccess(CommandSender receiver, @Placeholder Integer count);
 
+    @Message("prism.modifications-undo-no-result")
+    void modificationsUndoNoResult(CommandSender receiver);
+
     @Message("prism.no-results")
     void noResults(CommandSender receiver);
 
