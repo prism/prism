@@ -105,6 +105,7 @@ import org.prism_mc.prism.paper.services.purge.PaperPurgeQueue;
 import org.prism_mc.prism.paper.services.purge.PurgeService;
 import org.prism_mc.prism.paper.services.query.QueryService;
 import org.prism_mc.prism.paper.services.recording.PaperRecordingService;
+import org.prism_mc.prism.paper.services.recording.wal.WalService;
 import org.prism_mc.prism.paper.services.scheduling.SchedulingService;
 import org.prism_mc.prism.paper.services.translation.PaperTranslationService;
 import org.prism_mc.prism.paper.services.wands.InspectionWand;
@@ -310,6 +311,9 @@ public class PrismModule extends AbstractModule {
 
         // Service - Recording
         bind(RecordingService.class).to(PaperRecordingService.class).in(Singleton.class);
+
+        // Service - WAL
+        bind(WalService.class).in(Singleton.class);
 
         // Service - Scheduling
         bind(SchedulingService.class).in(Singleton.class);
