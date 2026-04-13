@@ -24,6 +24,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import org.bukkit.inventory.ItemStack;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.paper.actions.PaperItemStackAction;
@@ -117,11 +118,11 @@ public class ActivityAggregator {
     /**
      * Flush full entries and aged entries into the recording queue.
      *
-     * @param queue The recording queue
+     * @param sink The consumer to receive flushed activities
      */
-    public void flush(LinkedBlockingQueue<Activity> queue) {
+    public void flush(Consumer<Activity> sink) {
         // Drain entries that hit max stack size
-        drainFullEntries(queue);
+        drainFullEntries(sink);
 
         // Flush aged entries from the buffer
         long now = System.currentTimeMillis();
@@ -140,17 +141,17 @@ public class ActivityAggregator {
                 continue;
             }
 
-            queue.offer(buildAggregatedActivity(entry));
+            sink.accept(buildAggregatedActivity(entry));
         }
     }
 
     /**
      * Flush all entries regardless of age. Used during shutdown.
      *
-     * @param queue The recording queue
+     * @param sink The consumer to receive flushed activities
      */
-    public void flushAll(LinkedBlockingQueue<Activity> queue) {
-        drainFullEntries(queue);
+    public void flushAll(Consumer<Activity> sink) {
+        drainFullEntries(sink);
 
         for (AggregationKey key : buffer.keySet()) {
             AggregationEntry entry = buffer.remove(key);
@@ -158,19 +159,19 @@ public class ActivityAggregator {
                 continue;
             }
 
-            queue.offer(buildAggregatedActivity(entry));
+            sink.accept(buildAggregatedActivity(entry));
         }
     }
 
     /**
-     * Drain all full entries into the queue.
+     * Drain all full entries to the consumer.
      *
-     * @param queue The recording queue
+     * @param sink The consumer to receive flushed activities
      */
-    private void drainFullEntries(LinkedBlockingQueue<Activity> queue) {
+    private void drainFullEntries(Consumer<Activity> sink) {
         AggregationEntry entry;
         while ((entry = fullEntries.poll()) != null) {
-            queue.offer(buildAggregatedActivity(entry));
+            sink.accept(buildAggregatedActivity(entry));
         }
     }
 

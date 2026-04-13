@@ -35,6 +35,7 @@ import org.prism_mc.prism.paper.PrismPaper;
 import org.prism_mc.prism.paper.api.activities.PaperActivity;
 import org.prism_mc.prism.paper.api.containers.PaperPlayerContainer;
 import org.prism_mc.prism.paper.services.filters.PaperFilterService;
+import org.prism_mc.prism.paper.services.recording.wal.WalService;
 
 @Singleton
 public class PaperRecordingService implements RecordingService {
@@ -58,6 +59,11 @@ public class PaperRecordingService implements RecordingService {
      * The recording task.
      */
     private final RecordingTask recordingTask;
+
+    /**
+     * The WAL service.
+     */
+    private final WalService walService;
 
     /**
      * Set the recording mode.
@@ -105,18 +111,21 @@ public class PaperRecordingService implements RecordingService {
      * @param filterService The filter service
      * @param loggingService The logging service
      * @param recordingTask The recording task
+     * @param walService The WAL service
      */
     @Inject
     public PaperRecordingService(
         ConfigurationService configurationService,
         PaperFilterService filterService,
         LoggingService loggingService,
-        RecordingTask recordingTask
+        RecordingTask recordingTask,
+        WalService walService
     ) {
         this.configurationService = configurationService;
         this.filterService = filterService;
         this.loggingService = loggingService;
         this.recordingTask = recordingTask;
+        this.walService = walService;
         this.parallelism = configurationService.prismConfig().recording().parallelism();
         this.aggregator = new ActivityAggregator(configurationService.prismConfig().recording().aggregationInterval());
 
@@ -154,6 +163,20 @@ public class PaperRecordingService implements RecordingService {
             return true;
         }
 
+        if (!offerToQueue(activity)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Offer an activity to the queue and write it to the WAL if enabled.
+     *
+     * @param activity The activity
+     * @return True if the activity was accepted
+     */
+    private boolean offerToQueue(Activity activity) {
         if (!queue.offer(activity)) {
             if (droppedActivities.getAndIncrement() == 0) {
                 loggingService.warn(
@@ -165,6 +188,7 @@ public class PaperRecordingService implements RecordingService {
             return false;
         }
 
+        walService.append(activity);
         return true;
     }
 
@@ -180,7 +204,7 @@ public class PaperRecordingService implements RecordingService {
 
     @Override
     public void flushAggregator() {
-        aggregator.flush(queue);
+        aggregator.flush(activity -> offerToQueue(activity));
     }
 
     /**
@@ -196,7 +220,9 @@ public class PaperRecordingService implements RecordingService {
         recordMode = RecordMode.DRAIN_SYNC;
         long deadline = System.nanoTime() + timeout.toNanos();
 
-        aggregator.flushAll(queue);
+        aggregator.flushAll(activity -> offerToQueue(activity));
+
+        loggingService.info("Draining {0} queued activities (timeout: {1}s)...", queue.size(), timeout.toSeconds());
 
         RecordingTask drainTask = this.recordingTask.toNew();
         while (!queue.isEmpty()) {

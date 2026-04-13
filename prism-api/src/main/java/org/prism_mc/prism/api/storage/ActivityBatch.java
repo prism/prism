@@ -21,6 +21,7 @@
 package org.prism_mc.prism.api.storage;
 
 import org.prism_mc.prism.api.activities.Activity;
+import org.prism_mc.prism.api.storage.wal.WalRecord;
 
 public interface ActivityBatch {
     /**
@@ -37,6 +38,14 @@ public interface ActivityBatch {
      * @throws Exception Storage layer exception
      */
     void add(Activity activity) throws Exception;
+
+    /**
+     * Add a WAL record to the batch for replay.
+     *
+     * @param record The WAL record
+     * @throws Exception Storage layer exception
+     */
+    void addFromWalRecord(WalRecord record) throws Exception;
 
     /**
      * Commit the batch.

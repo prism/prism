@@ -36,6 +36,7 @@ import org.prism_mc.prism.api.containers.EntityContainer;
 import org.prism_mc.prism.api.containers.PlayerContainer;
 import org.prism_mc.prism.api.containers.StringContainer;
 import org.prism_mc.prism.api.storage.ActivityBatch;
+import org.prism_mc.prism.api.storage.wal.WalRecord;
 import org.prism_mc.prism.api.util.TextUtils;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 
@@ -264,6 +265,90 @@ public class SqlActivityProcedureBatch implements ActivityBatch {
         }
 
         statement.addBatch();
+    }
+
+    @Override
+    public void addFromWalRecord(WalRecord walRecord) throws SQLException {
+        statement.setLong(1, walRecord.getTimestamp() / 1000);
+        statement.setString(2, walRecord.getWorldName());
+        statement.setString(3, walRecord.getWorldUuid());
+        statement.setInt(4, walRecord.getX());
+        statement.setInt(5, walRecord.getY());
+        statement.setInt(6, walRecord.getZ());
+        statement.setString(7, walRecord.getActionKey());
+
+        setStringOrNull(statement, 8, walRecord.getItemMaterial());
+        if (walRecord.getItemMaterial() != null) {
+            statement.setShort(9, (short) walRecord.getItemQuantity());
+        } else {
+            statement.setNull(9, Types.SMALLINT);
+        }
+        setStringOrNull(statement, 10, walRecord.getItemData());
+
+        setStringOrNull(statement, 11, walRecord.getBlockNamespace());
+        setStringOrNull(statement, 12, walRecord.getBlockName());
+        setStringOrNull(statement, 13, walRecord.getBlockData());
+        setStringOrNull(statement, 14, walRecord.getBlockTranslationKey());
+
+        setStringOrNull(statement, 15, walRecord.getReplacedBlockNamespace());
+        setStringOrNull(statement, 16, walRecord.getReplacedBlockName());
+        setStringOrNull(statement, 17, walRecord.getReplacedBlockData());
+        setStringOrNull(statement, 18, walRecord.getReplacedBlockTranslationKey());
+
+        setStringOrNull(statement, 19, walRecord.getEntityType());
+        setStringOrNull(statement, 20, walRecord.getEntityTranslationKey());
+
+        setStringOrNull(statement, 21, walRecord.getAffectedPlayerName());
+        setStringOrNull(statement, 22, walRecord.getAffectedPlayerUuid());
+
+        // Causes - clear all then set the appropriate one
+        for (int i = 23; i <= 31; i++) {
+            statement.setNull(i, Types.VARCHAR);
+        }
+        String causeType = walRecord.getCauseType();
+        if ("string".equals(causeType)) {
+            statement.setString(23, walRecord.getCauseString());
+        } else if ("player".equals(causeType)) {
+            statement.setString(24, walRecord.getCausePlayerName());
+            statement.setString(25, walRecord.getCausePlayerUuid());
+        } else if ("entity".equals(causeType)) {
+            statement.setString(26, walRecord.getCauseEntityType());
+            statement.setString(27, walRecord.getCauseEntityTranslationKey());
+        } else if ("block".equals(causeType)) {
+            statement.setString(28, walRecord.getCauseBlockNamespace());
+            statement.setString(29, walRecord.getCauseBlockName());
+            statement.setString(30, walRecord.getCauseBlockData());
+            statement.setString(31, walRecord.getCauseBlockTranslationKey());
+        }
+
+        if (walRecord.getSerializedData() != null) {
+            statement.setInt(32, walRecord.getSerializerVersion());
+            statement.setString(33, walRecord.getSerializedData());
+        } else {
+            statement.setNull(32, Types.SMALLINT);
+            statement.setNull(33, Types.VARCHAR);
+        }
+
+        setStringOrNull(statement, 34, TextUtils.truncateWithEllipsis(walRecord.getDescriptor(), 255));
+        setStringOrNull(statement, 35, walRecord.getMetadata());
+
+        statement.addBatch();
+    }
+
+    /**
+     * Set a string parameter or null.
+     *
+     * @param stmt The statement
+     * @param index The parameter index
+     * @param value The value
+     * @throws SQLException On error
+     */
+    private void setStringOrNull(CallableStatement stmt, int index, String value) throws SQLException {
+        if (value != null) {
+            stmt.setString(index, value);
+        } else {
+            stmt.setNull(index, Types.VARCHAR);
+        }
     }
 
     @Override

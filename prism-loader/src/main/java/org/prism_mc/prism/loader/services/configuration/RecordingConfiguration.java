@@ -74,6 +74,30 @@ public class RecordingConfiguration {
     )
     private long aggregationInterval = 520;
 
+    @Comment(
+        """
+        Write-ahead log mode for activity queue persistence. If the database is unavailable
+        during shutdown, uncommitted activities are saved to a local WAL file and replayed
+        on next startup. WAL data is discarded after crashes since the world state may have
+        reverted to the last auto-save.
+        Options:
+          disabled  - No WAL (default)
+          on-demand - Only writes to WAL on database failure or shutdown with a remaining queue.
+                      Zero overhead during normal operation.
+          always    - Continuously writes all activities to WAL as they enter the queue.
+                      Provides protection against mid-operation database failures but adds
+                      constant disk I/O."""
+    )
+    private String walMode = "disabled";
+
+    @Comment(
+        """
+        How often (in milliseconds) the WAL buffer is flushed to disk. Only applies when
+        walMode is "always". Lower values reduce potential data loss but increase disk I/O.
+        Default is 1000ms (1 second)."""
+    )
+    private int walFlushIntervalMs = 1000;
+
     /**
      * Get the parallelism value, clamped to [1, 4].
      *

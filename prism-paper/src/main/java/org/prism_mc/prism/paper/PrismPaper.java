@@ -142,6 +142,7 @@ import org.prism_mc.prism.paper.providers.InjectorProvider;
 import org.prism_mc.prism.paper.services.messages.MessageService;
 import org.prism_mc.prism.paper.services.purge.PurgeService;
 import org.prism_mc.prism.paper.services.recording.PaperRecordingService;
+import org.prism_mc.prism.paper.services.recording.wal.WalService;
 import org.prism_mc.prism.paper.services.scheduling.SchedulingService;
 import org.prism_mc.prism.paper.utils.VersionUtils;
 
@@ -168,6 +169,11 @@ public class PrismPaper implements PrismPaperApi {
      * The purge service.
      */
     private PurgeService purgeService;
+
+    /**
+     * The WAL service.
+     */
+    private WalService walService;
 
     /**
      * The recording service.
@@ -256,6 +262,11 @@ public class PrismPaper implements PrismPaperApi {
 
             return;
         }
+
+        // Initialize WAL service and replay any uncommitted entries
+        walService = injectorProvider.injector().getInstance(WalService.class);
+        walService.replayUncommitted(storageAdapter);
+        walService.initialize();
 
         actionFactory = injectorProvider.injector().getInstance(PrismPaperActionFactory.class);
         actionTypeRegistry = injectorProvider.injector().getInstance(ActionTypeRegistry.class);
@@ -634,25 +645,36 @@ public class PrismPaper implements PrismPaperApi {
                     .recording()
                     .drainTimeoutSeconds();
 
-                if (drainTimeout > 0) {
-                    loader()
-                        .loggingService()
-                        .info(
-                            "Draining {0} queued activities (timeout: {1}s)...",
-                            recordingService.queue().size(),
-                            drainTimeout
-                        );
+                boolean walEnabled = walService != null && walService.isEnabled();
 
+                if (drainTimeout > 0) {
                     paperRecordingService.drainSync(Duration.ofSeconds(drainTimeout));
 
                     int remaining = recordingService.queue().size();
                     if (remaining == 0) {
                         loader().loggingService().info("Queue fully drained.");
+                    } else if (walEnabled) {
+                        walService.writeRemainingQueue(recordingService.queue());
+                        loader()
+                            .loggingService()
+                            .info(
+                                "Queue drain finished with {0} activities remaining. " +
+                                "Saved to WAL, will be replayed on next start.",
+                                remaining
+                            );
                     } else {
                         loader()
                             .loggingService()
                             .warn("Queue drain finished with {0} activities remaining.", remaining);
                     }
+                } else if (walEnabled) {
+                    walService.writeRemainingQueue(recordingService.queue());
+                    loader()
+                        .loggingService()
+                        .info(
+                            "Drain disabled. {0} queued activities saved to disk, " + "will be replayed on next start.",
+                            recordingService.queue().size()
+                        );
                 } else {
                     loader()
                         .loggingService()
@@ -664,6 +686,10 @@ public class PrismPaper implements PrismPaperApi {
             }
 
             recordingService.stop();
+        }
+
+        if (walService != null) {
+            walService.shutdown();
         }
 
         if (purgeService != null && !purgeService.queueFree()) {

@@ -47,6 +47,7 @@ import org.prism_mc.prism.api.containers.EntityContainer;
 import org.prism_mc.prism.api.containers.PlayerContainer;
 import org.prism_mc.prism.api.containers.StringContainer;
 import org.prism_mc.prism.api.storage.ActivityBatch;
+import org.prism_mc.prism.api.storage.wal.WalRecord;
 import org.prism_mc.prism.api.util.TextUtils;
 import org.prism_mc.prism.core.services.cache.CacheService;
 import org.prism_mc.prism.core.storage.dbo.records.PrismActivitiesRecord;
@@ -226,6 +227,124 @@ public class SqlActivityBatch implements ActivityBatch {
                 record.setSerializerVersion(UShort.valueOf(serializerVersion));
                 record.setSerializedData(customDataAction.serializeCustomData());
             }
+        }
+
+        records.add(record);
+    }
+
+    @Override
+    public void addFromWalRecord(WalRecord walRecord) throws SQLException {
+        var record = dslContext.newRecord(PRISM_ACTIVITIES);
+
+        record.setTimestamp(UInteger.valueOf(walRecord.getTimestamp() / 1000));
+        record.setX(walRecord.getX());
+        record.setY(walRecord.getY());
+        record.setZ(walRecord.getZ());
+
+        // Action
+        record.setActionId(UInteger.valueOf(getOrCreateActionId(walRecord.getActionKey())));
+
+        // Entity
+        if (walRecord.getEntityType() != null) {
+            record.setEntityTypeId(
+                UInteger.valueOf(
+                    getOrCreateEntityTypeId(walRecord.getEntityType(), walRecord.getEntityTranslationKey())
+                )
+            );
+        }
+
+        // Item
+        if (walRecord.getItemMaterial() != null) {
+            record.setItemId(UInteger.valueOf(getOrCreateItemId(walRecord.getItemMaterial(), walRecord.getItemData())));
+            record.setItemQuantity(UShort.valueOf(walRecord.getItemQuantity()));
+        }
+
+        // Block
+        if (walRecord.getBlockNamespace() != null) {
+            record.setBlockId(
+                UInteger.valueOf(
+                    getOrCreateBlockId(
+                        walRecord.getBlockNamespace(),
+                        walRecord.getBlockName(),
+                        walRecord.getBlockData(),
+                        walRecord.getBlockTranslationKey()
+                    )
+                )
+            );
+        }
+
+        // Replaced block
+        if (walRecord.getReplacedBlockNamespace() != null) {
+            record.setReplacedBlockId(
+                UInteger.valueOf(
+                    getOrCreateBlockId(
+                        walRecord.getReplacedBlockNamespace(),
+                        walRecord.getReplacedBlockName(),
+                        walRecord.getReplacedBlockData(),
+                        walRecord.getReplacedBlockTranslationKey()
+                    )
+                )
+            );
+        }
+
+        // World
+        record.setWorldId(
+            UInteger.valueOf(getOrCreateWorldId(UUID.fromString(walRecord.getWorldUuid()), walRecord.getWorldName()))
+        );
+
+        // Affected player
+        if (walRecord.getAffectedPlayerUuid() != null) {
+            record.setAffectedPlayerId(
+                UInteger.valueOf(
+                    getOrCreatePlayerId(
+                        UUID.fromString(walRecord.getAffectedPlayerUuid()),
+                        walRecord.getAffectedPlayerName()
+                    )
+                )
+            );
+        }
+
+        // Cause
+        String causeType = walRecord.getCauseType();
+        if ("player".equals(causeType)) {
+            record.setCausePlayerId(
+                UInteger.valueOf(
+                    getOrCreatePlayerId(UUID.fromString(walRecord.getCausePlayerUuid()), walRecord.getCausePlayerName())
+                )
+            );
+        } else if ("block".equals(causeType)) {
+            record.setCauseBlockId(
+                UInteger.valueOf(
+                    getOrCreateBlockId(
+                        walRecord.getCauseBlockNamespace(),
+                        walRecord.getCauseBlockName(),
+                        walRecord.getCauseBlockData(),
+                        walRecord.getCauseBlockTranslationKey()
+                    )
+                )
+            );
+        } else if ("entity".equals(causeType)) {
+            record.setCauseEntityTypeId(
+                UInteger.valueOf(
+                    getOrCreateEntityTypeId(walRecord.getCauseEntityType(), walRecord.getCauseEntityTranslationKey())
+                )
+            );
+        } else if ("string".equals(causeType)) {
+            record.setCauseId(UInteger.valueOf(getOrCreateCauseId(walRecord.getCauseString())));
+        }
+
+        // Descriptor
+        record.setDescriptor(TextUtils.truncateWithEllipsis(walRecord.getDescriptor(), 255));
+
+        // Metadata
+        if (walRecord.getMetadata() != null) {
+            record.setMetadata(walRecord.getMetadata());
+        }
+
+        // Custom data
+        if (walRecord.getSerializedData() != null) {
+            record.setSerializerVersion(UShort.valueOf(walRecord.getSerializerVersion()));
+            record.setSerializedData(walRecord.getSerializedData());
         }
 
         records.add(record);
