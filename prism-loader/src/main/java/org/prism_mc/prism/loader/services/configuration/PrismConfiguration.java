@@ -50,6 +50,9 @@ public class PrismConfiguration {
 
     private AlertsConfiguration alerts = new AlertsConfiguration();
 
+    @Comment("Configure automatic rollback.")
+    private AutoRollbackConfiguration autoRollback = new AutoRollbackConfiguration();
+
     @Comment(
         """
         Configure how Prism caches data. Probably best to leave
