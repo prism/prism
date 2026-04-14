@@ -78,15 +78,15 @@ public class RecordingConfiguration {
         """
         Write-ahead log mode for activity queue persistence. If the database is unavailable
         during shutdown, uncommitted activities are saved to a local WAL file and replayed
-        on next startup. WAL data is discarded after crashes since the world state may have
-        reverted to the last auto-save.
+        on next startup.
         Options:
           disabled  - No WAL (default)
           on-demand - Only writes to WAL on database failure or shutdown with a remaining queue.
-                      Zero overhead during normal operation.
+                      Zero overhead during normal operation. WAL data is discarded after crashes
+                      since the world state may have reverted to the last auto-save.
           always    - Continuously writes all activities to WAL as they enter the queue.
-                      Provides protection against mid-operation database failures but adds
-                      constant disk I/O."""
+                      Provides crash recovery by replaying uncommitted entries even after an
+                      unclean shutdown. Adds constant disk I/O."""
     )
     private String walMode = "disabled";
 
