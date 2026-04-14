@@ -299,11 +299,15 @@ public class WalService {
     /**
      * Replay any uncommitted WAL entries into the database.
      *
-     * <p>If a clean shutdown marker is missing, the WAL is discarded
-     * instead of replayed. This avoids inserting activities into the
-     * database that may not match the world state after a crash, since
-     * Minecraft auto-saves periodically and a crash can revert recent
-     * world changes.</p>
+     * <p>In on-demand mode, if a clean shutdown marker is missing, the WAL
+     * is discarded instead of replayed. This avoids inserting activities
+     * into the database that may not match the world state after a crash,
+     * since Minecraft auto-saves periodically and a crash can revert
+     * recent world changes.</p>
+     *
+     * <p>In always mode, WAL entries are replayed regardless of the clean
+     * shutdown marker. Since activities are continuously written to disk,
+     * the WAL provides a complete record suitable for crash recovery.</p>
      *
      * @param storageAdapter The storage adapter to replay into
      */
@@ -319,7 +323,7 @@ public class WalService {
             return;
         }
 
-        if (!reader.wasCleanShutdown(walDir)) {
+        if (!isAlwaysMode() && !reader.wasCleanShutdown(walDir)) {
             List<WalRecord> uncommitted = reader.readUncommitted(walDir, loggingService);
             loggingService.warn(
                 "Discarding {0} WAL entries due to unclean shutdown. " +
