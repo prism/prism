@@ -29,7 +29,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.BoundingBox;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
@@ -101,9 +100,9 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
     protected ModificationQueueMode mode = ModificationQueueMode.UNDECIDED;
 
     /**
-     * Cache the task id.
+     * Cache the scheduled task.
      */
-    protected int taskId;
+    protected io.papermc.paper.threadedregions.scheduler.ScheduledTask scheduledTask;
 
     /**
      * Count how many were read from the queue.
@@ -378,12 +377,10 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
             }
 
             // Schedule a new sync task
-            JavaPlugin plugin = PrismPaper.instance().loaderPlugin();
-            taskId = Bukkit.getServer()
-                .getScheduler()
-                .scheduleSyncRepeatingTask(
-                    plugin,
-                    () -> {
+            scheduledTask = Bukkit.getGlobalRegionScheduler()
+                .runAtFixedRate(
+                    PrismPaper.instance().loaderPlugin(),
+                    task -> {
                         loggingService.debug("New modification run beginning...");
 
                         int iterationCount = 0;
@@ -444,7 +441,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                             loggingService.debug("Modification queue fully processed, finishing up.");
 
                             // Cancel the repeating task
-                            Bukkit.getServer().getScheduler().cancelTask(taskId);
+                            task.cancel();
 
                             // Post process
                             postProcess(builder);
@@ -461,7 +458,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                             onEnd(result);
                         }
                     },
-                    0,
+                    1,
                     modificationRuleset.taskDelay()
                 );
         }
@@ -469,7 +466,9 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
 
     @Override
     public void destroy() {
-        Bukkit.getServer().getScheduler().cancelTask(taskId);
+        if (scheduledTask != null) {
+            scheduledTask.cancel();
+        }
     }
 
     /**
@@ -495,16 +494,16 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                 .toList();
 
             // Run the database update off the main thread to avoid blocking ticks
-            Bukkit.getScheduler()
-                .runTaskAsynchronously(PrismPaper.instance().loaderPlugin(), () -> {
+            Bukkit.getAsyncScheduler()
+                .runNow(PrismPaper.instance().loaderPlugin(), task -> {
                     try {
                         storageAdapter.markReversed(primarykeys, markReversedState());
                     } catch (Exception e) {
                         loggingService.handleException(e);
 
                         if (owner() instanceof CommandSender sender) {
-                            Bukkit.getScheduler()
-                                .runTask(PrismPaper.instance().loaderPlugin(), () -> {
+                            Bukkit.getGlobalRegionScheduler()
+                                .run(PrismPaper.instance().loaderPlugin(), t -> {
                                     messageService.errorQueueReversedFailure(sender);
                                 });
                         }

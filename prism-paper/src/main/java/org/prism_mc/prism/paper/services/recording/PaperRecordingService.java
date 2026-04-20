@@ -272,9 +272,14 @@ public class PaperRecordingService implements RecordingService {
                 continue;
             }
 
-            Bukkit.getServer()
-                .getScheduler()
-                .runTaskLaterAsynchronously(PrismPaper.instance().loaderPlugin(), this.recordingTask.toNew(), delay);
+            Runnable task = this.recordingTask.toNew();
+            Bukkit.getAsyncScheduler()
+                .runDelayed(
+                    PrismPaper.instance().loaderPlugin(),
+                    t -> task.run(),
+                    delay * 50,
+                    java.util.concurrent.TimeUnit.MILLISECONDS
+                );
         }
     }
 

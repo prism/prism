@@ -86,9 +86,6 @@ public enum DependencyRepository {
 
     MAVEN_CENTRAL("https://repo1.maven.org/maven2/"),
 
-    // Aikar (taskchain)
-    AIKAR("https://repo.aikar.co/content/groups/aikar/"),
-
     // CodeMC (nbt-api)
     CODEMC("https://repo.codemc.io/repository/maven-public/");
 

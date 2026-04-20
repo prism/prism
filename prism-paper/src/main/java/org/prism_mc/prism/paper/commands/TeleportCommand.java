@@ -83,9 +83,8 @@ public class TeleportCommand {
                         messageService.teleportingToActivity(player, activity);
 
                         World world = Bukkit.getServer().getWorld(activity.world().key());
-                        Bukkit.getServer()
-                            .getScheduler()
-                            .runTask(PrismPaper.instance().loaderPlugin(), () -> {
+                        Bukkit.getGlobalRegionScheduler()
+                            .run(PrismPaper.instance().loaderPlugin(), task -> {
                                 player.teleport(
                                     new Location(
                                         world,

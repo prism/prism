@@ -43,7 +43,6 @@ import org.prism_mc.prism.loader.services.logging.LoggingService;
 import org.prism_mc.prism.paper.PrismPaper;
 import org.prism_mc.prism.paper.actions.PaperItemStackAction;
 import org.prism_mc.prism.paper.actions.types.PaperActionTypeRegistry;
-import org.prism_mc.prism.paper.providers.TaskChainProvider;
 import org.prism_mc.prism.paper.services.lookup.LookupService;
 import org.prism_mc.prism.paper.services.messages.MessageService;
 import org.prism_mc.prism.paper.services.query.QueryService;
@@ -88,11 +87,6 @@ public class VaultCommand {
     private final StorageAdapter storageAdapter;
 
     /**
-     * The task chain provider.
-     */
-    private final TaskChainProvider taskChainProvider;
-
-    /**
      * The translation service.
      */
     private final PaperTranslationService translationService;
@@ -106,7 +100,6 @@ public class VaultCommand {
      * @param messageService The message service
      * @param queryService The query service
      * @param storageAdapter The storage adapter
-     * @param taskChainProvider The task chain provider
      * @param translationService The translation service
      */
     @Inject
@@ -117,7 +110,6 @@ public class VaultCommand {
         MessageService messageService,
         QueryService queryService,
         StorageAdapter storageAdapter,
-        TaskChainProvider taskChainProvider,
         PaperTranslationService translationService
     ) {
         this.actionRegistry = actionRegistry;
@@ -126,7 +118,6 @@ public class VaultCommand {
         this.messageService = messageService;
         this.queryService = queryService;
         this.storageAdapter = storageAdapter;
-        this.taskChainProvider = taskChainProvider;
         this.translationService = translationService;
     }
 
@@ -197,9 +188,8 @@ public class VaultCommand {
                     var prev = MiniMessage.miniMessage()
                         .deserialize(translationService.messageOf(player, "prism.vault-gui-previous"));
 
-                    Bukkit.getServer()
-                        .getScheduler()
-                        .runTask(PrismPaper.instance().loaderPlugin(), () -> {
+                    Bukkit.getGlobalRegionScheduler()
+                        .run(PrismPaper.instance().loaderPlugin(), task -> {
                             var gui = Gui.paginated()
                                 .title(title)
                                 .disableAllInteractions()
@@ -243,12 +233,10 @@ public class VaultCommand {
 
                             gui.setCloseGuiAction(event -> {
                                 var keys = new ArrayList<>(reversedKeys);
-                                taskChainProvider
-                                    .newChain()
-                                    .async(() -> {
+                                Bukkit.getAsyncScheduler()
+                                    .runNow(PrismPaper.instance().loaderPlugin(), t -> {
                                         storageAdapter.markReversed(keys, true);
-                                    })
-                                    .execute();
+                                    });
 
                                 reversedKeys.clear();
                             });
