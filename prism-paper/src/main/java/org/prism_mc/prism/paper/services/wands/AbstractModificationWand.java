@@ -22,7 +22,6 @@ package org.prism_mc.prism.paper.services.wands;
 
 import com.google.inject.Inject;
 import java.util.List;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.prism_mc.prism.api.activities.Activity;
@@ -33,8 +32,8 @@ import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
 import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
-import org.prism_mc.prism.paper.PrismPaper;
 import org.prism_mc.prism.paper.services.messages.MessageService;
+import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 
 public abstract class AbstractModificationWand {
 
@@ -64,6 +63,11 @@ public abstract class AbstractModificationWand {
     protected final LoggingService loggingService;
 
     /**
+     * The scheduler.
+     */
+    protected final PrismScheduler prismScheduler;
+
+    /**
      * The owner.
      */
     protected Object owner;
@@ -76,6 +80,7 @@ public abstract class AbstractModificationWand {
      * @param messageService The message service
      * @param modificationQueueService The modification queue service
      * @param loggingService The logging service
+     * @param prismScheduler The scheduler
      */
     @Inject
     public AbstractModificationWand(
@@ -83,13 +88,15 @@ public abstract class AbstractModificationWand {
         StorageAdapter storageAdapter,
         MessageService messageService,
         ModificationQueueService modificationQueueService,
-        LoggingService loggingService
+        LoggingService loggingService,
+        PrismScheduler prismScheduler
     ) {
         this.configurationService = configurationService;
         this.storageAdapter = storageAdapter;
         this.messageService = messageService;
         this.modificationQueueService = modificationQueueService;
         this.loggingService = loggingService;
+        this.prismScheduler = prismScheduler;
     }
 
     /**
@@ -106,40 +113,47 @@ public abstract class AbstractModificationWand {
             return;
         }
 
-        Bukkit.getAsyncScheduler()
-            .runNow(PrismPaper.instance().loaderPlugin(), task -> {
-                List<Activity> modifications;
-                try {
-                    modifications = storageAdapter.queryActivities(query);
-                } catch (Exception e) {
-                    loggingService.handleException(e);
+        prismScheduler.runAsync(() -> {
+            List<Activity> modifications;
+            try {
+                modifications = storageAdapter.queryActivities(query);
+            } catch (Exception e) {
+                loggingService.handleException(e);
 
-                    Bukkit.getGlobalRegionScheduler()
-                        .run(PrismPaper.instance().loaderPlugin(), t -> {
-                            messageService.errorQueryExec((CommandSender) owner);
-                        });
+                if (owner instanceof Player player) {
+                    prismScheduler.runForEntity(player, () -> {
+                        messageService.errorQueryExec((CommandSender) owner);
+                    });
+                } else {
+                    prismScheduler.runGlobal(() -> {
+                        messageService.errorQueryExec((CommandSender) owner);
+                    });
+                }
+
+                return;
+            }
+
+            Runnable applyTask = () -> {
+                if (modifications.isEmpty()) {
+                    messageService.noResults((Player) owner);
 
                     return;
                 }
 
-                Bukkit.getGlobalRegionScheduler()
-                    .run(PrismPaper.instance().loaderPlugin(), t -> {
-                        if (modifications.isEmpty()) {
-                            messageService.noResults((Player) owner);
+                ModificationRuleset modificationRuleset = configurationService
+                    .prismConfig()
+                    .modifications()
+                    .toRulesetBuilder()
+                    .build();
 
-                            return;
-                        }
+                modificationQueueService.newQueue(clazz, modificationRuleset, owner, query, modifications).apply();
+            };
 
-                        ModificationRuleset modificationRuleset = configurationService
-                            .prismConfig()
-                            .modifications()
-                            .toRulesetBuilder()
-                            .build();
-
-                        modificationQueueService
-                            .newQueue(clazz, modificationRuleset, owner, query, modifications)
-                            .apply();
-                    });
-            });
+            if (owner instanceof Player player) {
+                prismScheduler.runForEntity(player, applyTask);
+            } else {
+                prismScheduler.runGlobal(applyTask);
+            }
+        });
     }
 }

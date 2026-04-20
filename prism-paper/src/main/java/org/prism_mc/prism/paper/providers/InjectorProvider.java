@@ -22,6 +22,8 @@ package org.prism_mc.prism.paper.providers;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Module;
+import com.google.inject.util.Modules;
 import lombok.Getter;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 import org.prism_mc.prism.paper.PrismPaper;
@@ -35,7 +37,28 @@ public class InjectorProvider {
     @Getter
     private Injector injector;
 
-    public InjectorProvider(PrismPaper prism, LoggingService loggingService) {
-        this.injector = Guice.createInjector(new PrismModule(prism, loggingService));
+    /**
+     * Construct the injector provider.
+     *
+     * @param prism The prism plugin
+     * @param loggingService The logging service
+     * @param moduleOverrideClassName Optional override module class name, or null
+     */
+    public InjectorProvider(PrismPaper prism, LoggingService loggingService, String moduleOverrideClassName) {
+        Module module = new PrismModule(prism, loggingService);
+
+        if (moduleOverrideClassName != null) {
+            try {
+                Module override = (Module) Class.forName(moduleOverrideClassName)
+                    .getDeclaredConstructor()
+                    .newInstance();
+                module = Modules.override(module).with(override);
+            } catch (Exception e) {
+                loggingService.error("Failed to load module override: {0}", moduleOverrideClassName);
+                loggingService.handleException(e);
+            }
+        }
+
+        this.injector = Guice.createInjector(module);
     }
 }

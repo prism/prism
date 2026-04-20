@@ -27,7 +27,6 @@ import dev.triumphteam.cmd.core.annotations.NamedArguments;
 import dev.triumphteam.cmd.core.argument.keyed.Arguments;
 import java.util.List;
 import java.util.Optional;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
@@ -37,12 +36,12 @@ import org.prism_mc.prism.api.services.modifications.Previewable;
 import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
-import org.prism_mc.prism.paper.PrismPaper;
 import org.prism_mc.prism.paper.services.messages.MessageService;
 import org.prism_mc.prism.paper.services.modifications.PaperModificationQueueService;
 import org.prism_mc.prism.paper.services.modifications.PaperRestore;
 import org.prism_mc.prism.paper.services.modifications.PaperRollback;
 import org.prism_mc.prism.paper.services.query.QueryService;
+import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 
 @Command(value = "prism", alias = { "pr" })
 public class PreviewCommand {
@@ -78,6 +77,11 @@ public class PreviewCommand {
     private final LoggingService loggingService;
 
     /**
+     * The scheduler.
+     */
+    private final PrismScheduler prismScheduler;
+
+    /**
      * Construct the rollback command.
      *
      * @param configurationService The configuration service
@@ -86,6 +90,7 @@ public class PreviewCommand {
      * @param modificationQueueService The modification queue service
      * @param queryService The query service
      * @param loggingService The logging service
+     * @param prismScheduler The scheduler
      */
     @Inject
     public PreviewCommand(
@@ -94,7 +99,8 @@ public class PreviewCommand {
         MessageService messageService,
         PaperModificationQueueService modificationQueueService,
         QueryService queryService,
-        LoggingService loggingService
+        LoggingService loggingService,
+        PrismScheduler prismScheduler
     ) {
         this.configurationService = configurationService;
         this.storageAdapter = storageAdapter;
@@ -102,6 +108,7 @@ public class PreviewCommand {
         this.modificationQueueService = modificationQueueService;
         this.queryService = queryService;
         this.loggingService = loggingService;
+        this.prismScheduler = prismScheduler;
     }
 
     /**
@@ -220,35 +227,33 @@ public class PreviewCommand {
             return;
         }
 
-        Bukkit.getAsyncScheduler()
-            .runNow(PrismPaper.instance().loaderPlugin(), task -> {
-                var results = queryActivities(player, query);
-                if (results == null) {
+        prismScheduler.runAsync(() -> {
+            var results = queryActivities(player, query);
+            if (results == null) {
+                return;
+            }
+
+            prismScheduler.runForEntity(player, () -> {
+                if (results.isEmpty()) {
+                    messageService.noResults(player);
+
                     return;
                 }
 
-                Bukkit.getGlobalRegionScheduler()
-                    .run(PrismPaper.instance().loaderPlugin(), t -> {
-                        if (results.isEmpty()) {
-                            messageService.noResults(player);
-
-                            return;
-                        }
-
-                        ModificationQueue queue = modificationQueueService.newQueue(
-                            clazz,
-                            modificationRuleset,
-                            player,
-                            query,
-                            results
-                        );
-                        if (queue instanceof Previewable previewable) {
-                            previewable.preview();
-                        } else {
-                            messageService.errorNotPreviewable(player);
-                        }
-                    });
+                ModificationQueue queue = modificationQueueService.newQueue(
+                    clazz,
+                    modificationRuleset,
+                    player,
+                    query,
+                    results
+                );
+                if (queue instanceof Previewable previewable) {
+                    previewable.preview();
+                } else {
+                    messageService.errorNotPreviewable(player);
+                }
             });
+        });
     }
 
     /**
@@ -264,10 +269,7 @@ public class PreviewCommand {
         } catch (Exception e) {
             loggingService.handleException(e);
 
-            Bukkit.getGlobalRegionScheduler()
-                .run(PrismPaper.instance().loaderPlugin(), t -> {
-                    messageService.errorQueryExec(player);
-                });
+            prismScheduler.runForEntity(player, () -> messageService.errorQueryExec(player));
         }
 
         return null;

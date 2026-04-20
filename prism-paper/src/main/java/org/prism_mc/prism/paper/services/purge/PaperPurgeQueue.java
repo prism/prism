@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import lombok.Getter;
-import org.bukkit.Bukkit;
 import org.prism_mc.prism.api.activities.ActivityQuery;
 import org.prism_mc.prism.api.services.purges.PurgeCycleResult;
 import org.prism_mc.prism.api.services.purges.PurgeQueue;
@@ -37,7 +36,7 @@ import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.api.util.Pair;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
-import org.prism_mc.prism.paper.PrismPaper;
+import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 
 public class PaperPurgeQueue implements PurgeQueue {
 
@@ -55,6 +54,11 @@ public class PaperPurgeQueue implements PurgeQueue {
      * The storage adapter.
      */
     private final StorageAdapter storageAdapter;
+
+    /**
+     * The scheduler.
+     */
+    private final PrismScheduler prismScheduler;
 
     /**
      * The cycle callback.
@@ -96,12 +100,14 @@ public class PaperPurgeQueue implements PurgeQueue {
         ConfigurationService configurationService,
         LoggingService loggingService,
         StorageAdapter storageAdapter,
+        PrismScheduler prismScheduler,
         @Assisted Consumer<PurgeCycleResult> onCycle,
         @Assisted Consumer<PurgeResult> onEnd
     ) {
         this.configurationService = configurationService;
         this.loggingService = loggingService;
         this.storageAdapter = storageAdapter;
+        this.prismScheduler = prismScheduler;
         this.onCycle = onCycle;
         this.onEnd = onEnd;
     }
@@ -115,14 +121,13 @@ public class PaperPurgeQueue implements PurgeQueue {
     public void start() {
         running = true;
 
-        Bukkit.getAsyncScheduler()
-            .runNow(PrismPaper.instance().loaderPlugin(), task -> {
-                Pair<Integer, Integer> keys = storageAdapter.getActivitiesPkBounds(purgeQueue.getFirst());
+        prismScheduler.runAsync(() -> {
+            Pair<Integer, Integer> keys = storageAdapter.getActivitiesPkBounds(purgeQueue.getFirst());
 
-                loggingService.debug("Absolute purge lower/bound primary keys: {0}, {1}", keys.key(), keys.value());
+            loggingService.debug("Absolute purge lower/bound primary keys: {0}, {1}", keys.key(), keys.value());
 
-                executeNext(keys.key(), keys.value());
-            });
+            executeNext(keys.key(), keys.value());
+        });
     }
 
     @Override
@@ -173,60 +178,51 @@ public class PaperPurgeQueue implements PurgeQueue {
         final long delayDuration = cycleDuration;
         final TimeUnit delayUnit = cycleTimeUnit;
 
-        Bukkit.getAsyncScheduler()
-            .runNow(PrismPaper.instance().loaderPlugin(), task -> {
-                loggingService.debug("Executing next purge for query {0}...", query);
+        prismScheduler.runAsync(() -> {
+            loggingService.debug("Executing next purge for query {0}...", query);
 
-                /*
-                 * Calculate the cycle upper bound.
-                 * If it exceeds the max primary key, use that instead so we're not including keys incorrectly.
-                 * Otherwise, subtract one so each cycle's max key can be each subsequent cycle's min key.
-                 */
-                int cycleMaxPrimaryKey = Math.min(
-                    cycleMinPrimaryKey + configurationService.prismConfig().purges().limit() - 1,
-                    maxPrimaryKey
-                );
+            /*
+             * Calculate the cycle upper bound.
+             * If it exceeds the max primary key, use that instead so we're not including keys incorrectly.
+             * Otherwise, subtract one so each cycle's max key can be each subsequent cycle's min key.
+             */
+            int cycleMaxPrimaryKey = Math.min(
+                cycleMinPrimaryKey + configurationService.prismConfig().purges().limit() - 1,
+                maxPrimaryKey
+            );
 
-                loggingService.debug(
-                    "Limiting cycle to primary keys {0} - {1}",
-                    cycleMinPrimaryKey,
-                    cycleMaxPrimaryKey
-                );
+            loggingService.debug("Limiting cycle to primary keys {0} - {1}", cycleMinPrimaryKey, cycleMaxPrimaryKey);
 
-                // Delete this batch and store the count
-                int count = storageAdapter.deleteActivities(query, cycleMinPrimaryKey, cycleMaxPrimaryKey);
-                deleted += count;
+            // Delete this batch and store the count
+            int count = storageAdapter.deleteActivities(query, cycleMinPrimaryKey, cycleMaxPrimaryKey);
+            deleted += count;
 
-                // Emit information to the cycle callback
-                onCycle.accept(
-                    PurgeCycleResult.builder()
-                        .deleted(count)
-                        .minPrimaryKey(cycleMinPrimaryKey)
-                        .maxPrimaryKey(cycleMaxPrimaryKey)
-                        .build()
-                );
-                loggingService.debug("Purged {0} activity records", count);
+            // Emit information to the cycle callback
+            onCycle.accept(
+                PurgeCycleResult.builder()
+                    .deleted(count)
+                    .minPrimaryKey(cycleMinPrimaryKey)
+                    .maxPrimaryKey(cycleMaxPrimaryKey)
+                    .build()
+            );
+            loggingService.debug("Purged {0} activity records", count);
 
-                // Advance our starting pk for the next cycle
-                int nextCycleMinPrimaryKey = cycleMinPrimaryKey + configurationService.prismConfig().purges().limit();
+            // Advance our starting pk for the next cycle
+            int nextCycleMinPrimaryKey = cycleMinPrimaryKey + configurationService.prismConfig().purges().limit();
 
-                // If we deleted less than our limit, or our next pk exceeds the max,
-                // remove this query from the queue
-                if (nextCycleMinPrimaryKey >= maxPrimaryKey) {
-                    purgeQueue.remove(0);
-                }
+            // If we deleted less than our limit, or our next pk exceeds the max,
+            // remove this query from the queue
+            if (nextCycleMinPrimaryKey >= maxPrimaryKey) {
+                purgeQueue.remove(0);
+            }
 
-                loggingService.debug("Scheduling next cycle (and any configured delay)");
+            loggingService.debug("Scheduling next cycle (and any configured delay)");
 
-                Bukkit.getAsyncScheduler()
-                    .runDelayed(
-                        PrismPaper.instance().loaderPlugin(),
-                        delayTask -> {
-                            this.executeNext(nextCycleMinPrimaryKey, maxPrimaryKey);
-                        },
-                        delayDuration,
-                        delayUnit
-                    );
-            });
+            prismScheduler.runAsyncDelayed(
+                () -> this.executeNext(nextCycleMinPrimaryKey, maxPrimaryKey),
+                delayDuration,
+                delayUnit
+            );
+        });
     }
 }

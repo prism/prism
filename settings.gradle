@@ -5,5 +5,5 @@ pluginManagement {
 }
 
 rootProject.name = 'prism'
-include 'prism-api', 'prism-paper-api', 'prism-loader', 'prism-core', 'prism-paper', 'prism-paper-loader', 'prism-paper-example-plugin'
+include 'prism-api', 'prism-paper-api', 'prism-loader', 'prism-core', 'prism-paper', 'prism-paper-loader', 'prism-folia', 'prism-folia-loader', 'prism-paper-example-plugin'
 

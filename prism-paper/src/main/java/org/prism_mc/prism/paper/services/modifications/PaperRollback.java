@@ -35,6 +35,7 @@ import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 import org.prism_mc.prism.paper.services.messages.MessageService;
+import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 
 public class PaperRollback extends AbstractWorldModificationQueue implements Rollback {
 
@@ -45,6 +46,8 @@ public class PaperRollback extends AbstractWorldModificationQueue implements Rol
      * @param configurationService The configuration service
      * @param messageService The message service
      * @param storageAdapter The storage adapter
+     * @param prismScheduler The scheduler
+     * @param modificationExecutor The modification executor
      * @param modificationRuleset The ruleset
      * @param owner The owner
      * @param query The query used
@@ -57,6 +60,8 @@ public class PaperRollback extends AbstractWorldModificationQueue implements Rol
         ConfigurationService configurationService,
         MessageService messageService,
         StorageAdapter storageAdapter,
+        PrismScheduler prismScheduler,
+        ModificationExecutor modificationExecutor,
         @Assisted ModificationRuleset modificationRuleset,
         @Assisted Object owner,
         @Assisted ActivityQuery query,
@@ -68,6 +73,8 @@ public class PaperRollback extends AbstractWorldModificationQueue implements Rol
             configurationService,
             messageService,
             storageAdapter,
+            prismScheduler,
+            modificationExecutor,
             modificationRuleset,
             owner,
             query,

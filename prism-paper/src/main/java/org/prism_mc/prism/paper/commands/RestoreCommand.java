@@ -27,17 +27,17 @@ import dev.triumphteam.cmd.core.annotations.CommandFlags;
 import dev.triumphteam.cmd.core.annotations.NamedArguments;
 import dev.triumphteam.cmd.core.argument.keyed.Arguments;
 import java.util.List;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
 import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
-import org.prism_mc.prism.paper.PrismPaper;
 import org.prism_mc.prism.paper.services.messages.MessageService;
 import org.prism_mc.prism.paper.services.modifications.PaperModificationQueueService;
 import org.prism_mc.prism.paper.services.query.QueryService;
+import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 
 @Command(value = "prism", alias = { "pr" })
 public class RestoreCommand {
@@ -73,6 +73,11 @@ public class RestoreCommand {
     private final LoggingService loggingService;
 
     /**
+     * The scheduler.
+     */
+    private final PrismScheduler prismScheduler;
+
+    /**
      * Construct the restore command.
      *
      * @param configurationService The configuration service
@@ -81,6 +86,7 @@ public class RestoreCommand {
      * @param modificationQueueService The modification queue service
      * @param queryService The query service
      * @param loggingService The logging service
+     * @param prismScheduler The scheduler
      */
     @Inject
     public RestoreCommand(
@@ -89,7 +95,8 @@ public class RestoreCommand {
         MessageService messageService,
         PaperModificationQueueService modificationQueueService,
         QueryService queryService,
-        LoggingService loggingService
+        LoggingService loggingService,
+        PrismScheduler prismScheduler
     ) {
         this.configurationService = configurationService;
         this.storageAdapter = storageAdapter;
@@ -97,6 +104,7 @@ public class RestoreCommand {
         this.modificationQueueService = modificationQueueService;
         this.queryService = queryService;
         this.loggingService = loggingService;
+        this.prismScheduler = prismScheduler;
     }
 
     /**
@@ -126,35 +134,37 @@ public class RestoreCommand {
             }
 
             final ActivityQuery query = queryBuilder.build();
-            Bukkit.getAsyncScheduler()
-                .runNow(PrismPaper.instance().loaderPlugin(), task -> {
-                    var modifications = queryActivities(sender, query);
-                    if (modifications == null) {
+            prismScheduler.runAsync(() -> {
+                var modifications = queryActivities(sender, query);
+                if (modifications == null) {
+                    return;
+                }
+
+                Runnable applyTask = () -> {
+                    if (modifications.isEmpty()) {
+                        messageService.noResults(sender);
+
                         return;
                     }
 
-                    Bukkit.getGlobalRegionScheduler()
-                        .run(PrismPaper.instance().loaderPlugin(), t -> {
-                            if (modifications.isEmpty()) {
-                                messageService.noResults(sender);
+                    if (!query.defaultsUsed().isEmpty()) {
+                        messageService.defaultsUsed(sender, String.join(" ", query.defaultsUsed()));
+                    }
 
-                                return;
-                            }
+                    // Load the modification ruleset from the configs, and apply flags
+                    var modificationRuleset = modificationQueueService
+                        .applyFlagsToModificationRuleset(arguments)
+                        .build();
 
-                            if (!query.defaultsUsed().isEmpty()) {
-                                messageService.defaultsUsed(sender, String.join(" ", query.defaultsUsed()));
-                            }
+                    modificationQueueService.newRestoreQueue(modificationRuleset, sender, query, modifications).apply();
+                };
 
-                            // Load the modification ruleset from the configs, and apply flags
-                            var modificationRuleset = modificationQueueService
-                                .applyFlagsToModificationRuleset(arguments)
-                                .build();
-
-                            modificationQueueService
-                                .newRestoreQueue(modificationRuleset, sender, query, modifications)
-                                .apply();
-                        });
-                });
+                if (sender instanceof Player player) {
+                    prismScheduler.runForEntity(player, applyTask);
+                } else {
+                    prismScheduler.runGlobal(applyTask);
+                }
+            });
         }
     }
 
@@ -171,10 +181,11 @@ public class RestoreCommand {
         } catch (Exception e) {
             loggingService.handleException(e);
 
-            Bukkit.getGlobalRegionScheduler()
-                .run(PrismPaper.instance().loaderPlugin(), t -> {
-                    messageService.errorQueryExec(sender);
-                });
+            if (sender instanceof Player player) {
+                prismScheduler.runForEntity(player, () -> messageService.errorQueryExec(sender));
+            } else {
+                prismScheduler.runGlobal(() -> messageService.errorQueryExec(sender));
+            }
         }
 
         return null;
