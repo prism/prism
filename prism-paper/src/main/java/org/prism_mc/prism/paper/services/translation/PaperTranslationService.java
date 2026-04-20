@@ -217,6 +217,33 @@ public class PaperTranslationService implements IMessageSource<CommandSender, St
     }
 
     /**
+     * Register a custom translation entry.
+     *
+     * <p>The value is added to all loaded locales using {@code putIfAbsent},
+     * so existing server-owner overrides in locale files take priority.
+     * The translation is also registered in the {@link GlobalTranslator}.</p>
+     *
+     * @param key The translation key (e.g. "prism.past-tense.myplugin-explode")
+     * @param value The default translation value (e.g. "exploded")
+     */
+    public void registerCustomTranslation(String key, String value) {
+        for (var properties : locales.values()) {
+            properties.putIfAbsent(key, value);
+        }
+
+        final var store = MiniMessageTranslationStore.create(Key.key("prism_mc:prism_custom_" + key.hashCode()));
+
+        for (var localeEntry : locales.entrySet()) {
+            String resolved = localeEntry.getValue().getProperty(key);
+            if (resolved != null) {
+                store.register(key, localeEntry.getKey(), resolved);
+            }
+        }
+
+        GlobalTranslator.translator().addSource(store);
+    }
+
+    /**
      * Get the translation for a key for specific player locale.
      *
      * @param messageKey The message key

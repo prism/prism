@@ -45,9 +45,22 @@ public class GenericActionType extends ActionType {
      * @param key The key
      * @param resultType The result type
      * @param reversible If action is reversible
+     * @param usesDescriptor Whether the action uses a descriptor
      */
     public GenericActionType(String key, ActionResultType resultType, boolean reversible, boolean usesDescriptor) {
         super(key, resultType, reversible, usesDescriptor);
+    }
+
+    /**
+     * Construct a new generic action type with a default past tense string.
+     *
+     * @param key The key
+     * @param resultType The result type
+     * @param reversible If action is reversible
+     * @param defaultPastTense The default past tense translation string
+     */
+    public GenericActionType(String key, ActionResultType resultType, boolean reversible, String defaultPastTense) {
+        super(key, resultType, reversible, true, null, false, defaultPastTense);
     }
 
     @Override

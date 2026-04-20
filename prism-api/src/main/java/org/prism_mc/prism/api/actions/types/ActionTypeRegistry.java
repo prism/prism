@@ -64,6 +64,15 @@ public interface ActionTypeRegistry {
     ActionType registerGenericAction(String key);
 
     /**
+     * Register a new generic (non-reversible, descriptor-only) action type with a past tense string.
+     *
+     * @param key The unique action type key (e.g. "myplugin-event")
+     * @param pastTense The default past tense string (e.g. "triggered")
+     * @return The registered action type
+     */
+    ActionType registerGenericAction(String key, String pastTense);
+
+    /**
      * Register a new block action type.
      *
      * @param key The unique action type key (e.g. "myplugin-break")
@@ -72,6 +81,17 @@ public interface ActionTypeRegistry {
      * @return The registered action type
      */
     ActionType registerBlockAction(String key, ActionResultType resultType, boolean reversible);
+
+    /**
+     * Register a new block action type with a past tense string.
+     *
+     * @param key The unique action type key (e.g. "myplugin-break")
+     * @param resultType The result type (CREATES, REMOVES, REPLACES, or NONE)
+     * @param reversible Whether this action supports rollback/restore
+     * @param pastTense The default past tense string (e.g. "demolished")
+     * @return The registered action type
+     */
+    ActionType registerBlockAction(String key, ActionResultType resultType, boolean reversible, String pastTense);
 
     /**
      * Register a new block action type with a custom modification handler.
@@ -90,6 +110,24 @@ public interface ActionTypeRegistry {
     );
 
     /**
+     * Register a new block action type with a custom modification handler and past tense string.
+     *
+     * @param key The unique action type key (e.g. "myplugin-break")
+     * @param resultType The result type (CREATES, REMOVES, REPLACES, or NONE)
+     * @param reversible Whether this action supports rollback/restore
+     * @param handler Custom handler for rollback/restore logic
+     * @param pastTense The default past tense string (e.g. "demolished")
+     * @return The registered action type
+     */
+    ActionType registerBlockAction(
+        String key,
+        ActionResultType resultType,
+        boolean reversible,
+        ModificationHandler handler,
+        String pastTense
+    );
+
+    /**
      * Register a new entity action type.
      *
      * @param key The unique action type key (e.g. "myplugin-spawn")
@@ -98,6 +136,17 @@ public interface ActionTypeRegistry {
      * @return The registered action type
      */
     ActionType registerEntityAction(String key, ActionResultType resultType, boolean reversible);
+
+    /**
+     * Register a new entity action type with a past tense string.
+     *
+     * @param key The unique action type key (e.g. "myplugin-spawn")
+     * @param resultType The result type (CREATES, REMOVES, REPLACES, or NONE)
+     * @param reversible Whether this action supports rollback/restore
+     * @param pastTense The default past tense string (e.g. "spawned")
+     * @return The registered action type
+     */
+    ActionType registerEntityAction(String key, ActionResultType resultType, boolean reversible, String pastTense);
 
     /**
      * Register a new entity action type with a custom modification handler.
@@ -116,6 +165,24 @@ public interface ActionTypeRegistry {
     );
 
     /**
+     * Register a new entity action type with a custom modification handler and past tense string.
+     *
+     * @param key The unique action type key (e.g. "myplugin-spawn")
+     * @param resultType The result type (CREATES, REMOVES, REPLACES, or NONE)
+     * @param reversible Whether this action supports rollback/restore
+     * @param handler Custom handler for rollback/restore logic
+     * @param pastTense The default past tense string (e.g. "spawned")
+     * @return The registered action type
+     */
+    ActionType registerEntityAction(
+        String key,
+        ActionResultType resultType,
+        boolean reversible,
+        ModificationHandler handler,
+        String pastTense
+    );
+
+    /**
      * Register a new item action type.
      *
      * @param key The unique action type key (e.g. "myplugin-craft")
@@ -124,6 +191,17 @@ public interface ActionTypeRegistry {
      * @return The registered action type
      */
     ActionType registerItemAction(String key, ActionResultType resultType, boolean reversible);
+
+    /**
+     * Register a new item action type with a past tense string.
+     *
+     * @param key The unique action type key (e.g. "myplugin-craft")
+     * @param resultType The result type (CREATES, REMOVES, REPLACES, or NONE)
+     * @param reversible Whether this action supports rollback/restore
+     * @param pastTense The default past tense string (e.g. "crafted")
+     * @return The registered action type
+     */
+    ActionType registerItemAction(String key, ActionResultType resultType, boolean reversible, String pastTense);
 
     /**
      * Register a new item action type with a custom modification handler.
@@ -142,6 +220,24 @@ public interface ActionTypeRegistry {
     );
 
     /**
+     * Register a new item action type with a custom modification handler and past tense string.
+     *
+     * @param key The unique action type key (e.g. "myplugin-craft")
+     * @param resultType The result type (CREATES, REMOVES, REPLACES, or NONE)
+     * @param reversible Whether this action supports rollback/restore
+     * @param handler Custom handler for rollback/restore logic
+     * @param pastTense The default past tense string (e.g. "crafted")
+     * @return The registered action type
+     */
+    ActionType registerItemAction(
+        String key,
+        ActionResultType resultType,
+        boolean reversible,
+        ModificationHandler handler,
+        String pastTense
+    );
+
+    /**
      * Register a new player action type.
      *
      * @param key The unique action type key (e.g. "myplugin-action")
@@ -150,6 +246,17 @@ public interface ActionTypeRegistry {
      * @return The registered action type
      */
     ActionType registerPlayerAction(String key, ActionResultType resultType, boolean reversible);
+
+    /**
+     * Register a new player action type with a past tense string.
+     *
+     * @param key The unique action type key (e.g. "myplugin-action")
+     * @param resultType The result type (CREATES, REMOVES, REPLACES, or NONE)
+     * @param reversible Whether this action supports rollback/restore
+     * @param pastTense The default past tense string (e.g. "activated")
+     * @return The registered action type
+     */
+    ActionType registerPlayerAction(String key, ActionResultType resultType, boolean reversible, String pastTense);
 
     /**
      * Register a new player action type with a custom modification handler.
@@ -165,5 +272,23 @@ public interface ActionTypeRegistry {
         ActionResultType resultType,
         boolean reversible,
         ModificationHandler handler
+    );
+
+    /**
+     * Register a new player action type with a custom modification handler and past tense string.
+     *
+     * @param key The unique action type key (e.g. "myplugin-action")
+     * @param resultType The result type (CREATES, REMOVES, REPLACES, or NONE)
+     * @param reversible Whether this action supports rollback/restore
+     * @param handler Custom handler for rollback/restore logic
+     * @param pastTense The default past tense string (e.g. "activated")
+     * @return The registered action type
+     */
+    ActionType registerPlayerAction(
+        String key,
+        ActionResultType resultType,
+        boolean reversible,
+        ModificationHandler handler,
+        String pastTense
     );
 }
