@@ -30,7 +30,6 @@ import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.api.util.Coordinate;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
-import org.prism_mc.prism.paper.providers.TaskChainProvider;
 import org.prism_mc.prism.paper.services.messages.MessageService;
 import org.prism_mc.prism.paper.services.modifications.PaperRollback;
 
@@ -43,7 +42,6 @@ public class RollbackWand extends AbstractModificationWand implements Wand {
      * @param storageAdapter The storage adapter
      * @param messageService The message service
      * @param modificationQueueService The modification queue service
-     * @param taskChainProvider The task chain provider
      * @param loggingService The logging service
      */
     @Inject
@@ -52,17 +50,9 @@ public class RollbackWand extends AbstractModificationWand implements Wand {
         StorageAdapter storageAdapter,
         MessageService messageService,
         ModificationQueueService modificationQueueService,
-        TaskChainProvider taskChainProvider,
         LoggingService loggingService
     ) {
-        super(
-            configurationService,
-            storageAdapter,
-            messageService,
-            modificationQueueService,
-            taskChainProvider,
-            loggingService
-        );
+        super(configurationService, storageAdapter, messageService, modificationQueueService, loggingService);
     }
 
     @Override

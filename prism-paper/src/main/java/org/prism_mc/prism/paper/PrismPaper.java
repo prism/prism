@@ -32,7 +32,6 @@ import dev.triumphteam.cmd.core.suggestion.SuggestionKey;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -225,7 +224,7 @@ public class PrismPaper implements PrismPaperApi {
      * @return The platform dependencies
      */
     protected Set<Dependency> platformDependencies() {
-        return EnumSet.of(Dependency.TASKCHAIN_BUKKIT, Dependency.TASKCHAIN_CORE);
+        return Set.of();
     }
 
     /**

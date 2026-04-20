@@ -24,6 +24,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 import java.util.function.Consumer;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.prism_mc.prism.api.activities.AbstractActivity;
 import org.prism_mc.prism.api.activities.Activity;
@@ -33,7 +34,7 @@ import org.prism_mc.prism.api.services.pagination.ListPaginationResult;
 import org.prism_mc.prism.api.services.pagination.PaginationHandler;
 import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
-import org.prism_mc.prism.paper.providers.TaskChainProvider;
+import org.prism_mc.prism.paper.PrismPaper;
 import org.prism_mc.prism.paper.services.messages.MessageService;
 import org.prism_mc.prism.paper.services.pagination.PaginationService;
 
@@ -51,11 +52,6 @@ public class LookupService {
     private final StorageAdapter storageAdapter;
 
     /**
-     * The task chain provider.
-     */
-    private final TaskChainProvider taskChainProvider;
-
-    /**
      * The logging service.
      */
     private final LoggingService loggingService;
@@ -70,7 +66,6 @@ public class LookupService {
      *
      * @param messageService The message service
      * @param storageAdapter The storage adapter
-     * @param taskChainProvider The task chain provider
      * @param loggingService The logging service
      * @param paginationService The pagination service
      */
@@ -78,13 +73,11 @@ public class LookupService {
     public LookupService(
         MessageService messageService,
         StorageAdapter storageAdapter,
-        TaskChainProvider taskChainProvider,
         LoggingService loggingService,
         PaginationService paginationService
     ) {
         this.messageService = messageService;
         this.storageAdapter = storageAdapter;
-        this.taskChainProvider = taskChainProvider;
         this.loggingService = loggingService;
         this.paginationService = paginationService;
     }
@@ -96,9 +89,8 @@ public class LookupService {
      * @param query The activity query
      */
     public void lookup(CommandSender sender, ActivityQuery query) {
-        taskChainProvider
-            .newChain()
-            .async(() -> {
+        Bukkit.getAsyncScheduler()
+            .runNow(PrismPaper.instance().loaderPlugin(), task -> {
                 try {
                     var paginationResult = storageAdapter.queryActivitiesPaginated(query);
                     var paginationHandler = createPaginationHandler(
@@ -113,13 +105,19 @@ public class LookupService {
                         query
                     );
 
-                    paginationService.show(sender, paginationHandler);
+                    Bukkit.getGlobalRegionScheduler()
+                        .run(PrismPaper.instance().loaderPlugin(), t -> {
+                            paginationService.show(sender, paginationHandler);
+                        });
                 } catch (Exception ex) {
-                    messageService.errorQueryExec(sender);
                     loggingService.handleException(ex);
+
+                    Bukkit.getGlobalRegionScheduler()
+                        .run(PrismPaper.instance().loaderPlugin(), t -> {
+                            messageService.errorQueryExec(sender);
+                        });
                 }
-            })
-            .execute();
+            });
     }
 
     /**
@@ -129,16 +127,14 @@ public class LookupService {
      * @param consumer The result consumer
      */
     public void lookup(ActivityQuery query, Consumer<List<Activity>> consumer) {
-        taskChainProvider
-            .newChain()
-            .async(() -> {
+        Bukkit.getAsyncScheduler()
+            .runNow(PrismPaper.instance().loaderPlugin(), task -> {
                 try {
                     consumer.accept(storageAdapter.queryActivities(query));
                 } catch (Exception ex) {
                     loggingService.handleException(ex);
                 }
-            })
-            .execute();
+            });
     }
 
     /**
@@ -149,17 +145,19 @@ public class LookupService {
      * @param consumer The result consumer
      */
     public void lookup(CommandSender sender, ActivityQuery query, Consumer<List<Activity>> consumer) {
-        taskChainProvider
-            .newChain()
-            .async(() -> {
+        Bukkit.getAsyncScheduler()
+            .runNow(PrismPaper.instance().loaderPlugin(), task -> {
                 try {
                     consumer.accept(storageAdapter.queryActivities(query));
                 } catch (Exception ex) {
-                    messageService.errorQueryExec(sender);
                     loggingService.handleException(ex);
+
+                    Bukkit.getGlobalRegionScheduler()
+                        .run(PrismPaper.instance().loaderPlugin(), t -> {
+                            messageService.errorQueryExec(sender);
+                        });
                 }
-            })
-            .execute();
+            });
     }
 
     /**

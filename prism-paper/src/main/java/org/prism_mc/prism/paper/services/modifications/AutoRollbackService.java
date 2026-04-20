@@ -22,14 +22,16 @@ package org.prism_mc.prism.paper.services.modifications;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.List;
 import org.bukkit.Bukkit;
+import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
 import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.loader.services.configuration.AutoRollbackConfiguration;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
+import org.prism_mc.prism.paper.PrismPaper;
 import org.prism_mc.prism.paper.api.activities.PaperActivityQuery;
-import org.prism_mc.prism.paper.providers.TaskChainProvider;
 import org.prism_mc.prism.paper.utils.DateUtils;
 
 @Singleton
@@ -56,32 +58,24 @@ public class AutoRollbackService {
     private final StorageAdapter storageAdapter;
 
     /**
-     * The task chain provider.
-     */
-    private final TaskChainProvider taskChainProvider;
-
-    /**
      * Construct the auto rollback service.
      *
      * @param configurationService The configuration service
      * @param loggingService The logging service
      * @param modificationQueueService The modification queue service
      * @param storageAdapter The storage adapter
-     * @param taskChainProvider The task chain provider
      */
     @Inject
     public AutoRollbackService(
         ConfigurationService configurationService,
         LoggingService loggingService,
         PaperModificationQueueService modificationQueueService,
-        StorageAdapter storageAdapter,
-        TaskChainProvider taskChainProvider
+        StorageAdapter storageAdapter
     ) {
         this.configurationService = configurationService;
         this.loggingService = loggingService;
         this.modificationQueueService = modificationQueueService;
         this.storageAdapter = storageAdapter;
-        this.taskChainProvider = taskChainProvider;
     }
 
     /**
@@ -117,50 +111,67 @@ public class AutoRollbackService {
 
         loggingService.info("Auto-rollback: querying activities for banned player {0}...", playerName);
 
-        taskChainProvider
-            .newChain()
-            .asyncFirst(() -> {
-                try {
-                    return storageAdapter.queryActivities(query);
-                } catch (Exception e) {
-                    loggingService.error("Auto-rollback: query failed for player {0}.", playerName);
-                    loggingService.handleException(e);
-                }
-
-                return null;
-            })
-            .abortIfNull()
-            .syncLast(modifications -> {
-                if (modifications.isEmpty()) {
-                    loggingService.info(
-                        "Auto-rollback: no activities found for player {0}, nothing to rollback.",
-                        playerName
-                    );
-
+        Bukkit.getAsyncScheduler()
+            .runNow(PrismPaper.instance().loaderPlugin(), task -> {
+                var modifications = queryActivities(playerName, query);
+                if (modifications == null) {
                     return;
                 }
 
-                if (!modificationQueueService.queueAvailable()) {
-                    loggingService.warn(
-                        "Auto-rollback: queue became busy, skipping rollback for player {0}.",
-                        playerName
-                    );
+                Bukkit.getGlobalRegionScheduler()
+                    .run(PrismPaper.instance().loaderPlugin(), t -> {
+                        if (modifications.isEmpty()) {
+                            loggingService.info(
+                                "Auto-rollback: no activities found for player {0}, nothing to rollback.",
+                                playerName
+                            );
 
-                    return;
-                }
+                            return;
+                        }
 
-                loggingService.info(
-                    "Auto-rollback: rolling back {0} activities for banned player {1}.",
-                    modifications.size(),
-                    playerName
-                );
+                        if (!modificationQueueService.queueAvailable()) {
+                            loggingService.warn(
+                                "Auto-rollback: queue became busy, skipping rollback for player {0}.",
+                                playerName
+                            );
 
-                var modificationRuleset = configurationService.prismConfig().modifications().toRulesetBuilder().build();
+                            return;
+                        }
 
-                modificationQueueService
-                    .newRollbackQueue(modificationRuleset, Bukkit.getConsoleSender(), query, modifications)
-                    .apply();
-            })
-            .execute();
+                        loggingService.info(
+                            "Auto-rollback: rolling back {0} activities for banned player {1}.",
+                            modifications.size(),
+                            playerName
+                        );
+
+                        var modificationRuleset = configurationService
+                            .prismConfig()
+                            .modifications()
+                            .toRulesetBuilder()
+                            .build();
+
+                        modificationQueueService
+                            .newRollbackQueue(modificationRuleset, Bukkit.getConsoleSender(), query, modifications)
+                            .apply();
+                    });
+            });
+    }
+
+    /**
+     * Query activities from storage, handling exceptions.
+     *
+     * @param playerName The player name (for logging)
+     * @param query The activity query
+     * @return The list of actions, or null on failure
+     */
+    private List<Activity> queryActivities(String playerName, ActivityQuery query) {
+        try {
+            return storageAdapter.queryActivities(query);
+        } catch (Exception e) {
+            loggingService.error("Auto-rollback: query failed for player {0}.", playerName);
+            loggingService.handleException(e);
+        }
+
+        return null;
     }
 }

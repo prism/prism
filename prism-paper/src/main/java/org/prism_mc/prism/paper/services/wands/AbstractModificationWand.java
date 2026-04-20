@@ -21,8 +21,11 @@
 package org.prism_mc.prism.paper.services.wands;
 
 import com.google.inject.Inject;
+import java.util.List;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
 import org.prism_mc.prism.api.services.modifications.ModificationQueue;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueService;
@@ -30,7 +33,7 @@ import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
 import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
-import org.prism_mc.prism.paper.providers.TaskChainProvider;
+import org.prism_mc.prism.paper.PrismPaper;
 import org.prism_mc.prism.paper.services.messages.MessageService;
 
 public abstract class AbstractModificationWand {
@@ -56,11 +59,6 @@ public abstract class AbstractModificationWand {
     protected final ModificationQueueService modificationQueueService;
 
     /**
-     * The task chain provider.
-     */
-    protected final TaskChainProvider taskChainProvider;
-
-    /**
      * The logging service.
      */
     protected final LoggingService loggingService;
@@ -77,7 +75,6 @@ public abstract class AbstractModificationWand {
      * @param storageAdapter The storage adapter
      * @param messageService The message service
      * @param modificationQueueService The modification queue service
-     * @param taskChainProvider The task chain provider
      * @param loggingService The logging service
      */
     @Inject
@@ -86,14 +83,12 @@ public abstract class AbstractModificationWand {
         StorageAdapter storageAdapter,
         MessageService messageService,
         ModificationQueueService modificationQueueService,
-        TaskChainProvider taskChainProvider,
         LoggingService loggingService
     ) {
         this.configurationService = configurationService;
         this.storageAdapter = storageAdapter;
         this.messageService = messageService;
         this.modificationQueueService = modificationQueueService;
-        this.taskChainProvider = taskChainProvider;
         this.loggingService = loggingService;
     }
 
@@ -111,34 +106,40 @@ public abstract class AbstractModificationWand {
             return;
         }
 
-        taskChainProvider
-            .newChain()
-            .asyncFirst(() -> {
+        Bukkit.getAsyncScheduler()
+            .runNow(PrismPaper.instance().loaderPlugin(), task -> {
+                List<Activity> modifications;
                 try {
-                    return storageAdapter.queryActivities(query);
+                    modifications = storageAdapter.queryActivities(query);
                 } catch (Exception e) {
-                    messageService.errorQueryExec((CommandSender) owner);
                     loggingService.handleException(e);
-                }
 
-                return null;
-            })
-            .abortIfNull()
-            .syncLast(modifications -> {
-                if (modifications.isEmpty()) {
-                    messageService.noResults((Player) owner);
+                    Bukkit.getGlobalRegionScheduler()
+                        .run(PrismPaper.instance().loaderPlugin(), t -> {
+                            messageService.errorQueryExec((CommandSender) owner);
+                        });
 
                     return;
                 }
 
-                ModificationRuleset modificationRuleset = configurationService
-                    .prismConfig()
-                    .modifications()
-                    .toRulesetBuilder()
-                    .build();
+                Bukkit.getGlobalRegionScheduler()
+                    .run(PrismPaper.instance().loaderPlugin(), t -> {
+                        if (modifications.isEmpty()) {
+                            messageService.noResults((Player) owner);
 
-                modificationQueueService.newQueue(clazz, modificationRuleset, owner, query, modifications).apply();
-            })
-            .execute();
+                            return;
+                        }
+
+                        ModificationRuleset modificationRuleset = configurationService
+                            .prismConfig()
+                            .modifications()
+                            .toRulesetBuilder()
+                            .build();
+
+                        modificationQueueService
+                            .newQueue(clazz, modificationRuleset, owner, query, modifications)
+                            .apply();
+                    });
+            });
     }
 }

@@ -241,22 +241,6 @@ public enum Dependency {
         "3.49.1.0",
         "XIYJ0so0HeuMb3F3iXS1ukmVx9MtfHyJ2TkqPnLDkpE=",
         Relocation.of("sqlite", "org{}xerial")
-    ),
-    TASKCHAIN_BUKKIT(
-        "co.aikar",
-        "taskchain-bukkit",
-        "3.7.2",
-        "B/O3+zWGalLs8otAr8tdNnIc/39FDRh6tN5qvNgfEaI=",
-        EnumSet.of(DependencyRepository.AIKAR),
-        Relocation.of("taskchain", "co{}aikar{}taskchain")
-    ),
-    TASKCHAIN_CORE(
-        "co.aikar",
-        "taskchain-core",
-        "3.7.2",
-        "OpSCCN+7v6gqFpsU/LUNOOXzjImwjyE2ShHZ5xFUj/Q=",
-        EnumSet.of(DependencyRepository.AIKAR),
-        Relocation.of("taskchain", "co{}aikar{}taskchain")
     );
 
     private final String mavenRepoPath;
