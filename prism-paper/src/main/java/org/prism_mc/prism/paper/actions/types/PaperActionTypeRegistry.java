@@ -20,13 +20,31 @@
 
 package org.prism_mc.prism.paper.actions.types;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import org.jetbrains.annotations.Nullable;
 import org.prism_mc.prism.api.actions.types.ActionResultType;
 import org.prism_mc.prism.api.actions.types.ActionType;
 import org.prism_mc.prism.core.actions.types.AbstractActionTypeRegistry;
+import org.prism_mc.prism.paper.services.translation.PaperTranslationService;
 
 @Singleton
 public class PaperActionTypeRegistry extends AbstractActionTypeRegistry {
+
+    /**
+     * The translation service.
+     */
+    private PaperTranslationService translationService;
+
+    /**
+     * Set the translation service for registering custom action translations.
+     *
+     * @param translationService The translation service
+     */
+    @Inject
+    public void setTranslationService(PaperTranslationService translationService) {
+        this.translationService = translationService;
+    }
 
     /**
      * Static cache of action types.
@@ -225,27 +243,59 @@ public class PaperActionTypeRegistry extends AbstractActionTypeRegistry {
     }
 
     @Override
-    protected ActionType createGenericActionType(String key) {
-        return new GenericActionType(key, ActionResultType.NONE, false);
+    public void registerAction(ActionType actionType) {
+        super.registerAction(actionType);
+
+        if (actionType.defaultPastTense() != null && translationService != null) {
+            translationService.registerCustomTranslation(
+                actionType.pastTenseTranslationKey(),
+                actionType.defaultPastTense()
+            );
+        }
     }
 
     @Override
-    protected ActionType createBlockActionType(String key, ActionResultType resultType, boolean reversible) {
-        return new BlockActionType(key, resultType, reversible);
+    protected ActionType createGenericActionType(String key, @Nullable String defaultPastTense) {
+        return new GenericActionType(key, ActionResultType.NONE, false, defaultPastTense);
     }
 
     @Override
-    protected ActionType createEntityActionType(String key, ActionResultType resultType, boolean reversible) {
-        return new EntityActionType(key, resultType, reversible);
+    protected ActionType createBlockActionType(
+        String key,
+        ActionResultType resultType,
+        boolean reversible,
+        @Nullable String defaultPastTense
+    ) {
+        return new BlockActionType(key, resultType, reversible, defaultPastTense);
     }
 
     @Override
-    protected ActionType createItemActionType(String key, ActionResultType resultType, boolean reversible) {
-        return new ItemActionType(key, resultType, reversible);
+    protected ActionType createEntityActionType(
+        String key,
+        ActionResultType resultType,
+        boolean reversible,
+        @Nullable String defaultPastTense
+    ) {
+        return new EntityActionType(key, resultType, reversible, defaultPastTense);
     }
 
     @Override
-    protected ActionType createPlayerActionType(String key, ActionResultType resultType, boolean reversible) {
-        return new PlayerActionType(key, resultType, reversible);
+    protected ActionType createItemActionType(
+        String key,
+        ActionResultType resultType,
+        boolean reversible,
+        @Nullable String defaultPastTense
+    ) {
+        return new ItemActionType(key, resultType, reversible, defaultPastTense);
+    }
+
+    @Override
+    protected ActionType createPlayerActionType(
+        String key,
+        ActionResultType resultType,
+        boolean reversible,
+        @Nullable String defaultPastTense
+    ) {
+        return new PlayerActionType(key, resultType, reversible, defaultPastTense);
     }
 }

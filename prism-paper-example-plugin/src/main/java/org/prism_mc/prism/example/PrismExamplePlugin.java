@@ -63,15 +63,24 @@ public class PrismExamplePlugin extends JavaPlugin implements Listener {
 
         prism = provider.getProvider();
 
-        // 2. Register a custom generic action type
-        sprintToggle = prism.actionTypeRegistry().registerGenericAction("sprint-toggle");
+        // 2. Register a custom generic action type with a past tense string.
+        //    The past tense is the verb shown in lookup results
+        //    (e.g. "Player toggled sprint on (started sprinting)").
+        //    Server owners can override by adding prism.past-tense.sprint-toggle to their locale file.
+        sprintToggle = prism.actionTypeRegistry().registerGenericAction("sprint-toggle", "toggled sprint");
 
         // 3. Register a custom block action with a custom rollback/restore handler.
         //    When rolled back, this places a diamond block instead of restoring the original,
         //    proving the custom handler runs instead of built-in logic.
         customBreak = prism
             .actionTypeRegistry()
-            .registerBlockAction("custom-break", ActionResultType.REMOVES, true, new CustomBreakHandler());
+            .registerBlockAction(
+                "custom-break",
+                ActionResultType.REMOVES,
+                true,
+                new CustomBreakHandler(),
+                "custom-broke"
+            );
 
         getLogger().info("Registered custom action types: sprint-toggle, custom-break");
 
@@ -81,7 +90,7 @@ public class PrismExamplePlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onSprintToggle(PlayerToggleSprintEvent event) {
-        String desc = event.isSprinting() ? "started sprinting" : "stopped sprinting";
+        String desc = event.isSprinting() ? "on (started sprinting)" : "off (stopped sprinting)";
         var action = prism.actionFactory().createGenericAction(sprintToggle, desc);
 
         var activity = PaperActivity.builder()

@@ -48,6 +48,18 @@ public class BlockActionType extends ActionType {
         super(key, resultType, reversible);
     }
 
+    /**
+     * Construct a new block action type with a default past tense string.
+     *
+     * @param key The key
+     * @param resultType The result type
+     * @param reversible If action is reversible
+     * @param defaultPastTense The default past tense translation string
+     */
+    public BlockActionType(String key, ActionResultType resultType, boolean reversible, String defaultPastTense) {
+        super(key, resultType, reversible, true, null, false, defaultPastTense);
+    }
+
     @Override
     public Action createAction(ActionData actionData) {
         BlockData blockData = createBlockData(
