@@ -528,7 +528,8 @@ public class PrismPaper implements PrismPaperApi {
                 Flag.flag("nd").longFlag("nodefaults").build(),
                 Flag.flag("ng").longFlag("nogroup").build(),
                 Flag.flag("rd").longFlag("removedrops").argument(Boolean.class).build(),
-                Flag.flag("c").longFlag("count").build()
+                Flag.flag("c").longFlag("count").build(),
+                Flag.flag("s").longFlag("sort").argument(String.class).build()
             );
 
             commandManager.registerNamedArguments(

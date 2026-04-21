@@ -25,10 +25,12 @@ import com.google.inject.Provider;
 import dev.triumphteam.cmd.core.argument.keyed.Arguments;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.prism_mc.prism.api.activities.ActivityQuery;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.paper.actions.types.PaperActionTypeRegistry;
 import org.prism_mc.prism.paper.api.activities.PaperActivityQuery;
@@ -171,6 +173,20 @@ public class QueryService {
         // No-group flag
         if (arguments.hasFlag("nogroup")) {
             builder.grouped(false);
+        }
+
+        // Sort flag
+        Optional<String> sortFlag = arguments.getFlagValue("sort", String.class);
+        if (sortFlag.isPresent()) {
+            String sortValue = sortFlag.get().toLowerCase(Locale.ROOT);
+            switch (sortValue) {
+                case "asc" -> builder.sort(ActivityQuery.Sort.ASCENDING);
+                case "desc" -> builder.sort(ActivityQuery.Sort.DESCENDING);
+                default -> {
+                    messageService.errorParamInvalid(sender, "sort:" + sortFlag.get());
+                    return Optional.empty();
+                }
+            }
         }
 
         // If an ID is provided, no other parameters matter
