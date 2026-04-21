@@ -65,6 +65,7 @@ import org.prism_mc.prism.api.containers.TranslatableContainer;
 import org.prism_mc.prism.api.services.pagination.PartialListPaginationResult;
 import org.prism_mc.prism.api.storage.ActivityBatch;
 import org.prism_mc.prism.api.storage.StorageAdapter;
+import org.prism_mc.prism.api.storage.StorageConnectionStatus;
 import org.prism_mc.prism.api.util.Coordinate;
 import org.prism_mc.prism.api.util.Pair;
 import org.prism_mc.prism.core.injection.factories.SqlActivityQueryBuilderFactory;
@@ -1090,6 +1091,27 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
         if (dataSource != null) {
             dataSource.close();
         }
+    }
+
+    @Override
+    public StorageConnectionStatus connectionStatus() {
+        if (dataSource == null || dataSource.isClosed()) {
+            return StorageConnectionStatus.builder().connected(false).build();
+        }
+
+        var pool = dataSource.getHikariPoolMXBean();
+        if (pool == null) {
+            return StorageConnectionStatus.builder().connected(false).build();
+        }
+
+        return StorageConnectionStatus.builder()
+            .connected(true)
+            .activeConnections(pool.getActiveConnections())
+            .idleConnections(pool.getIdleConnections())
+            .totalConnections(pool.getTotalConnections())
+            .maxConnections(dataSource.getMaximumPoolSize())
+            .threadsAwaitingConnection(pool.getThreadsAwaitingConnection())
+            .build();
     }
 
     @Override

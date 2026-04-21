@@ -72,6 +72,7 @@ import org.prism_mc.prism.loader.services.logging.LoggingService;
 import org.prism_mc.prism.loader.storage.StorageType;
 import org.prism_mc.prism.paper.PrismPaper;
 import org.prism_mc.prism.paper.actions.types.PaperActionTypeRegistry;
+import org.prism_mc.prism.paper.commands.StatusLabel;
 import org.prism_mc.prism.paper.integrations.worldedit.WorldEditIntegration;
 import org.prism_mc.prism.paper.services.alerts.BlockBreakAlertData;
 import org.prism_mc.prism.paper.services.alerts.ItemAlertData;
@@ -92,6 +93,7 @@ import org.prism_mc.prism.paper.services.messages.resolvers.ModificationQueueRes
 import org.prism_mc.prism.paper.services.messages.resolvers.ModificationResultPlaceholderResolver;
 import org.prism_mc.prism.paper.services.messages.resolvers.PaginationResultPlaceholderResolver;
 import org.prism_mc.prism.paper.services.messages.resolvers.PurgeCycleResultPlaceholderResolver;
+import org.prism_mc.prism.paper.services.messages.resolvers.StatusLabelPlaceholderResolver;
 import org.prism_mc.prism.paper.services.messages.resolvers.StringPlaceholderResolver;
 import org.prism_mc.prism.paper.services.messages.resolvers.WandModePlaceholderResolver;
 import org.prism_mc.prism.paper.services.modifications.AutoRollbackService;
@@ -224,6 +226,7 @@ public class PrismModule extends AbstractModule {
                 .weightedPlaceholderResolver(String.class, new StringPlaceholderResolver(), 0)
                 .weightedPlaceholderResolver(PurgeCycleResult.class, new PurgeCycleResultPlaceholderResolver(), 0)
                 .weightedPlaceholderResolver(AbstractActivity.class, activityPlaceholderResolver, 0)
+                .weightedPlaceholderResolver(StatusLabel.class, new StatusLabelPlaceholderResolver(), 0)
                 .weightedPlaceholderResolver(WandMode.class, wandModePlaceholderResolver, 0)
                 .weightedPlaceholderResolver(
                     ModificationQueueResult.class,

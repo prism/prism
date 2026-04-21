@@ -86,6 +86,13 @@ public interface StorageAdapter {
     PartialListPaginationResult<AbstractActivity> queryActivitiesPaginated(ActivityQuery query) throws Exception;
 
     /**
+     * Get the connection pool status.
+     *
+     * @return The connection status
+     */
+    StorageConnectionStatus connectionStatus();
+
+    /**
      * Check whether this storage system is enabled and ready.
      *
      * @return True if successfully initialized.
