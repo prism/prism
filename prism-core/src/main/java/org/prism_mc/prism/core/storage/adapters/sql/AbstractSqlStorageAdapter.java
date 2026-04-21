@@ -788,6 +788,11 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
     }
 
     @Override
+    public int countActivities(ActivityQuery query) throws Exception {
+        return queryBuilder.countActivities(query);
+    }
+
+    @Override
     public List<Activity> queryActivities(ActivityQuery query) throws Exception {
         var results = activityMapper(queryBuilder.queryActivities(query), query);
 

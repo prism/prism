@@ -85,7 +85,12 @@ public class LookupCommand {
                 .get()
                 .limit(configurationService.prismConfig().defaults().perPage())
                 .build();
-            lookupService.lookup(sender, query);
+
+            if (query.countOnly()) {
+                lookupService.count(sender, query);
+            } else {
+                lookupService.lookup(sender, query);
+            }
         }
     }
 }
