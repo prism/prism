@@ -114,8 +114,14 @@ public interface MessageService {
     @Message("prism.error.param-invalid")
     void errorParamInvalid(CommandSender receiver, @Placeholder String param);
 
+    @Message("prism.error.param-invalid-action")
+    void errorParamInvalidAction(CommandSender receiver, @Placeholder String action);
+
     @Message("prism.error.param-invalid-block-tag")
     void errorParamInvalidBlockTag(CommandSender receiver);
+
+    @Message("prism.error.param-invalid-in")
+    void errorParamInvalidIn(CommandSender receiver, @Placeholder String value);
 
     @Message("prism.error.param-invalid-entity-type-tag")
     void errorParamInvalidEntityTypeTag(CommandSender receiver);

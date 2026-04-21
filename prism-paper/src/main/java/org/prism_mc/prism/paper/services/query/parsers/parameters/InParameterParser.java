@@ -85,16 +85,18 @@ public class InParameterParser extends StringQueryArgumentParser {
                 } else {
                     messageService.errorWorldEditMissing(sender);
                 }
-            } else {
+            } else if (optionalParameter.get().equalsIgnoreCase("chunk")) {
                 builder.worldUuid(parameterContext.world.getUID());
 
-                if (optionalParameter.get().equalsIgnoreCase("chunk")) {
-                    Chunk chunk = parameterContext.referenceLocation.getChunk();
-                    Coordinate chunkMin = LocationUtils.getChunkMinCoordinate(chunk);
-                    Coordinate chunkMax = LocationUtils.getChunkMaxCoordinate(chunk);
+                Chunk chunk = parameterContext.referenceLocation.getChunk();
+                Coordinate chunkMin = LocationUtils.getChunkMinCoordinate(chunk);
+                Coordinate chunkMax = LocationUtils.getChunkMaxCoordinate(chunk);
 
-                    builder.boundingCoordinates(chunkMin, chunkMax);
-                }
+                builder.boundingCoordinates(chunkMin, chunkMax);
+            } else {
+                messageService.errorParamInvalidIn(sender, optionalParameter.get());
+
+                return false;
             }
         }
 

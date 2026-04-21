@@ -68,9 +68,20 @@ public class ActionParameterParser extends StringSetQueryArgumentParser {
                     var optionalIActionType = actionRegistry.actionType(actionKey.toLowerCase(Locale.ENGLISH));
                     if (optionalIActionType.isPresent()) {
                         builder.actionTypeKey(actionKey);
+                    } else {
+                        messageService.errorParamInvalidAction(sender, actionKey);
+
+                        return false;
                     }
                 } else {
-                    builder.actionTypes(actionRegistry.actionTypesInFamily(actionKey.toLowerCase(Locale.ENGLISH)));
+                    var familyTypes = actionRegistry.actionTypesInFamily(actionKey.toLowerCase(Locale.ENGLISH));
+                    if (familyTypes.isEmpty()) {
+                        messageService.errorParamInvalidAction(sender, actionKey);
+
+                        return false;
+                    }
+
+                    builder.actionTypes(familyTypes);
                 }
             }
         }
