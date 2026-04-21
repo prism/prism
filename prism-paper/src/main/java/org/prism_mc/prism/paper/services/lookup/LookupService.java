@@ -121,6 +121,36 @@ public class LookupService {
     }
 
     /**
+     * Performs an async count query and displays the total count to the command sender.
+     *
+     * @param sender The command sender
+     * @param query The activity query
+     */
+    public void count(CommandSender sender, ActivityQuery query) {
+        Bukkit.getAsyncScheduler()
+            .runNow(PrismPaper.instance().loaderPlugin(), task -> {
+                try {
+                    int count = storageAdapter.countActivities(query);
+                    Bukkit.getGlobalRegionScheduler()
+                        .run(PrismPaper.instance().loaderPlugin(), t -> {
+                            if (!query.defaultsUsed().isEmpty()) {
+                                messageService.defaultsUsed(sender, String.join(" ", query.defaultsUsed()));
+                            }
+
+                            messageService.countResult(sender, count);
+                        });
+                } catch (Exception ex) {
+                    loggingService.handleException(ex);
+
+                    Bukkit.getGlobalRegionScheduler()
+                        .run(PrismPaper.instance().loaderPlugin(), t -> {
+                            messageService.errorQueryExec(sender);
+                        });
+                }
+            });
+    }
+
+    /**
      * Performs an async storage query and passes the result to the consumer.
      *
      * @param query The activity query

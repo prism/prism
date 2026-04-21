@@ -102,6 +102,12 @@ public class ActivityQuery {
     private Collection<String> causeEntityTypes;
 
     /**
+     * Count only.
+     */
+    @Builder.Default
+    private boolean countOnly = false;
+
+    /**
      * Grouped.
      */
     @Builder.Default

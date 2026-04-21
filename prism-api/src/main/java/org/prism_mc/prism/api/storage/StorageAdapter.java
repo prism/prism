@@ -68,6 +68,15 @@ public interface StorageAdapter {
     void markReversed(List<Long> activityIds, boolean reversed);
 
     /**
+     * Count activities matching the query.
+     *
+     * @param query The activity query
+     * @return The count of matching activities
+     * @throws Exception Storage layer exception
+     */
+    int countActivities(ActivityQuery query) throws Exception;
+
+    /**
      * Query activities in a non-paginated format (needed for world modification).
      *
      * @param query The activity query

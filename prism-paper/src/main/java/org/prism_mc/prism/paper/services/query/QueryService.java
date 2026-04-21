@@ -163,6 +163,11 @@ public class QueryService {
 
         var builder = PaperActivityQuery.builder();
 
+        // Count flag
+        if (arguments.hasFlag("count")) {
+            builder.countOnly(true);
+        }
+
         // No-group flag
         if (arguments.hasFlag("nogroup")) {
             builder.grouped(false);
