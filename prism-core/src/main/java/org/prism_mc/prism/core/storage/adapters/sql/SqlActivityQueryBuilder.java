@@ -579,6 +579,13 @@ public class SqlActivityQueryBuilder {
             conditions.add(PRISM_ACTIVITIES.Z.between(query.minCoordinate().intZ(), query.maxCoordinate().intZ()));
         }
 
+        // Y coordinate filters
+        if (query.above() != null) {
+            conditions.add(PRISM_ACTIVITIES.Y.greaterOrEqual(query.above()));
+        } else if (query.below() != null) {
+            conditions.add(PRISM_ACTIVITIES.Y.lessOrEqual(query.below()));
+        }
+
         // Query
         if (query.descriptor() != null) {
             conditions.add(PRISM_ACTIVITIES.DESCRIPTOR.likeIgnoreCase(String.format("%%%s%%", query.descriptor())));

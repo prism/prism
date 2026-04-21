@@ -180,6 +180,16 @@ public class ActivityQuery {
     private Sort sort = Sort.DESCENDING;
 
     /**
+     * The minimum Y coordinate (above filter).
+     */
+    private Integer above;
+
+    /**
+     * The maximum Y coordinate (below filter).
+     */
+    private Integer below;
+
+    /**
      * The world uuid.
      */
     private UUID worldUuid;
