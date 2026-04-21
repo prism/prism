@@ -30,8 +30,8 @@ import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.loader.services.configuration.AutoRollbackConfiguration;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
-import org.prism_mc.prism.paper.PrismPaper;
 import org.prism_mc.prism.paper.api.activities.PaperActivityQuery;
+import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 import org.prism_mc.prism.paper.utils.DateUtils;
 
 @Singleton
@@ -58,24 +58,32 @@ public class AutoRollbackService {
     private final StorageAdapter storageAdapter;
 
     /**
+     * The scheduler.
+     */
+    private final PrismScheduler prismScheduler;
+
+    /**
      * Construct the auto rollback service.
      *
      * @param configurationService The configuration service
      * @param loggingService The logging service
      * @param modificationQueueService The modification queue service
      * @param storageAdapter The storage adapter
+     * @param prismScheduler The scheduler
      */
     @Inject
     public AutoRollbackService(
         ConfigurationService configurationService,
         LoggingService loggingService,
         PaperModificationQueueService modificationQueueService,
-        StorageAdapter storageAdapter
+        StorageAdapter storageAdapter,
+        PrismScheduler prismScheduler
     ) {
         this.configurationService = configurationService;
         this.loggingService = loggingService;
         this.modificationQueueService = modificationQueueService;
         this.storageAdapter = storageAdapter;
+        this.prismScheduler = prismScheduler;
     }
 
     /**
@@ -111,50 +119,44 @@ public class AutoRollbackService {
 
         loggingService.info("Auto-rollback: querying activities for banned player {0}...", playerName);
 
-        Bukkit.getAsyncScheduler()
-            .runNow(PrismPaper.instance().loaderPlugin(), task -> {
-                var modifications = queryActivities(playerName, query);
-                if (modifications == null) {
+        prismScheduler.runAsync(() -> {
+            var modifications = queryActivities(playerName, query);
+            if (modifications == null) {
+                return;
+            }
+
+            prismScheduler.runGlobal(() -> {
+                if (modifications.isEmpty()) {
+                    loggingService.info(
+                        "Auto-rollback: no activities found for player {0}, nothing to rollback.",
+                        playerName
+                    );
+
                     return;
                 }
 
-                Bukkit.getGlobalRegionScheduler()
-                    .run(PrismPaper.instance().loaderPlugin(), t -> {
-                        if (modifications.isEmpty()) {
-                            loggingService.info(
-                                "Auto-rollback: no activities found for player {0}, nothing to rollback.",
-                                playerName
-                            );
+                if (!modificationQueueService.queueAvailable()) {
+                    loggingService.warn(
+                        "Auto-rollback: queue became busy, skipping rollback for player {0}.",
+                        playerName
+                    );
 
-                            return;
-                        }
+                    return;
+                }
 
-                        if (!modificationQueueService.queueAvailable()) {
-                            loggingService.warn(
-                                "Auto-rollback: queue became busy, skipping rollback for player {0}.",
-                                playerName
-                            );
+                loggingService.info(
+                    "Auto-rollback: rolling back {0} activities for banned player {1}.",
+                    modifications.size(),
+                    playerName
+                );
 
-                            return;
-                        }
+                var modificationRuleset = configurationService.prismConfig().modifications().toRulesetBuilder().build();
 
-                        loggingService.info(
-                            "Auto-rollback: rolling back {0} activities for banned player {1}.",
-                            modifications.size(),
-                            playerName
-                        );
-
-                        var modificationRuleset = configurationService
-                            .prismConfig()
-                            .modifications()
-                            .toRulesetBuilder()
-                            .build();
-
-                        modificationQueueService
-                            .newRollbackQueue(modificationRuleset, Bukkit.getConsoleSender(), query, modifications)
-                            .apply();
-                    });
+                modificationQueueService
+                    .newRollbackQueue(modificationRuleset, Bukkit.getConsoleSender(), query, modifications)
+                    .apply();
             });
+        });
     }
 
     /**

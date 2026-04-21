@@ -21,7 +21,6 @@
 package org.prism_mc.prism.paper.services.scheduling;
 
 import org.bukkit.Bukkit;
-import org.prism_mc.prism.paper.PrismPaper;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
@@ -38,11 +37,11 @@ public class PrismCommandJob implements Job {
 
         String command = dataMap.getString("command");
         if (command != null) {
+            PrismScheduler prismScheduler = (PrismScheduler) dataMap.get("prismScheduler");
             // Jobs via the scheduler are async, but commands must execute on the game thread
-            Bukkit.getGlobalRegionScheduler()
-                .run(PrismPaper.instance().loaderPlugin(), task -> {
-                    Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), command);
-                });
+            prismScheduler.runGlobal(() -> {
+                Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), command);
+            });
         }
     }
 }

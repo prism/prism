@@ -55,6 +55,17 @@ public class PrismPaperBootstrap implements PrismBootstrap {
     }
 
     /**
+     * Get the Guice module override class name. Subclasses can override to
+     * provide a platform-specific module (e.g. Folia). The class is loaded
+     * reflectively after runtime dependencies are available.
+     *
+     * @return A fully qualified class name, or null for no override
+     */
+    protected String moduleOverrideClassName() {
+        return null;
+    }
+
+    /**
      * Get the class path appender.
      *
      * @return The classpath appender

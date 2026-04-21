@@ -60,6 +60,11 @@ public class SchedulingService {
     private final LoggingService loggingService;
 
     /**
+     * The prism scheduler.
+     */
+    private final PrismScheduler prismScheduler;
+
+    /**
      * The scheduler.
      */
     private Scheduler scheduler = null;
@@ -68,8 +73,13 @@ public class SchedulingService {
      * Constructor.
      */
     @Inject
-    public SchedulingService(ConfigurationService configurationService, LoggingService loggingService) {
+    public SchedulingService(
+        ConfigurationService configurationService,
+        LoggingService loggingService,
+        PrismScheduler prismScheduler
+    ) {
         this.loggingService = loggingService;
+        this.prismScheduler = prismScheduler;
 
         CronDefinition definition = CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ);
         cronParser = new CronParser(definition);
@@ -119,6 +129,7 @@ public class SchedulingService {
                     .withIdentity("commandExec" + jobKey, "quartzGroup")
                     .usingJobData("command", commandConfig.command())
                     .build();
+                commandJob.getJobDataMap().put("prismScheduler", prismScheduler);
 
                 // Build the start cron trigger
                 CronTrigger commandTrigger = TriggerBuilder.newTrigger()

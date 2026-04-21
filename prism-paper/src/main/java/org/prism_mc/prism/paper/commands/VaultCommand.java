@@ -34,18 +34,17 @@ import java.util.List;
 import java.util.Locale;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
-import org.prism_mc.prism.paper.PrismPaper;
 import org.prism_mc.prism.paper.actions.PaperItemStackAction;
 import org.prism_mc.prism.paper.actions.types.PaperActionTypeRegistry;
 import org.prism_mc.prism.paper.services.lookup.LookupService;
 import org.prism_mc.prism.paper.services.messages.MessageService;
 import org.prism_mc.prism.paper.services.query.QueryService;
+import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 import org.prism_mc.prism.paper.services.translation.PaperTranslationService;
 
 @Command(value = "prism", alias = { "pr" })
@@ -92,6 +91,11 @@ public class VaultCommand {
     private final PaperTranslationService translationService;
 
     /**
+     * The scheduler.
+     */
+    private final PrismScheduler prismScheduler;
+
+    /**
      * Construct the near command.
      *
      * @param actionRegistry The action registry
@@ -101,6 +105,7 @@ public class VaultCommand {
      * @param queryService The query service
      * @param storageAdapter The storage adapter
      * @param translationService The translation service
+     * @param prismScheduler The scheduler
      */
     @Inject
     public VaultCommand(
@@ -110,7 +115,8 @@ public class VaultCommand {
         MessageService messageService,
         QueryService queryService,
         StorageAdapter storageAdapter,
-        PaperTranslationService translationService
+        PaperTranslationService translationService,
+        PrismScheduler prismScheduler
     ) {
         this.actionRegistry = actionRegistry;
         this.loggingService = loggingService;
@@ -119,6 +125,7 @@ public class VaultCommand {
         this.queryService = queryService;
         this.storageAdapter = storageAdapter;
         this.translationService = translationService;
+        this.prismScheduler = prismScheduler;
     }
 
     /**
@@ -188,59 +195,57 @@ public class VaultCommand {
                     var prev = MiniMessage.miniMessage()
                         .deserialize(translationService.messageOf(player, "prism.vault-gui-previous"));
 
-                    Bukkit.getGlobalRegionScheduler()
-                        .run(PrismPaper.instance().loaderPlugin(), task -> {
-                            var gui = Gui.paginated()
-                                .title(title)
-                                .disableAllInteractions()
-                                .enableItemTake()
-                                .rows(6)
-                                .create();
+                    prismScheduler.runForEntity(player, () -> {
+                        var gui = Gui.paginated()
+                            .title(title)
+                            .disableAllInteractions()
+                            .enableItemTake()
+                            .rows(6)
+                            .create();
 
-                            for (var activity : results) {
-                                if (activity.action() instanceof PaperItemStackAction itemStackAction) {
-                                    gui.addItem(
-                                        new GuiItem(itemStackAction.itemStack(), event -> {
-                                            reversedKeys.add((Long) activity.primaryKey());
-                                            loggingService.info(
-                                                "{0} took {1} for activity #{2} from the vault inventory",
-                                                player.getName(),
-                                                itemStackAction
-                                                    .itemStack()
-                                                    .getType()
-                                                    .toString()
-                                                    .toLowerCase(Locale.ENGLISH),
-                                                activity.primaryKey()
-                                            );
-                                        })
-                                    );
-                                }
-                            }
-
-                            for (var column = 1; column <= 9; column++) {
-                                gui.setItem(
-                                    6,
-                                    column,
-                                    new GuiItem(new ItemStack(Material.BLACK_STAINED_GLASS_PANE), event -> {
-                                        event.setCancelled(true);
+                        for (var activity : results) {
+                            if (activity.action() instanceof PaperItemStackAction itemStackAction) {
+                                gui.addItem(
+                                    new GuiItem(itemStackAction.itemStack(), event -> {
+                                        reversedKeys.add((Long) activity.primaryKey());
+                                        loggingService.info(
+                                            "{0} took {1} for activity #{2} from the vault inventory",
+                                            player.getName(),
+                                            itemStackAction
+                                                .itemStack()
+                                                .getType()
+                                                .toString()
+                                                .toLowerCase(Locale.ENGLISH),
+                                            activity.primaryKey()
+                                        );
                                     })
                                 );
                             }
+                        }
 
-                            updateGuiButtons(gui, prev, next);
+                        for (var column = 1; column <= 9; column++) {
+                            gui.setItem(
+                                6,
+                                column,
+                                new GuiItem(new ItemStack(Material.BLACK_STAINED_GLASS_PANE), event -> {
+                                    event.setCancelled(true);
+                                })
+                            );
+                        }
 
-                            gui.open(player);
+                        updateGuiButtons(gui, prev, next);
 
-                            gui.setCloseGuiAction(event -> {
-                                var keys = new ArrayList<>(reversedKeys);
-                                Bukkit.getAsyncScheduler()
-                                    .runNow(PrismPaper.instance().loaderPlugin(), t -> {
-                                        storageAdapter.markReversed(keys, true);
-                                    });
+                        gui.open(player);
 
-                                reversedKeys.clear();
+                        gui.setCloseGuiAction(event -> {
+                            var keys = new ArrayList<>(reversedKeys);
+                            prismScheduler.runAsync(() -> {
+                                storageAdapter.markReversed(keys, true);
                             });
+
+                            reversedKeys.clear();
                         });
+                    });
                 }
             });
         });

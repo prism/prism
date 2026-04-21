@@ -26,9 +26,11 @@ import java.util.List;
 import java.util.function.Consumer;
 import lombok.Getter;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
@@ -42,8 +44,8 @@ import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.api.util.Coordinate;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
-import org.prism_mc.prism.paper.PrismPaper;
 import org.prism_mc.prism.paper.services.messages.MessageService;
+import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 import org.prism_mc.prism.paper.utils.BlockUtils;
 import org.prism_mc.prism.paper.utils.EntityUtils;
 
@@ -68,6 +70,16 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      * The storage adapter.
      */
     protected final StorageAdapter storageAdapter;
+
+    /**
+     * The scheduler.
+     */
+    protected final PrismScheduler prismScheduler;
+
+    /**
+     * The modification executor.
+     */
+    protected final ModificationExecutor modificationExecutor;
 
     /**
      * The modification ruleset.
@@ -98,11 +110,6 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      */
     @Getter
     protected ModificationQueueMode mode = ModificationQueueMode.UNDECIDED;
-
-    /**
-     * Cache the scheduled task.
-     */
-    protected io.papermc.paper.threadedregions.scheduler.ScheduledTask scheduledTask;
 
     /**
      * Count how many were read from the queue.
@@ -152,6 +159,8 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      * @param configurationService The configuration service
      * @param messageService The message service
      * @param storageAdapter The storage adapter
+     * @param prismScheduler The scheduler
+     * @param modificationExecutor The modification executor
      * @param modificationRuleset Modification rule set
      * @param owner The owner
      * @param query The query
@@ -163,6 +172,8 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
         ConfigurationService configurationService,
         MessageService messageService,
         StorageAdapter storageAdapter,
+        PrismScheduler prismScheduler,
+        ModificationExecutor modificationExecutor,
         ModificationRuleset modificationRuleset,
         Object owner,
         ActivityQuery query,
@@ -174,6 +185,8 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
         this.configurationService = configurationService;
         this.messageService = messageService;
         this.storageAdapter = storageAdapter;
+        this.prismScheduler = prismScheduler;
+        this.modificationExecutor = modificationExecutor;
         this.modificationRuleset = modificationRuleset;
         this.owner = owner;
         this.query = query;
@@ -196,73 +209,75 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
     }
 
     /**
-     * Apply any pre-modification tasks.
+     * Apply pre-modification tasks within the given region bounds. The actual
+     * area affected is the intersection of the modification bounding box and
+     * the region bounds. On Paper, regionBounds covers the full world. On Folia,
+     * regionBounds is clipped to the current region.
+     *
+     * @param builder The result builder (thread-safe updates via synchronized)
+     * @param world The world
+     * @param regionBounds The region-safe bounding box to clip operations to
      */
-    protected void preProcess(ModificationQueueResult.ModificationQueueResultBuilder builder) {
-        if (mode.equals(ModificationQueueMode.COMPLETING)) {
-            if (
-                modificationRuleset.drainLava() &&
-                query.worldUuid() != null &&
-                query.minCoordinate() != null &&
-                query.maxCoordinate() != null
-            ) {
-                World world = Bukkit.getWorld(query.worldUuid());
-                if (world != null) {
-                    builder.drainedLava(
-                        BlockUtils.removeBlocksByMaterial(
-                            world,
-                            modificationBoundingBox(),
-                            List.of(Material.LAVA)
-                        ).size()
-                    );
-                }
+    protected void preProcess(
+        ModificationQueueResult.ModificationQueueResultBuilder builder,
+        World world,
+        BoundingBox regionBounds
+    ) {
+        BoundingBox effectiveBox = modificationBoundingBox().intersection(regionBounds);
+        if (effectiveBox.getVolume() <= 0) {
+            return;
+        }
+
+        synchronized (builder) {
+            if (modificationRuleset.drainLava()) {
+                int count = BlockUtils.removeBlocksByMaterial(world, effectiveBox, List.of(Material.LAVA)).size();
+                builder.drainedLava(builder.build().drainedLava() + count);
             }
 
-            if (
-                modificationRuleset.removeDrops() &&
-                query.worldUuid() != null &&
-                query.minCoordinate() != null &&
-                query.maxCoordinate() != null
-            ) {
-                World world = Bukkit.getWorld(query.worldUuid());
-                if (world != null) {
-                    int count = EntityUtils.removeDropsInRange(world, modificationBoundingBox());
-                    builder.removedDrops(count);
-                }
+            if (modificationRuleset.removeDrops()) {
+                int count = EntityUtils.removeDropsInRange(world, effectiveBox);
+                builder.removedDrops(builder.build().removedDrops() + count);
             }
 
-            if (
-                !modificationRuleset.removeBlocks().isEmpty() &&
-                query.worldUuid() != null &&
-                query.minCoordinate() != null &&
-                query.maxCoordinate() != null
-            ) {
+            if (!modificationRuleset.removeBlocks().isEmpty()) {
                 List<Material> materials = modificationRuleset
                     .removeBlocks()
                     .stream()
                     .map(m -> Material.valueOf(m.toUpperCase()))
                     .toList();
 
-                World world = Bukkit.getWorld(query.worldUuid());
-                if (world != null) {
-                    builder.removedBlocks(
-                        BlockUtils.removeBlocksByMaterial(world, modificationBoundingBox(), materials).size()
-                    );
-                }
+                int count = BlockUtils.removeBlocksByMaterial(world, effectiveBox, materials).size();
+                builder.removedBlocks(builder.build().removedBlocks() + count);
             }
         }
     }
 
     /**
-     * Apply any post-modification tasks.
+     * Apply post-modification tasks within the given region bounds. The actual
+     * area affected is the intersection of the modification bounding box and
+     * the region bounds.
+     *
+     * @param builder The result builder (thread-safe updates via synchronized)
+     * @param world The world
+     * @param regionBounds The region-safe bounding box to clip operations to
      */
-    protected void postProcess(ModificationQueueResult.ModificationQueueResultBuilder builder) {
-        if (modificationRuleset.moveEntities() && query.worldUuid() != null && !results.isEmpty()) {
-            World world = Bukkit.getWorld(query.worldUuid());
-            if (world != null) {
-                int count = EntityUtils.moveEntitiesToGround(world, modificationBoundingBox());
-                builder.movedEntities(count);
-            }
+    protected void postProcess(
+        ModificationQueueResult.ModificationQueueResultBuilder builder,
+        World world,
+        BoundingBox regionBounds
+    ) {
+        if (!modificationRuleset.moveEntities() || results.isEmpty()) {
+            return;
+        }
+
+        BoundingBox effectiveBox = modificationBoundingBox().intersection(regionBounds);
+        if (effectiveBox.getVolume() <= 0) {
+            return;
+        }
+
+        int count = EntityUtils.moveEntitiesToGround(world, effectiveBox, prismScheduler);
+        synchronized (builder) {
+            builder.movedEntities(builder.build().movedEntities() + count);
         }
     }
 
@@ -369,106 +384,81 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
         loggingService.debug(queueSizeMsg, modificationsQueue.size());
 
         if (!modificationsQueue.isEmpty()) {
+            Location schedulerLocation = schedulerLocation();
+
             ModificationQueueResult.ModificationQueueResultBuilder builder = ModificationQueueResult.builder()
                 .queue(this);
 
-            if (countModificationsRead == 0) {
-                preProcess(builder);
-            }
+            // Build pre/post processors that the executor will call on region-safe threads
+            boolean shouldPreProcess =
+                mode.equals(ModificationQueueMode.COMPLETING) &&
+                query.worldUuid() != null &&
+                query.minCoordinate() != null &&
+                query.maxCoordinate() != null;
 
-            // Schedule a new sync task
-            scheduledTask = Bukkit.getGlobalRegionScheduler()
-                .runAtFixedRate(
-                    PrismPaper.instance().loaderPlugin(),
-                    task -> {
-                        loggingService.debug("New modification run beginning...");
+            modificationExecutor.execute(
+                modificationsQueue,
+                mode,
+                modificationRuleset,
+                schedulerLocation,
+                this::applyModification,
+                result -> {
+                    results.add(result);
+                    trackBoundingBox(result);
 
-                        int iterationCount = 0;
-                        int index = countModificationsRead;
+                    if (result.status().equals(ModificationResultStatus.PLANNED)) {
+                        countPlanned++;
+                    } else if (result.status().equals(ModificationResultStatus.APPLIED)) {
+                        countApplied++;
+                    } else if (result.status().equals(ModificationResultStatus.PARTIAL)) {
+                        countPartial++;
+                    } else {
+                        countSkipped++;
+                    }
+                },
+                shouldPreProcess ? (world, boundingBox) -> preProcess(builder, world, boundingBox) : null,
+                mode.equals(ModificationQueueMode.COMPLETING)
+                    ? (world, boundingBox) -> postProcess(builder, world, boundingBox)
+                    : null,
+                () -> {
+                    ModificationQueueResult result = builder
+                        .mode(mode)
+                        .results(results)
+                        .applied(countApplied)
+                        .partial(countPartial)
+                        .planned(countPlanned)
+                        .skipped(countSkipped)
+                        .build();
 
-                        while (index < modificationsQueue.size()) {
-                            final Activity activity = modificationsQueue.get(index);
-
-                            // Simulate queue pointer advancement for previews
-                            if (mode.equals(ModificationQueueMode.PLANNING)) {
-                                countModificationsRead++;
-                            }
-
-                            // Limit the absolute max number of steps per execution of this task
-                            if (++iterationCount >= modificationRuleset.maxPerTask()) {
-                                break;
-                            }
-
-                            ModificationResult result = ModificationResult.builder().activity(activity).build();
-
-                            // Delegate reversible modifications to the actions
-                            if (activity.action().type().reversible()) {
-                                try {
-                                    result = applyModification(activity);
-                                } catch (Throwable t) {
-                                    result = ModificationResult.builder().activity(activity).errored().build();
-
-                                    loggingService.handleThrowable(
-                                        String.format("A modification error occurred. %s", activity),
-                                        t
-                                    );
-                                }
-                            }
-
-                            results.add(result);
-                            trackBoundingBox(result);
-
-                            if (result.status().equals(ModificationResultStatus.PLANNED)) {
-                                countPlanned++;
-                            } else if (result.status().equals(ModificationResultStatus.APPLIED)) {
-                                countApplied++;
-                            } else if (result.status().equals(ModificationResultStatus.PARTIAL)) {
-                                countPartial++;
-                            } else {
-                                countSkipped++;
-                            }
-
-                            // Remove from the queue if we're not previewing
-                            if (mode.equals(ModificationQueueMode.COMPLETING)) {
-                                modificationsQueue.remove(index);
-                            } else {
-                                index++;
-                            }
-                        }
-
-                        // The task for this action is done being used
-                        if (modificationsQueue.isEmpty() || countModificationsRead >= modificationsQueue.size()) {
-                            loggingService.debug("Modification queue fully processed, finishing up.");
-
-                            // Cancel the repeating task
-                            task.cancel();
-
-                            // Post process
-                            postProcess(builder);
-
-                            ModificationQueueResult result = builder
-                                .mode(mode)
-                                .results(results)
-                                .applied(countApplied)
-                                .partial(countPartial)
-                                .planned(countPlanned)
-                                .skipped(countSkipped)
-                                .build();
-
-                            onEnd(result);
-                        }
-                    },
-                    1,
-                    modificationRuleset.taskDelay()
-                );
+                    onEnd(result);
+                }
+            );
         }
+    }
+
+    /**
+     * Get a representative location for scheduling. Uses the first activity's
+     * coordinate or falls back to null (for global scheduling).
+     *
+     * @return A location, or null
+     */
+    protected Location schedulerLocation() {
+        if (!modificationsQueue.isEmpty()) {
+            Activity first = modificationsQueue.getFirst();
+            if (first.worldUuid() != null && first.coordinate() != null) {
+                World world = Bukkit.getWorld(first.worldUuid());
+                if (world != null) {
+                    return new Location(world, first.coordinate().x(), first.coordinate().y(), first.coordinate().z());
+                }
+            }
+        }
+
+        return null;
     }
 
     @Override
     public void destroy() {
-        if (scheduledTask != null) {
-            scheduledTask.cancel();
-        }
+        modificationExecutor.cancel();
     }
 
     /**
@@ -494,21 +484,23 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                 .toList();
 
             // Run the database update off the main thread to avoid blocking ticks
-            Bukkit.getAsyncScheduler()
-                .runNow(PrismPaper.instance().loaderPlugin(), task -> {
-                    try {
-                        storageAdapter.markReversed(primarykeys, markReversedState());
-                    } catch (Exception e) {
-                        loggingService.handleException(e);
+            prismScheduler.runAsync(() -> {
+                try {
+                    storageAdapter.markReversed(primarykeys, markReversedState());
+                } catch (Exception e) {
+                    loggingService.handleException(e);
 
-                        if (owner() instanceof CommandSender sender) {
-                            Bukkit.getGlobalRegionScheduler()
-                                .run(PrismPaper.instance().loaderPlugin(), t -> {
-                                    messageService.errorQueueReversedFailure(sender);
-                                });
-                        }
+                    if (owner() instanceof Player player) {
+                        prismScheduler.runForEntity(player, () -> {
+                            messageService.errorQueueReversedFailure(player);
+                        });
+                    } else if (owner() instanceof CommandSender sender) {
+                        prismScheduler.runGlobal(() -> {
+                            messageService.errorQueueReversedFailure(sender);
+                        });
                     }
-                });
+                }
+            });
         }
 
         // Execute the callback, letting the caller know we've ended

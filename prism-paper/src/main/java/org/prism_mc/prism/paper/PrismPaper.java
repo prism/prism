@@ -220,6 +220,15 @@ public class PrismPaper implements PrismPaperApi {
     }
 
     /**
+     * Get the bootstrap.
+     *
+     * @return The bootstrap
+     */
+    protected PrismPaperBootstrap bootstrap() {
+        return bootstrap;
+    }
+
+    /**
      * Get all platform dependencies.
      *
      * @return The platform dependencies
@@ -245,7 +254,7 @@ public class PrismPaper implements PrismPaperApi {
         bootstrap.loggingService().info("Serializer version: {0}", serializerVersion);
         bootstrap.loggingService().info("Server version: {0}", VersionUtils.detectedVersion());
 
-        injectorProvider = new InjectorProvider(this, bootstrap.loggingService());
+        injectorProvider = new InjectorProvider(this, bootstrap.loggingService(), bootstrap.moduleOverrideClassName());
 
         // Choose and initialize the datasource
         try {

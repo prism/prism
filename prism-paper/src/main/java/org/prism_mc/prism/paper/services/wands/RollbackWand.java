@@ -32,6 +32,7 @@ import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 import org.prism_mc.prism.paper.services.messages.MessageService;
 import org.prism_mc.prism.paper.services.modifications.PaperRollback;
+import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 
 public class RollbackWand extends AbstractModificationWand implements Wand {
 
@@ -43,6 +44,7 @@ public class RollbackWand extends AbstractModificationWand implements Wand {
      * @param messageService The message service
      * @param modificationQueueService The modification queue service
      * @param loggingService The logging service
+     * @param prismScheduler The scheduler
      */
     @Inject
     public RollbackWand(
@@ -50,9 +52,17 @@ public class RollbackWand extends AbstractModificationWand implements Wand {
         StorageAdapter storageAdapter,
         MessageService messageService,
         ModificationQueueService modificationQueueService,
-        LoggingService loggingService
+        LoggingService loggingService,
+        PrismScheduler prismScheduler
     ) {
-        super(configurationService, storageAdapter, messageService, modificationQueueService, loggingService);
+        super(
+            configurationService,
+            storageAdapter,
+            messageService,
+            modificationQueueService,
+            loggingService,
+            prismScheduler
+        );
     }
 
     @Override

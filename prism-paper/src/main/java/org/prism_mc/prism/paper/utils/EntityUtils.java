@@ -33,6 +33,7 @@ import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.BoundingBox;
+import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 
 @UtilityClass
 public class EntityUtils {
@@ -42,9 +43,10 @@ public class EntityUtils {
      *
      * @param world The world
      * @param boundingBox The bounding box
+     * @param prismScheduler The scheduler for teleportation
      * @return A count of entities moved
      */
-    public static int moveEntitiesToGround(World world, BoundingBox boundingBox) {
+    public static int moveEntitiesToGround(World world, BoundingBox boundingBox, PrismScheduler prismScheduler) {
         var totalMoved = 0;
 
         for (var entity : entitiesInRangeByClass(world, boundingBox, LivingEntity.class)) {
@@ -67,10 +69,11 @@ public class EntityUtils {
 
             if (destination != null) {
                 // Teleport to the destination
-                entity.teleport(destination);
+                prismScheduler.teleport(entity, destination);
             } else {
                 // Teleport to the highest block
-                entity.teleport(
+                prismScheduler.teleport(
+                    entity,
                     world
                         .getHighestBlockAt(entity.getLocation().getBlockX(), entity.getLocation().getBlockZ())
                         .getRelative(BlockFace.UP)

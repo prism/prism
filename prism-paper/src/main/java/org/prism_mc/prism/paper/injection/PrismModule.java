@@ -97,6 +97,8 @@ import org.prism_mc.prism.paper.services.messages.resolvers.StatusLabelPlacehold
 import org.prism_mc.prism.paper.services.messages.resolvers.StringPlaceholderResolver;
 import org.prism_mc.prism.paper.services.messages.resolvers.WandModePlaceholderResolver;
 import org.prism_mc.prism.paper.services.modifications.AutoRollbackService;
+import org.prism_mc.prism.paper.services.modifications.ModificationExecutor;
+import org.prism_mc.prism.paper.services.modifications.PaperModificationExecutor;
 import org.prism_mc.prism.paper.services.modifications.PaperModificationQueueService;
 import org.prism_mc.prism.paper.services.modifications.PaperRestore;
 import org.prism_mc.prism.paper.services.modifications.PaperRollback;
@@ -107,6 +109,8 @@ import org.prism_mc.prism.paper.services.purge.PurgeService;
 import org.prism_mc.prism.paper.services.query.QueryService;
 import org.prism_mc.prism.paper.services.recording.PaperRecordingService;
 import org.prism_mc.prism.paper.services.recording.wal.WalService;
+import org.prism_mc.prism.paper.services.scheduling.PaperScheduler;
+import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 import org.prism_mc.prism.paper.services.scheduling.SchedulingService;
 import org.prism_mc.prism.paper.services.translation.PaperTranslationService;
 import org.prism_mc.prism.paper.services.wands.InspectionWand;
@@ -249,6 +253,7 @@ public class PrismModule extends AbstractModule {
     public void configure() {
         // Base
         bind(Path.class).toInstance(dataPath);
+        bind(Plugin.class).toInstance(prism.loaderPlugin());
 
         // Actions
         bind(org.prism_mc.prism.paper.api.actions.PrismPaperActionFactory.class)
@@ -286,6 +291,7 @@ public class PrismModule extends AbstractModule {
 
         // Service - Modifications
         bind(AutoRollbackService.class).in(Singleton.class);
+        bind(ModificationExecutor.class).to(PaperModificationExecutor.class);
         bind(ModificationQueueService.class).to(PaperModificationQueueService.class).in(Singleton.class);
 
         // Service - Nbt
@@ -315,6 +321,7 @@ public class PrismModule extends AbstractModule {
         bind(WalService.class).in(Singleton.class);
 
         // Service - Scheduling
+        bind(PrismScheduler.class).to(PaperScheduler.class).in(Singleton.class);
         bind(SchedulingService.class).in(Singleton.class);
 
         // Service - Translation

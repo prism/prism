@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.prism_mc.prism.api.activities.AbstractActivity;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
@@ -37,6 +38,7 @@ import org.prism_mc.prism.loader.services.logging.LoggingService;
 import org.prism_mc.prism.paper.PrismPaper;
 import org.prism_mc.prism.paper.services.messages.MessageService;
 import org.prism_mc.prism.paper.services.pagination.PaginationService;
+import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 
 @Singleton
 public class LookupService {
@@ -62,24 +64,32 @@ public class LookupService {
     private final PaginationService paginationService;
 
     /**
+     * The scheduler.
+     */
+    private final PrismScheduler prismScheduler;
+
+    /**
      * Construct the lookup service.
      *
      * @param messageService The message service
      * @param storageAdapter The storage adapter
      * @param loggingService The logging service
      * @param paginationService The pagination service
+     * @param prismScheduler The scheduler
      */
     @Inject
     public LookupService(
         MessageService messageService,
         StorageAdapter storageAdapter,
         LoggingService loggingService,
-        PaginationService paginationService
+        PaginationService paginationService,
+        PrismScheduler prismScheduler
     ) {
         this.messageService = messageService;
         this.storageAdapter = storageAdapter;
         this.loggingService = loggingService;
         this.paginationService = paginationService;
+        this.prismScheduler = prismScheduler;
     }
 
     /**
@@ -89,35 +99,37 @@ public class LookupService {
      * @param query The activity query
      */
     public void lookup(CommandSender sender, ActivityQuery query) {
-        Bukkit.getAsyncScheduler()
-            .runNow(PrismPaper.instance().loaderPlugin(), task -> {
-                try {
-                    var paginationResult = storageAdapter.queryActivitiesPaginated(query);
-                    var paginationHandler = createPaginationHandler(
-                        sender,
-                        paginationResult,
-                        page -> {
-                            paginationResult.currentPage(page);
+        prismScheduler.runAsync(() -> {
+            try {
+                var paginationResult = storageAdapter.queryActivitiesPaginated(query);
+                var paginationHandler = createPaginationHandler(
+                    sender,
+                    paginationResult,
+                    page -> {
+                        paginationResult.currentPage(page);
 
-                            final ActivityQuery newQuery = query.toBuilder().offset(paginationResult.offset()).build();
-                            lookup(sender, newQuery);
-                        },
-                        query
-                    );
+                        final ActivityQuery newQuery = query.toBuilder().offset(paginationResult.offset()).build();
+                        lookup(sender, newQuery);
+                    },
+                    query
+                );
 
-                    Bukkit.getGlobalRegionScheduler()
-                        .run(PrismPaper.instance().loaderPlugin(), t -> {
-                            paginationService.show(sender, paginationHandler);
-                        });
-                } catch (Exception ex) {
-                    loggingService.handleException(ex);
-
-                    Bukkit.getGlobalRegionScheduler()
-                        .run(PrismPaper.instance().loaderPlugin(), t -> {
-                            messageService.errorQueryExec(sender);
-                        });
+                Runnable showTask = () -> paginationService.show(sender, paginationHandler);
+                if (sender instanceof Player player) {
+                    prismScheduler.runForEntity(player, showTask);
+                } else {
+                    prismScheduler.runGlobal(showTask);
                 }
-            });
+            } catch (Exception ex) {
+                loggingService.handleException(ex);
+
+                if (sender instanceof Player player) {
+                    prismScheduler.runForEntity(player, () -> messageService.errorQueryExec(sender));
+                } else {
+                    prismScheduler.runGlobal(() -> messageService.errorQueryExec(sender));
+                }
+            }
+        });
     }
 
     /**
@@ -157,14 +169,13 @@ public class LookupService {
      * @param consumer The result consumer
      */
     public void lookup(ActivityQuery query, Consumer<List<Activity>> consumer) {
-        Bukkit.getAsyncScheduler()
-            .runNow(PrismPaper.instance().loaderPlugin(), task -> {
-                try {
-                    consumer.accept(storageAdapter.queryActivities(query));
-                } catch (Exception ex) {
-                    loggingService.handleException(ex);
-                }
-            });
+        prismScheduler.runAsync(() -> {
+            try {
+                consumer.accept(storageAdapter.queryActivities(query));
+            } catch (Exception ex) {
+                loggingService.handleException(ex);
+            }
+        });
     }
 
     /**
@@ -175,19 +186,19 @@ public class LookupService {
      * @param consumer The result consumer
      */
     public void lookup(CommandSender sender, ActivityQuery query, Consumer<List<Activity>> consumer) {
-        Bukkit.getAsyncScheduler()
-            .runNow(PrismPaper.instance().loaderPlugin(), task -> {
-                try {
-                    consumer.accept(storageAdapter.queryActivities(query));
-                } catch (Exception ex) {
-                    loggingService.handleException(ex);
+        prismScheduler.runAsync(() -> {
+            try {
+                consumer.accept(storageAdapter.queryActivities(query));
+            } catch (Exception ex) {
+                loggingService.handleException(ex);
 
-                    Bukkit.getGlobalRegionScheduler()
-                        .run(PrismPaper.instance().loaderPlugin(), t -> {
-                            messageService.errorQueryExec(sender);
-                        });
+                if (sender instanceof Player player) {
+                    prismScheduler.runForEntity(player, () -> messageService.errorQueryExec(sender));
+                } else {
+                    prismScheduler.runGlobal(() -> messageService.errorQueryExec(sender));
                 }
-            });
+            }
+        });
     }
 
     /**

@@ -25,17 +25,16 @@ import com.google.inject.Singleton;
 import java.time.Duration;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.services.recording.RecordingService;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
-import org.prism_mc.prism.paper.PrismPaper;
 import org.prism_mc.prism.paper.api.activities.PaperActivity;
 import org.prism_mc.prism.paper.api.containers.PaperPlayerContainer;
 import org.prism_mc.prism.paper.services.filters.PaperFilterService;
 import org.prism_mc.prism.paper.services.recording.wal.WalService;
+import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 
 @Singleton
 public class PaperRecordingService implements RecordingService {
@@ -64,6 +63,11 @@ public class PaperRecordingService implements RecordingService {
      * The WAL service.
      */
     private final WalService walService;
+
+    /**
+     * The scheduler.
+     */
+    private final PrismScheduler prismScheduler;
 
     /**
      * Set the recording mode.
@@ -119,12 +123,14 @@ public class PaperRecordingService implements RecordingService {
         PaperFilterService filterService,
         LoggingService loggingService,
         RecordingTask recordingTask,
-        WalService walService
+        WalService walService,
+        PrismScheduler prismScheduler
     ) {
         this.configurationService = configurationService;
         this.filterService = filterService;
         this.loggingService = loggingService;
         this.recordingTask = recordingTask;
+        this.prismScheduler = prismScheduler;
         this.walService = walService;
         this.parallelism = configurationService.prismConfig().recording().parallelism();
         this.aggregator = new ActivityAggregator(configurationService.prismConfig().recording().aggregationInterval());
@@ -273,13 +279,7 @@ public class PaperRecordingService implements RecordingService {
             }
 
             Runnable task = this.recordingTask.toNew();
-            Bukkit.getAsyncScheduler()
-                .runDelayed(
-                    PrismPaper.instance().loaderPlugin(),
-                    t -> task.run(),
-                    delay * 50,
-                    java.util.concurrent.TimeUnit.MILLISECONDS
-                );
+            prismScheduler.runAsyncDelayed(task, delay * 50, java.util.concurrent.TimeUnit.MILLISECONDS);
         }
     }
 

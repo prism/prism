@@ -30,9 +30,9 @@ import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.prism_mc.prism.api.activities.ActivityQuery;
-import org.prism_mc.prism.paper.PrismPaper;
 import org.prism_mc.prism.paper.services.lookup.LookupService;
 import org.prism_mc.prism.paper.services.messages.MessageService;
+import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 
 @Command(value = "prism", alias = { "pr" })
 public class TeleportCommand {
@@ -48,15 +48,22 @@ public class TeleportCommand {
     private final MessageService messageService;
 
     /**
+     * The scheduler.
+     */
+    private final PrismScheduler prismScheduler;
+
+    /**
      * Construct the teleport command.
      *
      * @param lookupService The lookup service
      * @param messageService The message service
+     * @param prismScheduler The scheduler
      */
     @Inject
-    public TeleportCommand(LookupService lookupService, MessageService messageService) {
+    public TeleportCommand(LookupService lookupService, MessageService messageService, PrismScheduler prismScheduler) {
         this.lookupService = lookupService;
         this.messageService = messageService;
+        this.prismScheduler = prismScheduler;
     }
 
     @Command("teleport")
@@ -83,17 +90,15 @@ public class TeleportCommand {
                         messageService.teleportingToActivity(player, activity);
 
                         World world = Bukkit.getServer().getWorld(activity.world().key());
-                        Bukkit.getGlobalRegionScheduler()
-                            .run(PrismPaper.instance().loaderPlugin(), task -> {
-                                player.teleport(
-                                    new Location(
-                                        world,
-                                        activity.coordinate().intX(),
-                                        activity.coordinate().intY(),
-                                        activity.coordinate().intZ()
-                                    )
-                                );
-                            });
+                        prismScheduler.teleport(
+                            player,
+                            new Location(
+                                world,
+                                activity.coordinate().intX(),
+                                activity.coordinate().intY(),
+                                activity.coordinate().intZ()
+                            )
+                        );
                     }
                 });
             }
@@ -129,7 +134,7 @@ public class TeleportCommand {
                     messageService.teleportingTo(player, worldName, x, y, z);
                 }
 
-                player.teleport(new Location(world, x, y, z));
+                prismScheduler.teleport(player, new Location(world, x, y, z));
             }
         }
     }
