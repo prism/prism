@@ -35,9 +35,11 @@ import org.prism_mc.prism.paper.api.activities.PaperActivityQuery;
 import org.prism_mc.prism.paper.integrations.worldedit.WorldEditIntegration;
 import org.prism_mc.prism.paper.services.messages.MessageService;
 import org.prism_mc.prism.paper.services.query.parsers.QueryArgumentParser;
+import org.prism_mc.prism.paper.services.query.parsers.parameters.AboveParameterParser;
 import org.prism_mc.prism.paper.services.query.parsers.parameters.ActionParameterParser;
 import org.prism_mc.prism.paper.services.query.parsers.parameters.AtParameterParser;
 import org.prism_mc.prism.paper.services.query.parsers.parameters.BeforeParameterParser;
+import org.prism_mc.prism.paper.services.query.parsers.parameters.BelowParameterParser;
 import org.prism_mc.prism.paper.services.query.parsers.parameters.BlockCauseParameterParser;
 import org.prism_mc.prism.paper.services.query.parsers.parameters.BlockParameterParser;
 import org.prism_mc.prism.paper.services.query.parsers.parameters.BlockTagParameterParser;
@@ -94,11 +96,13 @@ public class QueryService {
         // World parser must be first
         parsers.add(new WorldParameterParser(messageService, configurationService.prismConfig().defaults()));
 
+        parsers.add(new AboveParameterParser(messageService, configurationService.prismConfig().defaults()));
         parsers.add(
             new ActionParameterParser(messageService, configurationService.prismConfig().defaults(), actionRegistry)
         );
         parsers.add(new AtParameterParser(messageService, configurationService.prismConfig().defaults()));
         parsers.add(new BeforeParameterParser(messageService, configurationService.prismConfig().defaults()));
+        parsers.add(new BelowParameterParser(messageService, configurationService.prismConfig().defaults()));
         parsers.add(new BlockCauseParameterParser(messageService, configurationService.prismConfig().defaults()));
         parsers.add(new BlockParameterParser(messageService, configurationService.prismConfig().defaults()));
         parsers.add(new BlockTagParameterParser(messageService, configurationService.prismConfig().defaults()));

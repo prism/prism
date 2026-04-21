@@ -532,6 +532,8 @@ public class PrismPaper implements PrismPaperApi {
 
             commandManager.registerNamedArguments(
                 ArgumentKey.of("query-parameters"),
+                Argument.forInt().name("above").build(),
+                Argument.forInt().name("below").build(),
                 Argument.forBoolean().name("reversed").build(),
                 Argument.forInt().name("r").build(),
                 Argument.forString().name("in").suggestion(SuggestionKey.of("ins")).build(),
