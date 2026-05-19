@@ -23,6 +23,7 @@ package org.prism_mc.prism.paper.services.modifications;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import lombok.Getter;
 import org.bukkit.Bukkit;
@@ -34,6 +35,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
+import org.prism_mc.prism.api.services.modifications.ActivityStream;
 import org.prism_mc.prism.api.services.modifications.ModificationQueue;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueMode;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
@@ -51,6 +53,11 @@ import org.prism_mc.prism.paper.utils.BlockUtils;
 import org.prism_mc.prism.paper.utils.EntityUtils;
 
 public abstract class AbstractWorldModificationQueue implements ModificationQueue {
+
+    /**
+     * Multiplier applied to maxPerTask when sizing each streaming refill.
+     */
+    private static final int BATCH_FETCH_MULTIPLIER = 5;
 
     /**
      * The logging service.
@@ -88,7 +95,12 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
     protected ModificationRuleset modificationRuleset;
 
     /**
-     * Manage a queue of pending modifications.
+     * The streaming activity source. Pulled in batches as the queue drains.
+     */
+    protected final ActivityStream activityStream;
+
+    /**
+     * The current in-memory batch handed to the executor. Refilled from the stream between executor runs.
      */
     protected final List<Activity> modificationsQueue = Collections.synchronizedList(new ArrayList<>());
 
@@ -176,6 +188,18 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
     private boolean bbHasCoordinates = false;
 
     /**
+     * Whether pre-processing has already run for this operation. Pre-process
+     * (drain lava, remove blocks, remove drops) must only fire on the first
+     * batch; subsequent refills pass a null pre-processor.
+     */
+    private boolean preProcessRan = false;
+
+    /**
+     * Whether the operation has been canceled or finalized.
+     */
+    private volatile boolean cancelled = false;
+
+    /**
      * Construct a new world modification.
      *
      * @param loggingService The logging service
@@ -187,7 +211,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      * @param modificationRuleset Modification rule set
      * @param owner The owner
      * @param query The query
-     * @param modifications A list of all modifications
+     * @param activityStream The streaming activity source
      * @param onEndCallback The ended callback
      */
     public AbstractWorldModificationQueue(
@@ -200,10 +224,9 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
         ModificationRuleset modificationRuleset,
         Object owner,
         ActivityQuery query,
-        final List<Activity> modifications,
+        ActivityStream activityStream,
         Consumer<ModificationQueueResult> onEndCallback
     ) {
-        modificationsQueue.addAll(modifications);
         this.loggingService = loggingService;
         this.configurationService = configurationService;
         this.messageService = messageService;
@@ -213,12 +236,16 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
         this.modificationRuleset = modificationRuleset;
         this.owner = owner;
         this.query = query;
+        this.activityStream = activityStream;
         this.onEndCallback = onEndCallback;
     }
 
     @Override
     public int queueSize() {
-        return modificationsQueue.size();
+        if (cancelled) {
+            return 0;
+        }
+        return Math.max(0, activityStream.total() - results.size());
     }
 
     /**
@@ -383,6 +410,17 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
 
     @Override
     public void apply() {
+        resetState(ModificationQueueMode.COMPLETING);
+        announceStart();
+        fetchAndRunNextBatch();
+    }
+
+    /**
+     * Reset counters and prepare the result builder for a fresh apply or preview run.
+     *
+     * @param newMode The mode this run will operate in
+     */
+    protected void resetState(ModificationQueueMode newMode) {
         countModificationsRead = 0;
         countApplied = 0;
         countPartial = 0;
@@ -393,92 +431,172 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
         countRemovedDrops = 0;
         countMovedEntities = 0;
         results.clear();
-        this.mode = ModificationQueueMode.COMPLETING;
-        execute();
+        modificationsQueue.clear();
+        preProcessRan = false;
+        cancelled = false;
+        activityStream.reopen();
+        progressTotal = activityStream.total();
+        progressLastReportedPercent = 0;
+        this.mode = newMode;
     }
 
-    protected void execute() {
-        String queueSizeMsg = "Modification queue beginning application. Queue size: {0}";
-        loggingService.debug(queueSizeMsg, modificationsQueue.size());
-
-        progressTotal = modificationsQueue.size();
-        progressLastReportedPercent = 0;
-
+    /**
+     * Send starting message.
+     */
+    private void announceStart() {
         if (progressTotal >= configurationService.prismConfig().modifications().progressReportThreshold()) {
             sendToOwner(receiver -> messageService.modificationsStarting(receiver, progressTotal));
         }
+    }
 
-        if (!modificationsQueue.isEmpty()) {
-            Location schedulerLocation = schedulerLocation();
-
-            // Build pre/post processors that the executor will call on region-safe threads
-            boolean shouldPreProcess =
-                mode.equals(ModificationQueueMode.COMPLETING) &&
-                query.worldUuid() != null &&
-                query.minCoordinate() != null &&
-                query.maxCoordinate() != null;
-
-            modificationExecutor.execute(
-                modificationsQueue,
-                mode,
-                modificationRuleset,
-                schedulerLocation,
-                this::applyModification,
-                result -> {
-                    results.add(result);
-                    trackBoundingBox(result);
-
-                    if (result.status().equals(ModificationResultStatus.PLANNED)) {
-                        countPlanned++;
-                    } else if (result.status().equals(ModificationResultStatus.APPLIED)) {
-                        countApplied++;
-                    } else if (result.status().equals(ModificationResultStatus.PARTIAL)) {
-                        countPartial++;
-                    } else {
-                        countSkipped++;
-                    }
-
-                    maybeReportProgress();
-                },
-                shouldPreProcess ? this::preProcess : null,
-                mode.equals(ModificationQueueMode.COMPLETING) ? this::postProcess : null,
-                () -> {
-                    ModificationQueueResult result = ModificationQueueResult.builder()
-                        .queue(this)
-                        .mode(mode)
-                        .results(results)
-                        .applied(countApplied)
-                        .partial(countPartial)
-                        .planned(countPlanned)
-                        .skipped(countSkipped)
-                        .drainedLava(countDrainedLava)
-                        .removedBlocks(countRemovedBlocks)
-                        .removedDrops(countRemovedDrops)
-                        .movedEntities(countMovedEntities)
-                        .build();
-
-                    // Heap dump at peak prism memory — queue drained, results list fully
-                    // populated, and any retained BlockState snapshots still alive. REQUIRES
-                    // the Spark plugin to be installed; without Spark the command is silently
-                    // rejected by Bukkit and no dump is produced. Dispatched via the global
-                    // scheduler because Bukkit.dispatchCommand must run on the main thread
-                    // (on Folia, this region thread is not the main thread).
-                    if (configurationService.prismConfig().modifications().debugMemory()) {
-                        loggingService.info(
-                            "Dispatching /spark heapdump at queue completion (mode={0}, results={1})",
-                            mode,
-                            results.size()
-                        );
-
-                        prismScheduler.runGlobal(() ->
-                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "spark heapdump")
-                        );
-                    }
-
-                    onEnd(result);
-                }
-            );
+    /**
+     * Pull the next batch off the activity stream (async, off the region
+     * thread), then resume executor scheduling on the global region. When
+     * the stream is exhausted, finalize the result and fire the end callback.
+     */
+    private void fetchAndRunNextBatch() {
+        if (cancelled) {
+            return;
         }
+
+        int batchSize = Math.max(modificationRuleset.maxPerTask() * BATCH_FETCH_MULTIPLIER, 1);
+
+        prismScheduler.runAsync(() -> {
+            List<Activity> batch;
+            try {
+                batch = activityStream.next(batchSize);
+            } catch (Exception e) {
+                loggingService.handleException(e);
+                prismScheduler.runGlobal(this::finalizeResult);
+                return;
+            }
+
+            if (cancelled) {
+                return;
+            }
+
+            if (batch.isEmpty()) {
+                prismScheduler.runGlobal(this::finalizeResult);
+                return;
+            }
+
+            prismScheduler.runGlobal(() -> {
+                if (cancelled) {
+                    return;
+                }
+                modificationsQueue.clear();
+                modificationsQueue.addAll(batch);
+                executeCurrentBatch();
+            });
+        });
+    }
+
+    /**
+     * Hand the current in-memory batch to the modification executor. When the
+     * executor finishes the batch, kick off another stream fetch — or finalize
+     * if the stream is drained.
+     */
+    private void executeCurrentBatch() {
+        String batchMsg = "Modification batch beginning application. Batch size: {0}";
+        loggingService.debug(batchMsg, modificationsQueue.size());
+
+        Location schedulerLocation = schedulerLocation();
+
+        // Pre-process (drain lava, remove drops/blocks) fires only on the first batch.
+        // After that, blocks are already cleared and re-running would either re-clear
+        // newly-placed rollback blocks or inflate counts.
+        boolean shouldPreProcess =
+            !preProcessRan &&
+            mode.equals(ModificationQueueMode.COMPLETING) &&
+            query.worldUuid() != null &&
+            query.minCoordinate() != null &&
+            query.maxCoordinate() != null;
+
+        BiConsumer<World, BoundingBox> preProcessor = shouldPreProcess
+            ? (world, boundingBox) -> {
+                preProcess(world, boundingBox);
+                preProcessRan = true;
+            }
+            : null;
+
+        // Post-process (move entities) runs at the end of every batch. The
+        // movedEntities count can be slightly inflated for multi-batch runs
+        // since the same entities may fall within the cumulative bounding box
+        // on successive passes; the operation itself is idempotent.
+        BiConsumer<World, BoundingBox> postProcessor = mode.equals(ModificationQueueMode.COMPLETING)
+            ? this::postProcess
+            : null;
+
+        modificationExecutor.execute(
+            modificationsQueue,
+            mode,
+            modificationRuleset,
+            schedulerLocation,
+            this::applyModification,
+            result -> {
+                results.add(result);
+                trackBoundingBox(result);
+
+                if (result.status().equals(ModificationResultStatus.PLANNED)) {
+                    countPlanned++;
+                } else if (result.status().equals(ModificationResultStatus.APPLIED)) {
+                    countApplied++;
+                } else if (result.status().equals(ModificationResultStatus.PARTIAL)) {
+                    countPartial++;
+                } else {
+                    countSkipped++;
+                }
+
+                maybeReportProgress();
+            },
+            preProcessor,
+            postProcessor,
+            this::fetchAndRunNextBatch
+        );
+    }
+
+    /**
+     * Build the final result and notify the callback.
+     */
+    private void finalizeResult() {
+        if (cancelled) {
+            return;
+        }
+
+        ModificationQueueResult result = ModificationQueueResult.builder()
+            .queue(this)
+            .mode(mode)
+            .results(results)
+            .applied(countApplied)
+            .partial(countPartial)
+            .planned(countPlanned)
+            .skipped(countSkipped)
+            .drainedLava(countDrainedLava)
+            .removedBlocks(countRemovedBlocks)
+            .removedDrops(countRemovedDrops)
+            .movedEntities(countMovedEntities)
+            .build();
+
+        if (configurationService.prismConfig().modifications().debugMemory()) {
+            loggingService.info(
+                "Dispatching /spark heapdump at queue completion (mode={0}, results={1})",
+                mode,
+                results.size()
+            );
+            prismScheduler.runGlobal(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "spark heapdump"));
+        }
+
+        loggingService.debug("Modification queue fully processed, finishing up.");
+        onEnd(result);
+    }
+
+    /**
+     * Set the queue mode and start streaming for a preview run.
+     */
+    protected void startPreview() {
+        resetState(ModificationQueueMode.PLANNING);
+        announceStart();
+        fetchAndRunNextBatch();
     }
 
     /**
@@ -503,7 +621,13 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
 
     @Override
     public void destroy() {
+        cancelled = true;
         modificationExecutor.cancel();
+        try {
+            activityStream.close();
+        } catch (Exception e) {
+            loggingService.handleException(e);
+        }
     }
 
     /**

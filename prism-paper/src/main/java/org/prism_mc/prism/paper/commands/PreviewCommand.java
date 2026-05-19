@@ -25,11 +25,10 @@ import dev.triumphteam.cmd.bukkit.annotation.Permission;
 import dev.triumphteam.cmd.core.annotations.Command;
 import dev.triumphteam.cmd.core.annotations.NamedArguments;
 import dev.triumphteam.cmd.core.argument.keyed.Arguments;
-import java.util.List;
 import java.util.Optional;
 import org.bukkit.entity.Player;
-import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
+import org.prism_mc.prism.api.services.modifications.ActivityStream;
 import org.prism_mc.prism.api.services.modifications.ModificationQueue;
 import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
 import org.prism_mc.prism.api.services.modifications.Previewable;
@@ -230,44 +229,52 @@ public class PreviewCommand {
         messageService.modificationsQuerying(player);
 
         prismScheduler.runAsync(() -> {
-            var results = queryActivities(player, query);
-            if (results == null) {
+            ActivityStream activityStream = openStream(player, query);
+            if (activityStream == null) {
                 return;
             }
 
             prismScheduler.runForEntity(player, () -> {
-                if (results.isEmpty()) {
+                if (activityStream.total() == 0) {
+                    activityStream.close();
                     messageService.noResults(player);
 
                     return;
                 }
 
-                ModificationQueue queue = modificationQueueService.newQueue(
-                    clazz,
-                    modificationRuleset,
-                    player,
-                    query,
-                    results
-                );
-                if (queue instanceof Previewable previewable) {
-                    previewable.preview();
-                } else {
-                    messageService.errorNotPreviewable(player);
+                try {
+                    ModificationQueue queue = modificationQueueService.newQueue(
+                        clazz,
+                        modificationRuleset,
+                        player,
+                        query,
+                        activityStream
+                    );
+                    if (queue instanceof Previewable previewable) {
+                        previewable.preview();
+                    } else {
+                        modificationQueueService.cancelQueueForOwner(player);
+                        messageService.errorNotPreviewable(player);
+                    }
+                } catch (Exception e) {
+                    activityStream.close();
+                    loggingService.handleException(e);
+                    messageService.errorQueueNotFree(player);
                 }
             });
         });
     }
 
     /**
-     * Query activities from storage, handling exceptions.
+     * Open a streaming activity source for the query, handling exceptions.
      *
      * @param player The player
      * @param query The activity query
-     * @return The list of actions, or null on failure
+     * @return A stream, or null on failure
      */
-    private List<Activity> queryActivities(Player player, ActivityQuery query) {
+    private ActivityStream openStream(Player player, ActivityQuery query) {
         try {
-            return storageAdapter.queryActivities(query);
+            return storageAdapter.streamActivities(query);
         } catch (Exception e) {
             loggingService.handleException(e);
 
