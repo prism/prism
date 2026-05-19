@@ -22,10 +22,9 @@ package org.prism_mc.prism.paper.services.modifications;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.List;
 import org.bukkit.Bukkit;
-import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
+import org.prism_mc.prism.api.services.modifications.ActivityStream;
 import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.loader.services.configuration.AutoRollbackConfiguration;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
@@ -120,13 +119,14 @@ public class AutoRollbackService {
         loggingService.info("Auto-rollback: querying activities for banned player {0}...", playerName);
 
         prismScheduler.runAsync(() -> {
-            var modifications = queryActivities(playerName, query);
-            if (modifications == null) {
+            ActivityStream activityStream = openStream(playerName, query);
+            if (activityStream == null) {
                 return;
             }
 
             prismScheduler.runGlobal(() -> {
-                if (modifications.isEmpty()) {
+                if (activityStream.total() == 0) {
+                    activityStream.close();
                     loggingService.info(
                         "Auto-rollback: no activities found for player {0}, nothing to rollback.",
                         playerName
@@ -136,6 +136,7 @@ public class AutoRollbackService {
                 }
 
                 if (!modificationQueueService.queueAvailable()) {
+                    activityStream.close();
                     loggingService.warn(
                         "Auto-rollback: queue became busy, skipping rollback for player {0}.",
                         playerName
@@ -146,29 +147,34 @@ public class AutoRollbackService {
 
                 loggingService.info(
                     "Auto-rollback: rolling back {0} activities for banned player {1}.",
-                    modifications.size(),
+                    activityStream.total(),
                     playerName
                 );
 
                 var modificationRuleset = configurationService.prismConfig().modifications().toRulesetBuilder().build();
 
-                modificationQueueService
-                    .newRollbackQueue(modificationRuleset, Bukkit.getConsoleSender(), query, modifications)
-                    .apply();
+                try {
+                    modificationQueueService
+                        .newRollbackQueue(modificationRuleset, Bukkit.getConsoleSender(), query, activityStream)
+                        .apply();
+                } catch (Exception e) {
+                    activityStream.close();
+                    loggingService.handleException(e);
+                }
             });
         });
     }
 
     /**
-     * Query activities from storage, handling exceptions.
+     * Open a streaming activity source for the query, handling exceptions.
      *
      * @param playerName The player name (for logging)
      * @param query The activity query
-     * @return The list of actions, or null on failure
+     * @return A stream, or null on failure
      */
-    private List<Activity> queryActivities(String playerName, ActivityQuery query) {
+    private ActivityStream openStream(String playerName, ActivityQuery query) {
         try {
-            return storageAdapter.queryActivities(query);
+            return storageAdapter.streamActivities(query);
         } catch (Exception e) {
             loggingService.error("Auto-rollback: query failed for player {0}.", playerName);
             loggingService.handleException(e);

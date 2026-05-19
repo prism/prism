@@ -26,11 +26,10 @@ import dev.triumphteam.cmd.core.annotations.Command;
 import dev.triumphteam.cmd.core.annotations.CommandFlags;
 import dev.triumphteam.cmd.core.annotations.NamedArguments;
 import dev.triumphteam.cmd.core.argument.keyed.Arguments;
-import java.util.List;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
+import org.prism_mc.prism.api.services.modifications.ActivityStream;
 import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
@@ -138,13 +137,14 @@ public class RollbackCommand {
 
             final ActivityQuery query = queryBuilder.build();
             prismScheduler.runAsync(() -> {
-                var modifications = queryActivities(sender, query);
-                if (modifications == null) {
+                ActivityStream activityStream = openStream(sender, query);
+                if (activityStream == null) {
                     return;
                 }
 
                 Runnable applyTask = () -> {
-                    if (modifications.isEmpty()) {
+                    if (activityStream.total() == 0) {
+                        activityStream.close();
                         messageService.noResults(sender);
 
                         return;
@@ -159,9 +159,15 @@ public class RollbackCommand {
                         .applyFlagsToModificationRuleset(arguments)
                         .build();
 
-                    modificationQueueService
-                        .newRollbackQueue(modificationRuleset, sender, query, modifications)
-                        .apply();
+                    try {
+                        modificationQueueService
+                            .newRollbackQueue(modificationRuleset, sender, query, activityStream)
+                            .apply();
+                    } catch (Exception e) {
+                        activityStream.close();
+                        loggingService.handleException(e);
+                        messageService.errorQueueNotFree(sender);
+                    }
                 };
 
                 if (sender instanceof Player player) {
@@ -174,15 +180,15 @@ public class RollbackCommand {
     }
 
     /**
-     * Query activities from storage, handling exceptions.
+     * Open a streaming activity source for the query, handling exceptions.
      *
      * @param sender The command sender
      * @param query The activity query
-     * @return The list of actions, or null on failure
+     * @return A stream, or null on failure
      */
-    private List<Activity> queryActivities(CommandSender sender, ActivityQuery query) {
+    private ActivityStream openStream(CommandSender sender, ActivityQuery query) {
         try {
-            return storageAdapter.queryActivities(query);
+            return storageAdapter.streamActivities(query);
         } catch (Exception e) {
             loggingService.handleException(e);
 

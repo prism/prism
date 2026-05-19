@@ -37,8 +37,8 @@ import javax.annotation.Nullable;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
+import org.prism_mc.prism.api.services.modifications.ActivityStream;
 import org.prism_mc.prism.api.services.modifications.ModificationQueue;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueMode;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
@@ -259,12 +259,12 @@ public class PaperModificationQueueService implements ModificationQueueService {
         ModificationRuleset modificationRuleset,
         Object owner,
         ActivityQuery query,
-        List<Activity> modifications
+        ActivityStream activityStream
     ) {
         if (clazz.equals(PaperRollback.class)) {
-            return newRollbackQueue(modificationRuleset, owner, query, modifications);
+            return newRollbackQueue(modificationRuleset, owner, query, activityStream);
         } else if (clazz.equals(PaperRestore.class)) {
-            return newRestoreQueue(modificationRuleset, owner, query, modifications);
+            return newRestoreQueue(modificationRuleset, owner, query, activityStream);
         }
 
         throw new IllegalArgumentException("Invalid modification queue.");
@@ -275,7 +275,7 @@ public class PaperModificationQueueService implements ModificationQueueService {
         ModificationRuleset modificationRuleset,
         Object owner,
         ActivityQuery query,
-        List<Activity> modifications
+        ActivityStream activityStream
     ) {
         if (!queueAvailable()) {
             throw new IllegalStateException("No queue available until current queue finished.");
@@ -284,7 +284,7 @@ public class PaperModificationQueueService implements ModificationQueueService {
         // Cancel any existing queues/results
         clearEverythingForOwner(owner);
 
-        this.currentQueue = rollbackFactory.create(modificationRuleset, owner, query, modifications, this::onEnd);
+        this.currentQueue = rollbackFactory.create(modificationRuleset, owner, query, activityStream, this::onEnd);
 
         return this.currentQueue;
     }
@@ -294,7 +294,7 @@ public class PaperModificationQueueService implements ModificationQueueService {
         ModificationRuleset modificationRuleset,
         Object owner,
         ActivityQuery query,
-        List<Activity> modifications
+        ActivityStream activityStream
     ) {
         if (!queueAvailable()) {
             throw new IllegalStateException("No queue available until current queue finished.");
@@ -303,7 +303,7 @@ public class PaperModificationQueueService implements ModificationQueueService {
         // Cancel any existing queues/results
         clearEverythingForOwner(owner);
 
-        this.currentQueue = restoreFactory.create(modificationRuleset, owner, query, modifications, this::onEnd);
+        this.currentQueue = restoreFactory.create(modificationRuleset, owner, query, activityStream, this::onEnd);
 
         return this.currentQueue;
     }
@@ -337,15 +337,16 @@ public class PaperModificationQueueService implements ModificationQueueService {
         CompletableFuture<ModificationQueueResult> future = new CompletableFuture<>();
 
         prismScheduler.runAsync(() -> {
-            List<Activity> modifications;
+            ActivityStream activityStream;
             try {
-                modifications = storageAdapter.queryActivities(query);
+                activityStream = storageAdapter.streamActivities(query);
             } catch (Exception e) {
                 future.completeExceptionally(e);
                 return;
             }
 
-            if (modifications.isEmpty()) {
+            if (activityStream.total() == 0) {
+                activityStream.close();
                 future.complete(
                     ModificationQueueResult.builder()
                         .mode(
@@ -359,7 +360,7 @@ public class PaperModificationQueueService implements ModificationQueueService {
                 return;
             }
 
-            prismScheduler.runGlobal(() -> runQueue(type, owner, query, ruleset, modifications, future));
+            prismScheduler.runGlobal(() -> runQueue(type, owner, query, ruleset, activityStream, future));
         });
 
         return future;
@@ -378,15 +379,16 @@ public class PaperModificationQueueService implements ModificationQueueService {
         Object owner,
         ActivityQuery query,
         ModificationRuleset ruleset,
-        List<Activity> modifications,
+        ActivityStream activityStream,
         CompletableFuture<ModificationQueueResult> future
     ) {
         ModificationQueue queue;
         try {
             queue = type == ModificationType.RESTORE
-                ? newRestoreQueue(ruleset, owner, query, modifications)
-                : newRollbackQueue(ruleset, owner, query, modifications);
+                ? newRestoreQueue(ruleset, owner, query, activityStream)
+                : newRollbackQueue(ruleset, owner, query, activityStream);
         } catch (Exception e) {
+            activityStream.close();
             future.completeExceptionally(e);
             return;
         }

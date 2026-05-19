@@ -20,10 +20,9 @@
 
 package org.prism_mc.prism.core.injection.factories;
 
-import java.util.List;
 import java.util.function.Consumer;
-import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
+import org.prism_mc.prism.api.services.modifications.ActivityStream;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
 import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
 import org.prism_mc.prism.api.services.modifications.Rollback;
@@ -35,7 +34,7 @@ public interface RollbackFactory {
      * @param modificationRuleset The ruleset
      * @param owner The owner
      * @param query The query
-     * @param modifications The modifications
+     * @param activityStream The streaming activity source
      * @param onEnd The on end callback
      * @return A rollback instance
      */
@@ -43,7 +42,7 @@ public interface RollbackFactory {
         ModificationRuleset modificationRuleset,
         Object owner,
         ActivityQuery query,
-        List<Activity> modifications,
+        ActivityStream activityStream,
         Consumer<ModificationQueueResult> onEnd
     );
 }

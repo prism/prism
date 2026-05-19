@@ -26,6 +26,7 @@ import dev.triumphteam.cmd.core.annotations.Command;
 import java.util.List;
 import org.bukkit.command.CommandSender;
 import org.prism_mc.prism.api.activities.Activity;
+import org.prism_mc.prism.api.services.modifications.ActivityStream;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueMode;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
 import org.prism_mc.prism.api.services.modifications.ModificationResultStatus;
@@ -121,16 +122,18 @@ public class UndoCommand {
         var modificationRuleset = configurationService.prismConfig().modifications().toRulesetBuilder().build();
 
         // Create the opposite queue type and apply
-        if (lastResult.queue() instanceof Rollback) {
-            // Last operation was a rollback, so undo with a restore
-            modificationQueueService
-                .newRestoreQueue(modificationRuleset, sender, originalQuery, appliedActivities)
-                .apply();
-        } else {
-            // Last operation was a restore, so undo with a rollback
-            modificationQueueService
-                .newRollbackQueue(modificationRuleset, sender, originalQuery, appliedActivities)
-                .apply();
+        ActivityStream stream = ActivityStream.of(appliedActivities);
+        try {
+            if (lastResult.queue() instanceof Rollback) {
+                // Last operation was a rollback, so undo with a restore
+                modificationQueueService.newRestoreQueue(modificationRuleset, sender, originalQuery, stream).apply();
+            } else {
+                // Last operation was a restore, so undo with a rollback
+                modificationQueueService.newRollbackQueue(modificationRuleset, sender, originalQuery, stream).apply();
+            }
+        } catch (Exception e) {
+            stream.close();
+            messageService.errorQueueNotFree(sender);
         }
     }
 }

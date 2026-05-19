@@ -62,6 +62,7 @@ import org.prism_mc.prism.api.activities.GroupedActivity;
 import org.prism_mc.prism.api.containers.PlayerContainer;
 import org.prism_mc.prism.api.containers.StringContainer;
 import org.prism_mc.prism.api.containers.TranslatableContainer;
+import org.prism_mc.prism.api.services.modifications.ActivityStream;
 import org.prism_mc.prism.api.services.pagination.PartialListPaginationResult;
 import org.prism_mc.prism.api.storage.ActivityBatch;
 import org.prism_mc.prism.api.storage.StorageAdapter;
@@ -804,6 +805,81 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
         }
 
         return activities;
+    }
+
+    @Override
+    public ActivityStream streamActivities(ActivityQuery query) throws Exception {
+        // Enforce the modifications.max-per-operation cap as a hard ceiling on the PK fetch.
+        int maxPerOperation = configurationService.prismConfig().modifications().maxPerOperation();
+        ActivityQuery effectiveQuery = query;
+        if (maxPerOperation > 0 && (query.limit() <= 0 || query.limit() > maxPerOperation)) {
+            effectiveQuery = query.toBuilder().limit(maxPerOperation).build();
+        }
+
+        List<Long> pks = queryBuilder.queryActivityPks(effectiveQuery);
+        return new SqlBatchedActivityStream(pks, query);
+    }
+
+    /**
+     * Streams activities by holding only the matching primary keys in memory.
+     */
+    private final class SqlBatchedActivityStream implements ActivityStream {
+
+        private final List<Long> pks;
+        private final ActivityQuery query;
+        private final int total;
+        private int cursor;
+        private boolean closed;
+
+        SqlBatchedActivityStream(List<Long> pks, ActivityQuery query) {
+            this.pks = pks;
+            this.query = query;
+            this.total = pks.size();
+        }
+
+        @Override
+        public List<Activity> next(int limit) {
+            List<Long> batchPks;
+            synchronized (this) {
+                if (closed || cursor >= pks.size() || limit <= 0) {
+                    return List.of();
+                }
+
+                int end = Math.min(cursor + limit, pks.size());
+                batchPks = List.copyOf(pks.subList(cursor, end));
+                cursor = end;
+            }
+
+            var result = queryBuilder.queryActivitiesByPks(batchPks, query);
+            var mapped = activityMapper(result, query);
+
+            List<Activity> activities = new ArrayList<>(mapped.size());
+            for (var abstractActivity : mapped) {
+                if (abstractActivity instanceof Activity activity) {
+                    activities.add(activity);
+                }
+            }
+            return activities;
+        }
+
+        @Override
+        public synchronized void close() {
+            closed = true;
+            pks.clear();
+        }
+
+        @Override
+        public synchronized void reopen() {
+            if (closed) {
+                throw new IllegalStateException("Cannot reopen a closed ActivityStream");
+            }
+            cursor = 0;
+        }
+
+        @Override
+        public int total() {
+            return total;
+        }
     }
 
     @Override
