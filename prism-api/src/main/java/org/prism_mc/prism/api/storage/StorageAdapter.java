@@ -25,6 +25,7 @@ import java.util.List;
 import org.prism_mc.prism.api.activities.AbstractActivity;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
+import org.prism_mc.prism.api.services.modifications.ActivityStream;
 import org.prism_mc.prism.api.services.pagination.PartialListPaginationResult;
 import org.prism_mc.prism.api.util.Pair;
 
@@ -84,6 +85,15 @@ public interface StorageAdapter {
      * @throws Exception Storage layer exception
      */
     List<Activity> queryActivities(ActivityQuery query) throws Exception;
+
+    /**
+     * Open a streaming activity source.
+     *
+     * @param query The activity query
+     * @return A stream that must be closed by the caller
+     * @throws Exception Storage layer exception
+     */
+    ActivityStream streamActivities(ActivityQuery query) throws Exception;
 
     /**
      * Query activities in a format intended for information display.

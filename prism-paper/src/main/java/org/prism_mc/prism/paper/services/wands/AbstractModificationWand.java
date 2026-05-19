@@ -21,11 +21,10 @@
 package org.prism_mc.prism.paper.services.wands;
 
 import com.google.inject.Inject;
-import java.util.List;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
+import org.prism_mc.prism.api.services.modifications.ActivityStream;
 import org.prism_mc.prism.api.services.modifications.ModificationQueue;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueService;
 import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
@@ -114,9 +113,9 @@ public abstract class AbstractModificationWand {
         }
 
         prismScheduler.runAsync(() -> {
-            List<Activity> modifications;
+            ActivityStream activityStream;
             try {
-                modifications = storageAdapter.queryActivities(query);
+                activityStream = storageAdapter.streamActivities(query);
             } catch (Exception e) {
                 loggingService.handleException(e);
 
@@ -134,7 +133,8 @@ public abstract class AbstractModificationWand {
             }
 
             Runnable applyTask = () -> {
-                if (modifications.isEmpty()) {
+                if (activityStream.total() == 0) {
+                    activityStream.close();
                     messageService.noResults((Player) owner);
 
                     return;
@@ -146,7 +146,16 @@ public abstract class AbstractModificationWand {
                     .toRulesetBuilder()
                     .build();
 
-                modificationQueueService.newQueue(clazz, modificationRuleset, owner, query, modifications).apply();
+                try {
+                    modificationQueueService.newQueue(clazz, modificationRuleset, owner, query, activityStream).apply();
+                } catch (Exception e) {
+                    activityStream.close();
+                    loggingService.handleException(e);
+
+                    if (owner instanceof CommandSender sender) {
+                        messageService.errorQueueNotFree(sender);
+                    }
+                }
             };
 
             if (owner instanceof Player player) {

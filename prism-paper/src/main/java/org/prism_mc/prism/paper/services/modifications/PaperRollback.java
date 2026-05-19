@@ -22,11 +22,10 @@ package org.prism_mc.prism.paper.services.modifications;
 
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
-import java.util.List;
 import java.util.function.Consumer;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
-import org.prism_mc.prism.api.services.modifications.ModificationQueueMode;
+import org.prism_mc.prism.api.services.modifications.ActivityStream;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
 import org.prism_mc.prism.api.services.modifications.ModificationResult;
 import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
@@ -51,7 +50,7 @@ public class PaperRollback extends AbstractWorldModificationQueue implements Rol
      * @param modificationRuleset The ruleset
      * @param owner The owner
      * @param query The query used
-     * @param modifications A list of modifications
+     * @param activityStream The streaming activity source
      * @param onEnd The end callback
      */
     @Inject
@@ -65,7 +64,7 @@ public class PaperRollback extends AbstractWorldModificationQueue implements Rol
         @Assisted ModificationRuleset modificationRuleset,
         @Assisted Object owner,
         @Assisted ActivityQuery query,
-        @Assisted List<Activity> modifications,
+        @Assisted ActivityStream activityStream,
         @Assisted Consumer<ModificationQueueResult> onEnd
     ) {
         super(
@@ -78,7 +77,7 @@ public class PaperRollback extends AbstractWorldModificationQueue implements Rol
             modificationRuleset,
             owner,
             query,
-            modifications,
+            activityStream,
             onEnd
         );
     }
@@ -100,7 +99,6 @@ public class PaperRollback extends AbstractWorldModificationQueue implements Rol
 
     @Override
     public void preview() {
-        this.mode = ModificationQueueMode.PLANNING;
-        execute();
+        startPreview();
     }
 }

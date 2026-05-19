@@ -20,9 +20,7 @@
 
 package org.prism_mc.prism.api.services.modifications;
 
-import java.util.List;
 import java.util.Optional;
-import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
 
 public interface ModificationQueueService {
@@ -64,12 +62,12 @@ public interface ModificationQueueService {
     Optional<ModificationQueue> currentQueueForOwner(Object owner);
 
     /**
-     * Create a new modification queue.
+     * Create a new modification queue backed by a streaming source.
      *
      * @param clazz The modification queue class
      * @param owner The owner
      * @param query The query used
-     * @param modifications A list of activities to make modifications
+     * @param activityStream An activity stream
      * @return The rollback queue
      * @throws IllegalStateException If queue can't be created
      */
@@ -78,39 +76,26 @@ public interface ModificationQueueService {
         ModificationRuleset modificationRuleset,
         Object owner,
         ActivityQuery query,
-        List<Activity> modifications
+        ActivityStream activityStream
     );
 
     /**
      * Get the default modification ruleset, populated from the server's configuration.
      *
      * <p>Use this when you do not need to customize behavior — pass it to
-     * {@link #newRollbackQueue(ModificationRuleset, Object, ActivityQuery, List)} or
-     * call the overloads that omit the ruleset entirely.</p>
+     * {@link #newRollbackQueue(ModificationRuleset, Object, ActivityQuery, ActivityStream)}
+     * or the other queue factories.</p>
      *
      * @return A ruleset using the server's configured defaults
      */
     ModificationRuleset defaultModificationRuleset();
 
     /**
-     * Create a new rollback queue using the server's default modification ruleset.
+     * Create a new rollback queue backed by a streaming source.
      *
      * @param owner The owner
      * @param query The query used
-     * @param modifications A list of activities to make modifications
-     * @return The rollback queue
-     * @throws IllegalStateException If queue can't be created
-     */
-    default ModificationQueue newRollbackQueue(Object owner, ActivityQuery query, List<Activity> modifications) {
-        return newRollbackQueue(defaultModificationRuleset(), owner, query, modifications);
-    }
-
-    /**
-     * Create a new rollback queue.
-     *
-     * @param owner The owner
-     * @param query The query used
-     * @param modifications A list of activities to make modifications
+     * @param activityStream An activity stream
      * @return The rollback queue
      * @throws IllegalStateException If queue can't be created
      */
@@ -118,28 +103,15 @@ public interface ModificationQueueService {
         ModificationRuleset modificationRuleset,
         Object owner,
         ActivityQuery query,
-        List<Activity> modifications
+        ActivityStream activityStream
     );
 
     /**
-     * Create a new restore queue using the server's default modification ruleset.
+     * Create a new restore queue backed by a streaming source.
      *
      * @param owner The owner
      * @param query The query used
-     * @param modifications A list of activities to make modifications
-     * @return The restore queue
-     * @throws IllegalStateException If queue can't be created
-     */
-    default ModificationQueue newRestoreQueue(Object owner, ActivityQuery query, List<Activity> modifications) {
-        return newRestoreQueue(defaultModificationRuleset(), owner, query, modifications);
-    }
-
-    /**
-     * Create a new restore queue.
-     *
-     * @param owner The owner
-     * @param query The query used
-     * @param modifications A list of activities to make modifications
+     * @param activityStream An activity stream
      * @return The restore queue
      * @throws IllegalStateException If queue can't be created
      */
@@ -147,7 +119,7 @@ public interface ModificationQueueService {
         ModificationRuleset modificationRuleset,
         Object owner,
         ActivityQuery query,
-        List<Activity> modifications
+        ActivityStream activityStream
     );
 
     /**

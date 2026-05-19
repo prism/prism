@@ -239,37 +239,7 @@ public class SqlActivityQueryBuilder {
         }
 
         if (query.modification()) {
-            // Most rollbacks "build up" but some hanging blocks need to be "built down" or they just break.
-            // In order to do this, we tell hanging blocks to sort *after* everything else,
-            // then we sort everything by `y asc` and sort these hanging blocks by `y desc`.
-            // cave_vines are sorted to come after cave_vines_plant so the plant is rebuilt first.
-            queryBuilder.addOrderBy(
-                DSL.decode().when(PRISM_BLOCKS.NAME.in("cave_vines", "weeping_vines"), 1).else_(-1).asc()
-            );
-            queryBuilder.addOrderBy(
-                DSL.decode().when(PRISM_BLOCKS.NAME.in("cave_vines_plant", "weeping_vines_plant"), 1).else_(-1).asc()
-            );
-            queryBuilder.addOrderBy(
-                DSL.decode().when(PRISM_BLOCKS.NAME.in("vine", "pointed_dripstone"), 1).else_(-1).asc()
-            );
-
-            queryBuilder.addOrderBy(PRISM_ACTIVITIES.X.asc());
-            queryBuilder.addOrderBy(PRISM_ACTIVITIES.Z.asc());
-
-            List<String> blocksToBuildUp = List.of(
-                "pointed_dripstone",
-                "cave_vines_plant",
-                "weeping_vines_plant",
-                "vine"
-            );
-
-            queryBuilder.addOrderBy(
-                DSL.decode().when(PRISM_BLOCKS.NAME.in(blocksToBuildUp), PRISM_ACTIVITIES.Y).desc()
-            );
-
-            queryBuilder.addOrderBy(
-                DSL.decode().when(PRISM_BLOCKS.NAME.notIn(blocksToBuildUp), PRISM_ACTIVITIES.Y).asc()
-            );
+            addModificationOrdering(queryBuilder);
         }
 
         // Limits
@@ -278,6 +248,159 @@ public class SqlActivityQueryBuilder {
         }
 
         return queryBuilder.fetch();
+    }
+
+    /**
+     * Apply the rollback/restore-specific ordering: hanging blocks last, then
+     * build columns x/z ascending with a per-block y direction depending on
+     * whether the block needs to build up or down. Shared between full-record
+     * and PK-only queries so a streaming source produces the same order as
+     * the legacy materialized query.
+     */
+    private void addModificationOrdering(SelectQuery<Record> queryBuilder) {
+        // Most rollbacks "build up" but some hanging blocks need to be "built down" or they just break.
+        // In order to do this, we tell hanging blocks to sort *after* everything else,
+        // then we sort everything by `y asc` and sort these hanging blocks by `y desc`.
+        // cave_vines are sorted to come after cave_vines_plant so the plant is rebuilt first.
+        queryBuilder.addOrderBy(
+            DSL.decode().when(PRISM_BLOCKS.NAME.in("cave_vines", "weeping_vines"), 1).else_(-1).asc()
+        );
+
+        queryBuilder.addOrderBy(
+            DSL.decode().when(PRISM_BLOCKS.NAME.in("cave_vines_plant", "weeping_vines_plant"), 1).else_(-1).asc()
+        );
+
+        queryBuilder.addOrderBy(
+            DSL.decode().when(PRISM_BLOCKS.NAME.in("vine", "pointed_dripstone"), 1).else_(-1).asc()
+        );
+
+        queryBuilder.addOrderBy(PRISM_ACTIVITIES.X.asc());
+        queryBuilder.addOrderBy(PRISM_ACTIVITIES.Z.asc());
+
+        List<String> blocksToBuildUp = List.of("pointed_dripstone", "cave_vines_plant", "weeping_vines_plant", "vine");
+
+        queryBuilder.addOrderBy(DSL.decode().when(PRISM_BLOCKS.NAME.in(blocksToBuildUp), PRISM_ACTIVITIES.Y).desc());
+        queryBuilder.addOrderBy(DSL.decode().when(PRISM_BLOCKS.NAME.notIn(blocksToBuildUp), PRISM_ACTIVITIES.Y).asc());
+    }
+
+    /**
+     * Fetch only primary keys for a modification query.
+     *
+     * @param query The activity query
+     * @return The activity primary keys in rollback ordering
+     */
+    public List<Long> queryActivityPks(ActivityQuery query) {
+        SelectQuery<Record> queryBuilder = dslContext.selectQuery();
+        queryBuilder.addSelect(PRISM_ACTIVITIES.ACTIVITY_ID);
+        queryBuilder.addFrom(PRISM_ACTIVITIES);
+
+        joins(queryBuilder, query);
+
+        if (query.modification()) {
+            queryBuilder.addJoin(
+                REPLACED_BLOCKS,
+                JoinType.LEFT_OUTER_JOIN,
+                REPLACED_BLOCKS.BLOCK_ID.equal(PRISM_ACTIVITIES.REPLACED_BLOCK_ID)
+            );
+        }
+
+        queryBuilder.addConditions(conditions(query));
+
+        if (query.modification()) {
+            addModificationOrdering(queryBuilder);
+        } else if (query.sort().equals(ActivityQuery.Sort.ASCENDING)) {
+            queryBuilder.addOrderBy(PRISM_ACTIVITIES.TIMESTAMP.asc());
+        } else {
+            queryBuilder.addOrderBy(PRISM_ACTIVITIES.TIMESTAMP.desc());
+        }
+
+        if (query.limit() > 0) {
+            queryBuilder.addLimit(query.offset(), query.limit());
+        }
+
+        List<Long> pks = new ArrayList<>();
+        for (Record r : queryBuilder.fetch()) {
+            UInteger pk = r.get(PRISM_ACTIVITIES.ACTIVITY_ID);
+            if (pk != null) {
+                pks.add(pk.longValue());
+            }
+        }
+        return pks;
+    }
+
+    /**
+     * Fetch full activity records for a specific set of primary keys, preserving modification ordering.
+     *
+     * @param pks The primary keys to fetch
+     * @param query The original activity query (provides join shape, conditions)
+     * @return A jOOQ result for the requested PKs
+     */
+    public Result<Record> queryActivitiesByPks(Collection<Long> pks, ActivityQuery query) {
+        SelectQuery<Record> queryBuilder = buildModificationSelect(query);
+
+        List<UInteger> pkValues = new ArrayList<>(pks.size());
+        for (Long pk : pks) {
+            pkValues.add(UInteger.valueOf(pk));
+        }
+
+        queryBuilder.addConditions(PRISM_ACTIVITIES.ACTIVITY_ID.in(pkValues));
+
+        if (query.modification()) {
+            addModificationOrdering(queryBuilder);
+        }
+
+        return queryBuilder.fetch();
+    }
+
+    /**
+     * Build the SELECT and JOIN shape used by modification batch fetches.
+     *
+     * @param query The activity query
+     * @return The query builder
+     */
+    private SelectQuery<Record> buildModificationSelect(ActivityQuery query) {
+        SelectQuery<Record> queryBuilder = dslContext.selectQuery();
+
+        queryBuilder.addSelect(
+            PRISM_WORLDS.WORLD_UUID,
+            PRISM_WORLDS.WORLD,
+            PRISM_ITEMS.MATERIAL,
+            PRISM_ITEMS.DATA,
+            PRISM_ACTIVITIES.AFFECTED_ITEM_QUANTITY,
+            PRISM_BLOCKS.NS,
+            PRISM_BLOCKS.NAME,
+            PRISM_BLOCKS.TRANSLATION_KEY,
+            PRISM_ENTITY_TYPES.ENTITY_TYPE,
+            PRISM_ACTIONS.ACTION,
+            PRISM_PLAYERS.PLAYER_UUID,
+            PRISM_PLAYERS.PLAYER,
+            PRISM_ACTIVITIES.DESCRIPTOR,
+            PRISM_ACTIVITIES.ACTIVITY_ID,
+            PRISM_ACTIVITIES.TIMESTAMP,
+            PRISM_ACTIVITIES.X,
+            PRISM_ACTIVITIES.Y,
+            PRISM_ACTIVITIES.Z,
+            PRISM_BLOCKS.DATA,
+            PRISM_ACTIVITIES.SERIALIZED_DATA,
+            coalesce(PRISM_ACTIVITIES.SERIALIZER_VERSION, 1).as("serializer_version"),
+            REPLACED_BLOCKS.NS,
+            REPLACED_BLOCKS.NAME,
+            REPLACED_BLOCKS.DATA,
+            REPLACED_BLOCKS_TRANSLATION_KEY
+        );
+
+        queryBuilder.addFrom(PRISM_ACTIVITIES);
+        joins(queryBuilder, query);
+
+        queryBuilder.addJoin(
+            REPLACED_BLOCKS,
+            JoinType.LEFT_OUTER_JOIN,
+            REPLACED_BLOCKS.BLOCK_ID.equal(PRISM_ACTIVITIES.REPLACED_BLOCK_ID)
+        );
+
+        queryBuilder.addConditions(conditions(query));
+
+        return queryBuilder;
     }
 
     /**
