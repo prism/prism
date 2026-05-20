@@ -23,25 +23,15 @@ package org.prism_mc.prism.paper.commands;
 import com.google.inject.Inject;
 import dev.triumphteam.cmd.bukkit.annotation.Permission;
 import dev.triumphteam.cmd.core.annotations.Command;
-import java.util.List;
 import org.bukkit.command.CommandSender;
-import org.prism_mc.prism.api.activities.Activity;
-import org.prism_mc.prism.api.services.modifications.ActivityStream;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueMode;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
-import org.prism_mc.prism.api.services.modifications.ModificationResultStatus;
 import org.prism_mc.prism.api.services.modifications.Rollback;
-import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.paper.services.messages.MessageService;
 import org.prism_mc.prism.paper.services.modifications.PaperModificationQueueService;
 
 @Command(value = "prism", alias = { "pr" })
 public class UndoCommand {
-
-    /**
-     * The configuration service.
-     */
-    private final ConfigurationService configurationService;
 
     /**
      * The message service.
@@ -56,17 +46,11 @@ public class UndoCommand {
     /**
      * Construct the undo command.
      *
-     * @param configurationService The configuration service
      * @param messageService The message service
      * @param modificationQueueService The modification queue service
      */
     @Inject
-    public UndoCommand(
-        ConfigurationService configurationService,
-        MessageService messageService,
-        PaperModificationQueueService modificationQueueService
-    ) {
-        this.configurationService = configurationService;
+    public UndoCommand(MessageService messageService, PaperModificationQueueService modificationQueueService) {
         this.messageService = messageService;
         this.modificationQueueService = modificationQueueService;
     }
@@ -103,37 +87,17 @@ public class UndoCommand {
             return;
         }
 
-        // Get the activities that were successfully applied
-        List<Activity> appliedActivities = lastResult
-            .results()
-            .stream()
-            .filter(r -> r.status().equals(ModificationResultStatus.APPLIED))
-            .map(r -> r.activity())
-            .toList();
-
-        if (appliedActivities.isEmpty()) {
+        if (lastResult.undoEntries().isEmpty()) {
             messageService.modificationsUndoNoResult(sender);
 
             return;
         }
 
-        // Get the original query and ruleset
-        var originalQuery = lastResult.queue().query();
-        var modificationRuleset = configurationService.prismConfig().modifications().toRulesetBuilder().build();
-
-        // Create the opposite queue type and apply
-        ActivityStream stream = ActivityStream.of(appliedActivities);
-        try {
-            if (lastResult.queue() instanceof Rollback) {
-                // Last operation was a rollback, so undo with a restore
-                modificationQueueService.newRestoreQueue(modificationRuleset, sender, originalQuery, stream).apply();
-            } else {
-                // Last operation was a restore, so undo with a rollback
-                modificationQueueService.newRollbackQueue(modificationRuleset, sender, originalQuery, stream).apply();
-            }
-        } catch (Exception e) {
-            stream.close();
-            messageService.errorQueueNotFree(sender);
-        }
+        // Replay the captured snapshots. Rollback's undo reverses to restore
+        // semantics (reversed flag back to false); restore's undo flips back
+        // to true. Snapshots are world-state captures from the moment the
+        // original op fired, so this is independent of the activity log.
+        boolean undoOfRollback = lastResult.queue() instanceof Rollback;
+        modificationQueueService.applyUndo(sender, lastResult, undoOfRollback);
     }
 }
