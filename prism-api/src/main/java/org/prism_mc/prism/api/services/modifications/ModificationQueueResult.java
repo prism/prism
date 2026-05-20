@@ -84,6 +84,10 @@ public final class ModificationQueueResult {
 
     /**
      * The modification results.
+     *
+     * <p>For {@link ModificationQueueMode#COMPLETING} runs this contains only
+     * non-applied results (PARTIAL, SKIPPED) for {@code /pr report}. Applied
+     * results are converted to {@link #undoEntries}.</p>
      */
     @NonNull
     private List<ModificationResult> results;
@@ -93,4 +97,13 @@ public final class ModificationQueueResult {
      */
     @Builder.Default
     private int skipped = 0;
+
+    /**
+     * Per-applied-block undo snapshots. Captured from the live world at the
+     * moment the queue overwrote it; replayed by {@code /pr undo} with a
+     * live-state guard so locations modified since the queue ran are not
+     * silently clobbered.
+     */
+    @Builder.Default
+    private List<UndoEntry> undoEntries = List.of();
 }

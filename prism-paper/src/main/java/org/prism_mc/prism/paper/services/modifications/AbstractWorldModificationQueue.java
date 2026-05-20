@@ -42,6 +42,7 @@ import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
 import org.prism_mc.prism.api.services.modifications.ModificationResult;
 import org.prism_mc.prism.api.services.modifications.ModificationResultStatus;
 import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
+import org.prism_mc.prism.api.services.modifications.UndoEntry;
 import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.api.util.Coordinate;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
@@ -130,6 +131,12 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
     protected int countModificationsRead;
 
     /**
+     * Total results processed across all statuses. Tracked separately from
+     * {@link #results} because APPLIED/PLANNED results are not retained there.
+     */
+    protected int countProcessed = 0;
+
+    /**
      * Count how many were applied.
      */
     protected int countApplied = 0;
@@ -159,7 +166,10 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
     protected int countMovedEntities = 0;
 
     /**
-     * A list of all modification results.
+     * Non-applied results retained for {@code /pr report partial} and
+     * {@code /pr report skips}. Applied results are converted to
+     * {@link #undoEntries} and discarded; otherwise the list would pin one
+     * full Activity per applied block.
      */
     protected final List<ModificationResult> results = new ArrayList<>();
 
@@ -175,6 +185,14 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      * progress-report step threshold is crossed.
      */
     private int progressLastReportedPercent;
+
+    /**
+     * Per-applied-block undo snapshots. Captured live from the world before
+     * the queue overwrote each block. Used by {@code /pr undo} to replay
+     * world state without re-querying the activity log, and as the source of
+     * primary keys for {@code markReversed}.
+     */
+    protected final List<UndoEntry> undoEntries = new ArrayList<>();
 
     /**
      * Incrementally tracked bounding box min/max from result coordinates.
@@ -245,7 +263,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
         if (cancelled) {
             return 0;
         }
-        return Math.max(0, activityStream.total() - results.size());
+        return Math.max(0, activityStream.total() - countProcessed);
     }
 
     /**
@@ -422,6 +440,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      */
     protected void resetState(ModificationQueueMode newMode) {
         countModificationsRead = 0;
+        countProcessed = 0;
         countApplied = 0;
         countPartial = 0;
         countPlanned = 0;
@@ -431,6 +450,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
         countRemovedDrops = 0;
         countMovedEntities = 0;
         results.clear();
+        undoEntries.clear();
         modificationsQueue.clear();
         preProcessRan = false;
         cancelled = false;
@@ -534,17 +554,31 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
             schedulerLocation,
             this::applyModification,
             result -> {
-                results.add(result);
                 trackBoundingBox(result);
+                countProcessed++;
 
                 if (result.status().equals(ModificationResultStatus.PLANNED)) {
                     countPlanned++;
+                    // Don't pin the result — keep just the lightweight undo
+                    // snapshot, which cancelPreview replays to revert client
+                    // packets without holding Activity refs.
+                    if (result.undoEntry() != null) {
+                        undoEntries.add(result.undoEntry());
+                    }
                 } else if (result.status().equals(ModificationResultStatus.APPLIED)) {
                     countApplied++;
+                    // Same shape as PLANNED: snapshot is all the queue and
+                    // any future /pr undo need; the Activity ref would just
+                    // pin memory per block.
+                    if (result.undoEntry() != null) {
+                        undoEntries.add(result.undoEntry());
+                    }
                 } else if (result.status().equals(ModificationResultStatus.PARTIAL)) {
                     countPartial++;
+                    results.add(result);
                 } else {
                     countSkipped++;
+                    results.add(result);
                 }
 
                 maybeReportProgress();
@@ -567,6 +601,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
             .queue(this)
             .mode(mode)
             .results(results)
+            .undoEntries(undoEntries)
             .applied(countApplied)
             .partial(countPartial)
             .planned(countPlanned)
@@ -642,7 +677,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
             return;
         }
 
-        int processed = results.size();
+        int processed = countProcessed;
         int percent = (int) (((long) processed * 100L) / progressTotal);
 
         if (percent >= progressLastReportedPercent + modConfig.progressReportStepPercent() && percent < 100) {
@@ -680,12 +715,13 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      */
     protected void onEnd(ModificationQueueResult result) {
         if (result.mode().equals(ModificationQueueMode.COMPLETING)) {
-            // Get PKs of all applied activities
+            // PKs come off the undo entries — applied results are no longer
+            // retained, but every applied block has a corresponding entry.
             List<Long> primarykeys = result
-                .results()
+                .undoEntries()
                 .stream()
-                .filter(r -> r.status().equals(ModificationResultStatus.APPLIED))
-                .map(r -> (long) ((Activity) r.activity()).primaryKey())
+                .filter(BlockUndoEntry.class::isInstance)
+                .map(e -> ((BlockUndoEntry) e).activityPk())
                 .toList();
 
             // Run the database update off the main thread to avoid blocking ticks

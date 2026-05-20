@@ -64,6 +64,11 @@ public final class ModificationResult {
      */
     private final String target;
 
+    /**
+     * A world-state snapshot the action captured before overwriting the block.
+     */
+    private final UndoEntry undoEntry;
+
     public static class ModificationResultBuilder {
 
         /**
