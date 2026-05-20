@@ -1154,17 +1154,30 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
         return queryBuilder.queryActivitiesPkBounds(query);
     }
 
+    /**
+     * Maximum number of activity ids per {@code markReversed} statement. Chunking
+     * keeps the generated SQL well under SQLite's statement size limit and below
+     * the bind-parameter ceilings of every supported driver, regardless of how
+     * jOOQ chooses to render the IN list. 1000 is a comfortable headroom value.
+     */
+    private static final int MARK_REVERSED_CHUNK_SIZE = 1000;
+
     @Override
     public void markReversed(List<Long> activityIds, boolean reversed) {
         if (activityIds.isEmpty()) {
             return;
         }
 
-        dslContext
-            .update(PRISM_ACTIVITIES)
-            .set(PRISM_ACTIVITIES.REVERSED, reversed)
-            .where(PRISM_ACTIVITIES.ACTIVITY_ID.in(activityIds))
-            .execute();
+        for (int start = 0; start < activityIds.size(); start += MARK_REVERSED_CHUNK_SIZE) {
+            int end = Math.min(start + MARK_REVERSED_CHUNK_SIZE, activityIds.size());
+            List<Long> chunk = activityIds.subList(start, end);
+
+            dslContext
+                .update(PRISM_ACTIVITIES)
+                .set(PRISM_ACTIVITIES.REVERSED, reversed)
+                .where(PRISM_ACTIVITIES.ACTIVITY_ID.in(chunk))
+                .execute();
+        }
     }
 
     @Override
