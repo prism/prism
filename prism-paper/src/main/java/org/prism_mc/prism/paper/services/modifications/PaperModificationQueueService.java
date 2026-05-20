@@ -219,6 +219,16 @@ public class PaperModificationQueueService implements ModificationQueueService {
 
     @Override
     public void clearEverythingForOwner(Object owner) {
+        clearEverythingForOwner(owner, null);
+    }
+
+    /**
+     * Cancel the current queue and invalidate the cached result for {@code owner}.
+     *
+     * @param owner The owner
+     * @param onComplete Optional callback fired once cleanup (including any reveal) finishes
+     */
+    public void clearEverythingForOwner(Object owner, Runnable onComplete) {
         // Capture the in-flight preview's query before destroy() nulls currentQueue.
         // Without this, cancelling a preview before it finishes leaves phantom block
         // changes on the player's client — finalizeResult never runs, so queueResults
@@ -250,7 +260,9 @@ public class PaperModificationQueueService implements ModificationQueueService {
         }
 
         if (previewQuery != null && owner instanceof Player player) {
-            revealLiveBlocks(player, previewQuery);
+            revealLiveBlocks(player, previewQuery, onComplete);
+        } else if (onComplete != null) {
+            onComplete.run();
         }
     }
 
@@ -269,32 +281,50 @@ public class PaperModificationQueueService implements ModificationQueueService {
      *
      * @param player The previewing player
      * @param query The query the preview was built from
+     * @param onComplete Optional callback fired on the player's region thread when the reveal finishes
      */
-    protected void revealLiveBlocks(Player player, ActivityQuery query) {
+    protected void revealLiveBlocks(Player player, ActivityQuery query, Runnable onComplete) {
         prismScheduler.runAsync(() -> {
             ActivityStream stream;
             try {
                 stream = storageAdapter.streamActivities(query);
             } catch (Exception e) {
                 loggingService.handleException(e);
+                if (onComplete != null) {
+                    prismScheduler.runForEntity(player, onComplete);
+                }
                 return;
             }
 
-            revealNextBatch(player, stream);
+            int total = stream.total();
+            int[] processed = { 0 };
+            int[] lastReportedPercent = { 0 };
+            revealNextBatch(player, stream, total, processed, lastReportedPercent, onComplete);
         });
     }
 
     /**
      * Pull the next batch of previewed activities and reveal their live block
      * state to the player. Recurses until the stream is drained, then closes
-     * it. Each batch hops to the player's region thread because
-     * {@code block.getBlockData()} and {@code sendBlockChange} must run there
-     * on Folia.
+     * it and fires {@code onComplete}. Each batch hops to the player's region
+     * thread because {@code block.getBlockData()} and {@code sendBlockChange}
+     * must run there on Folia.
      *
      * @param player The previewing player
      * @param stream The stream opened from the result's query
+     * @param total Total activity count, captured once for progress denominator
+     * @param processed Single-cell mutable counter, summed across batches
+     * @param lastReportedPercent Single-cell mutable percent-floor used to throttle progress messages
+     * @param onComplete Optional callback fired when the stream is drained or errors
      */
-    private void revealNextBatch(Player player, ActivityStream stream) {
+    private void revealNextBatch(
+        Player player,
+        ActivityStream stream,
+        int total,
+        int[] processed,
+        int[] lastReportedPercent,
+        Runnable onComplete
+    ) {
         int batchSize = Math.max(1, configurationService.prismConfig().modifications().cancelPreviewBatchSize());
 
         prismScheduler.runAsync(() -> {
@@ -304,11 +334,21 @@ public class PaperModificationQueueService implements ModificationQueueService {
             } catch (Exception e) {
                 loggingService.handleException(e);
                 stream.close();
+
+                if (onComplete != null) {
+                    prismScheduler.runForEntity(player, onComplete);
+                }
+
                 return;
             }
 
             if (batch.isEmpty()) {
                 stream.close();
+
+                if (onComplete != null) {
+                    prismScheduler.runForEntity(player, onComplete);
+                }
+
                 return;
             }
 
@@ -332,9 +372,36 @@ public class PaperModificationQueueService implements ModificationQueueService {
                     player.sendBlockChange(block.getLocation(), block.getBlockData());
                 }
 
-                revealNextBatch(player, stream);
+                processed[0] += batch.size();
+                maybeReportProgress(player, processed[0], total, lastReportedPercent);
+
+                revealNextBatch(player, stream, total, processed, lastReportedPercent, onComplete);
             });
         });
+    }
+
+    /**
+     * Send a {@code modifications-progress} message to the receiver when a new
+     * progress-report milestone is reached. Mirrors the throttle used by the
+     * normal modification pipeline so cancel and undo runs behave consistently
+     * with rollback/restore.
+     *
+     * @param receiver The owner to message
+     * @param processed Items processed so far
+     * @param total Total items being processed
+     * @param lastReportedPercent Single-cell mutable percent-floor; updated when a milestone fires
+     */
+    private void maybeReportProgress(CommandSender receiver, int processed, int total, int[] lastReportedPercent) {
+        var modConfig = configurationService.prismConfig().modifications();
+        if (total < modConfig.progressReportThreshold()) {
+            return;
+        }
+
+        int percent = (int) (((long) processed * 100L) / total);
+        if (percent >= lastReportedPercent[0] + modConfig.progressReportStepPercent() && percent < 100) {
+            lastReportedPercent[0] = percent;
+            messageService.modificationsProgress(receiver, percent, processed, total);
+        }
     }
 
     @Nullable
@@ -617,8 +684,9 @@ public class PaperModificationQueueService implements ModificationQueueService {
 
         int[] applied = { 0 };
         int[] skipped = { 0 };
+        int[] lastReportedPercent = { 0 };
 
-        replayUndoBatch(sender, entries, 0, applied, skipped, undoOfRollback);
+        replayUndoBatch(sender, entries, 0, applied, skipped, lastReportedPercent, undoOfRollback);
     }
 
     /**
@@ -631,6 +699,7 @@ public class PaperModificationQueueService implements ModificationQueueService {
         int cursor,
         int[] applied,
         int[] skipped,
+        int[] lastReportedPercent,
         boolean undoOfRollback
     ) {
         if (cursor >= entries.size()) {
@@ -676,10 +745,14 @@ public class PaperModificationQueueService implements ModificationQueueService {
                 applied[0]++;
             }
 
+            maybeReportProgress(sender, end, entries.size(), lastReportedPercent);
+
             // Schedule the next batch via async hop, then back to the region
             // thread for the writes. Keeps any single tick bounded.
             prismScheduler.runAsync(() ->
-                prismScheduler.runGlobal(() -> replayUndoBatch(sender, entries, end, applied, skipped, undoOfRollback))
+                prismScheduler.runGlobal(() ->
+                    replayUndoBatch(sender, entries, end, applied, skipped, lastReportedPercent, undoOfRollback)
+                )
             );
         };
 

@@ -145,9 +145,7 @@ public class PreviewCommand {
             return;
         }
 
-        modificationQueueService.clearEverythingForOwner(player);
-
-        messageService.previewCancelled(player);
+        modificationQueueService.clearEverythingForOwner(player, () -> messageService.previewCancelled(player));
     }
 
     /**
