@@ -24,6 +24,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import de.tr7zw.nbtapi.NBT;
 import dev.triumphteam.cmd.core.argument.keyed.Arguments;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import org.bukkit.Bukkit;
@@ -47,6 +49,7 @@ import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueService;
 import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
 import org.prism_mc.prism.api.services.modifications.Previewable;
+import org.prism_mc.prism.api.services.modifications.UndoEntry;
 import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.core.injection.factories.RestoreFactory;
 import org.prism_mc.prism.core.injection.factories.RollbackFactory;
@@ -58,6 +61,12 @@ import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 
 @Singleton
 public class PaperModificationQueueService implements ModificationQueueService {
+
+    /**
+     * Batch size for the undo snapshot replay. Sized to amortize region-hop
+     * cost without holding a giant slice live on any single tick.
+     */
+    private static final int UNDO_REPLAY_BATCH_SIZE = 5000;
 
     /**
      * The configuration service.
@@ -80,6 +89,13 @@ public class PaperModificationQueueService implements ModificationQueueService {
      * and written from the global region thread when queues are created/cleared.
      */
     private volatile ModificationQueue currentQueue = null;
+
+    /**
+     * Set while an undo replay is in flight. Undo bypasses the normal queue
+     * machinery (no Activity flow, no executor) but still needs to lock out
+     * other modifications.
+     */
+    private final AtomicBoolean undoInProgress = new AtomicBoolean(false);
 
     /**
      * The restore factory.
@@ -186,7 +202,7 @@ public class PaperModificationQueueService implements ModificationQueueService {
 
     @Override
     public boolean queueAvailable() {
-        return currentQueue == null;
+        return currentQueue == null && !undoInProgress.get();
     }
 
     @Override
@@ -560,5 +576,156 @@ public class PaperModificationQueueService implements ModificationQueueService {
     @Override
     public Optional<ModificationQueueResult> queueResultForOwner(Object owner) {
         return Optional.ofNullable(queueResults.getIfPresent(owner));
+    }
+
+    /**
+     * Replay the captured pre-modification world state for a previously
+     * completed rollback/restore.
+     *
+     * @param sender The command sender requesting the undo
+     * @param queueResult The cached result whose entries we're replaying
+     * @param undoOfRollback True if undoing a rollback, false if undoing a restore
+     */
+    public void applyUndo(CommandSender sender, ModificationQueueResult queueResult, boolean undoOfRollback) {
+        if (!undoInProgress.compareAndSet(false, true)) {
+            messageService.errorQueueNotFree(sender);
+            return;
+        }
+
+        // Snapshot the entries — the cached result list could be mutated by
+        // cancelPreview or eviction while we iterate async.
+        List<UndoEntry> entries = List.copyOf(queueResult.undoEntries());
+        if (entries.isEmpty()) {
+            undoInProgress.set(false);
+            messageService.modificationsUndoNoResult(sender);
+            return;
+        }
+
+        int[] applied = { 0 };
+        int[] skipped = { 0 };
+
+        replayUndoBatch(sender, entries, 0, applied, skipped, undoOfRollback);
+    }
+
+    /**
+     * Process one batch of undo entries on a region-safe thread, then recurse
+     * (async-hopping in between) until the snapshot list is drained.
+     */
+    private void replayUndoBatch(
+        CommandSender sender,
+        List<UndoEntry> entries,
+        int cursor,
+        int[] applied,
+        int[] skipped,
+        boolean undoOfRollback
+    ) {
+        if (cursor >= entries.size()) {
+            finishUndo(sender, applied[0], skipped[0], entries, undoOfRollback);
+            return;
+        }
+
+        int end = Math.min(cursor + UNDO_REPLAY_BATCH_SIZE, entries.size());
+        List<UndoEntry> batch = entries.subList(cursor, end);
+
+        Runnable applyBatch = () -> {
+            for (UndoEntry entry : batch) {
+                if (!(entry instanceof BlockUndoEntry block)) {
+                    continue;
+                }
+
+                World world = Bukkit.getWorld(block.worldUuid());
+                if (world == null) {
+                    skipped[0]++;
+                    continue;
+                }
+
+                Block live = world.getBlockAt(
+                    block.coordinate().intX(),
+                    block.coordinate().intY(),
+                    block.coordinate().intZ()
+                );
+
+                // Live-state guard: only revert if the block is still what the
+                // original modification wrote. If something else is there now,
+                // someone (or something) has built over it since — leave it.
+                if (!live.getBlockData().matches(block.newBlockData())) {
+                    skipped[0]++;
+                    continue;
+                }
+
+                live.setBlockData(block.oldBlockData());
+                if (block.oldTileNbt() != null && live.getType() != org.bukkit.Material.AIR) {
+                    NBT.modify(live.getState(), nbt -> {
+                        nbt.mergeCompound(block.oldTileNbt());
+                    });
+                }
+                applied[0]++;
+            }
+
+            // Schedule the next batch via async hop, then back to the region
+            // thread for the writes. Keeps any single tick bounded.
+            prismScheduler.runAsync(() ->
+                prismScheduler.runGlobal(() -> replayUndoBatch(sender, entries, end, applied, skipped, undoOfRollback))
+            );
+        };
+
+        if (sender instanceof Player player) {
+            prismScheduler.runForEntity(player, applyBatch);
+        } else {
+            prismScheduler.runGlobal(applyBatch);
+        }
+    }
+
+    /**
+     * Final step of undo: flip the activity reversed flag in storage, message
+     * the user with applied/skipped counts, and clear the busy flag.
+     */
+    private void finishUndo(
+        CommandSender sender,
+        int applied,
+        int skipped,
+        List<UndoEntry> entries,
+        boolean undoOfRollback
+    ) {
+        List<Long> primarykeys = entries
+            .stream()
+            .filter(BlockUndoEntry.class::isInstance)
+            .map(e -> ((BlockUndoEntry) e).activityPk())
+            .toList();
+
+        // undoOfRollback=true means the original op marked reversed=true; we flip back to false.
+        // undoOfRollback=false (restore was original) means we flip back to true.
+        boolean newReversedState = !undoOfRollback;
+
+        prismScheduler.runAsync(() -> {
+            try {
+                storageAdapter.markReversed(primarykeys, newReversedState);
+            } catch (Exception e) {
+                loggingService.handleException(e);
+            } finally {
+                undoInProgress.set(false);
+            }
+
+            Runnable notify = () -> {
+                messageService.modificationsAppliedSuccess(sender);
+                messageService.modificationsApplied(sender, applied);
+                if (skipped > 0) {
+                    // Synthetic result so the message template's {result.skipped}
+                    // placeholder renders; undo doesn't run through the queue
+                    // so there's no real ModificationQueueResult to reuse.
+                    ModificationQueueResult conflictView = ModificationQueueResult.builder()
+                        .mode(ModificationQueueMode.COMPLETING)
+                        .results(List.of())
+                        .skipped(skipped)
+                        .build();
+                    messageService.modificationsSkipped(sender, conflictView);
+                }
+            };
+            if (sender instanceof Player player) {
+                prismScheduler.runForEntity(player, notify);
+            } else {
+                prismScheduler.runGlobal(notify);
+            }
+        });
     }
 }
