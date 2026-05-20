@@ -189,10 +189,23 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
     /**
      * Per-applied-block undo snapshots. Captured live from the world before
      * the queue overwrote each block. Used by {@code /pr undo} to replay
-     * world state without re-querying the activity log, and as the source of
-     * primary keys for {@code markReversed}.
+     * world state without re-querying the activity log.
      */
     protected final List<UndoEntry> undoEntries = new ArrayList<>();
+
+    /**
+     * Primary keys of activities applied during the current batch, awaiting a
+     * {@code markReversed} flush. Drained after each batch so the IN list size
+     * stays bounded and we don't hit per-statement limits on rollbacks of
+     * hundreds of thousands of activities.
+     */
+    private final List<Long> pendingReversalKeys = new ArrayList<>();
+
+    /**
+     * Set once a {@code markReversed} flush has failed and the owner has been
+     * notified, so subsequent batch failures don't spam the same error.
+     */
+    private boolean reversalErrorReported = false;
 
     /**
      * Incrementally tracked bounding box min/max from result coordinates.
@@ -452,6 +465,8 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
         results.clear();
         undoEntries.clear();
         modificationsQueue.clear();
+        pendingReversalKeys.clear();
+        reversalErrorReported = false;
         preProcessRan = false;
         cancelled = false;
         activityStream.reopen();
@@ -573,6 +588,9 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                     if (result.undoEntry() != null) {
                         undoEntries.add(result.undoEntry());
                     }
+                    if (mode.equals(ModificationQueueMode.COMPLETING)) {
+                        pendingReversalKeys.add((long) result.activity().primaryKey());
+                    }
                 } else if (result.status().equals(ModificationResultStatus.PARTIAL)) {
                     countPartial++;
                     results.add(result);
@@ -585,12 +603,60 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
             },
             preProcessor,
             postProcessor,
-            this::fetchAndRunNextBatch
+            () -> {
+                flushPendingReversalKeys();
+                fetchAndRunNextBatch();
+            }
         );
     }
 
     /**
-     * Build the final result and notify the callback.
+     * Snapshot and clear the keys accumulated during the just-completed batch,
+     * then mark them reversed off the region thread. Done per-batch so the IN
+     * list never grows large enough to exceed driver/statement limits during
+     * rollbacks of very large queries.
+     */
+    private void flushPendingReversalKeys() {
+        if (pendingReversalKeys.isEmpty()) {
+            return;
+        }
+
+        List<Long> snapshot = new ArrayList<>(pendingReversalKeys);
+        pendingReversalKeys.clear();
+        boolean reversed = markReversedState();
+
+        prismScheduler.runAsync(() -> {
+            try {
+                storageAdapter.markReversed(snapshot, reversed);
+            } catch (Exception e) {
+                loggingService.handleException(e);
+                notifyReversalFailureOnce();
+            }
+        });
+    }
+
+    /**
+     * Notify the owning player/sender of a reversal-marking failure, at most
+     * once per operation.
+     */
+    private void notifyReversalFailureOnce() {
+        synchronized (this) {
+            if (reversalErrorReported) {
+                return;
+            }
+            reversalErrorReported = true;
+        }
+
+        if (owner() instanceof Player player) {
+            prismScheduler.runForEntity(player, () -> messageService.errorQueueReversedFailure(player));
+        } else if (owner() instanceof CommandSender sender) {
+            prismScheduler.runGlobal(() -> messageService.errorQueueReversedFailure(sender));
+        }
+    }
+
+    /**
+     * Stream exhausted (or errored). Build the final result and notify the
+     * registered end callback.
      */
     private void finalizeResult() {
         if (cancelled) {
@@ -714,35 +780,9 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      * @param result The result
      */
     protected void onEnd(ModificationQueueResult result) {
-        if (result.mode().equals(ModificationQueueMode.COMPLETING)) {
-            // PKs come off the undo entries — applied results are no longer
-            // retained, but every applied block has a corresponding entry.
-            List<Long> primarykeys = result
-                .undoEntries()
-                .stream()
-                .filter(BlockUndoEntry.class::isInstance)
-                .map(e -> ((BlockUndoEntry) e).activityPk())
-                .toList();
-
-            // Run the database update off the main thread to avoid blocking ticks
-            prismScheduler.runAsync(() -> {
-                try {
-                    storageAdapter.markReversed(primarykeys, markReversedState());
-                } catch (Exception e) {
-                    loggingService.handleException(e);
-
-                    if (owner() instanceof Player player) {
-                        prismScheduler.runForEntity(player, () -> {
-                            messageService.errorQueueReversedFailure(player);
-                        });
-                    } else if (owner() instanceof CommandSender sender) {
-                        prismScheduler.runGlobal(() -> {
-                            messageService.errorQueueReversedFailure(sender);
-                        });
-                    }
-                }
-            });
-        }
+        // Reversal flags are written per-batch via flushPendingReversalKeys to
+        // keep the IN list short. By the time we get here, every applied
+        // activity has already been scheduled for marking.
 
         // Execute the callback, letting the caller know we've ended
         onEndCallback.accept(result);
