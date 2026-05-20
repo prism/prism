@@ -48,6 +48,13 @@ public interface ModificationQueue {
     ActivityQuery query();
 
     /**
+     * Get the current mode of the queue.
+     *
+     * @return The mode
+     */
+    ModificationQueueMode mode();
+
+    /**
      * The size of the current queue.
      *
      * @return Queue size

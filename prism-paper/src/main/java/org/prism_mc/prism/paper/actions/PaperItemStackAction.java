@@ -49,7 +49,6 @@ import org.prism_mc.prism.api.services.modifications.ModificationResult;
 import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
 import org.prism_mc.prism.api.services.modifications.ModificationSkipReason;
 import org.prism_mc.prism.paper.actions.types.PaperActionTypeRegistry;
-import org.prism_mc.prism.paper.services.modifications.state.ItemStackStateChange;
 import org.prism_mc.prism.paper.utils.TagLib;
 
 public class PaperItemStackAction extends PaperMaterialAction implements ItemAction {
@@ -154,7 +153,7 @@ public class PaperItemStackAction extends PaperMaterialAction implements ItemAct
             ) {
                 OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerContainer.uuid());
                 if (offlinePlayer.isOnline()) {
-                    return addItem(activityContext, ((Player) offlinePlayer).getInventory(), mode);
+                    return addItem(activityContext, ((Player) offlinePlayer).getInventory());
                 }
             }
         } else if (type().resultType().equals(ActionResultType.REMOVES)) {
@@ -167,7 +166,7 @@ public class PaperItemStackAction extends PaperMaterialAction implements ItemAct
             );
 
             if (location.getBlock().getState() instanceof InventoryHolder holder) {
-                return addItem(activityContext, holder.getInventory(), mode);
+                return addItem(activityContext, holder.getInventory());
             }
 
             // Attempt armor stand rollback
@@ -184,12 +183,7 @@ public class PaperItemStackAction extends PaperMaterialAction implements ItemAct
                         armorStand.get().setItem(EquipmentSlot.FEET, itemStack);
                     }
 
-                    var builder = ModificationResult.builder().activity(activityContext).applied();
-                    if (mode.equals(ModificationQueueMode.PLANNING)) {
-                        builder.stateChange(new ItemStackStateChange(itemStack.clone(), null));
-                    }
-
-                    return builder.build();
+                    return ModificationResult.builder().activity(activityContext).applied().build();
                 }
             }
         }
@@ -220,20 +214,13 @@ public class PaperItemStackAction extends PaperMaterialAction implements ItemAct
      *
      * @param activityContext Activity context
      * @param inventory Inventory
-     * @param mode The queue mode
      * @return Modification result
      */
-    private ModificationResult addItem(Activity activityContext, Inventory inventory, ModificationQueueMode mode) {
+    private ModificationResult addItem(Activity activityContext, Inventory inventory) {
         var remainderMap = inventory.addItem(itemStack.clone());
-        boolean capture = mode.equals(ModificationQueueMode.PLANNING);
 
         if (remainderMap.isEmpty()) {
-            var builder = ModificationResult.builder().activity(activityContext).applied();
-            if (capture) {
-                builder.stateChange(new ItemStackStateChange(itemStack.clone(), null));
-            }
-
-            return builder.build();
+            return ModificationResult.builder().activity(activityContext).applied().build();
         } else {
             var remainder = remainderMap.values().stream().findFirst();
 
@@ -247,18 +234,11 @@ public class PaperItemStackAction extends PaperMaterialAction implements ItemAct
             }
 
             // If some items delivered, mark this as partial
-            var itemClone = itemStack.clone();
-            itemClone.setAmount(itemClone.getAmount() - remainder.get().getAmount());
-
-            var builder = ModificationResult.builder()
+            return ModificationResult.builder()
                 .activity(activityContext)
                 .partial()
-                .partialReason(ModificationPartialReason.FULL_INVENTORY);
-            if (capture) {
-                builder.stateChange(new ItemStackStateChange(itemClone, null));
-            }
-
-            return builder.build();
+                .partialReason(ModificationPartialReason.FULL_INVENTORY)
+                .build();
         }
     }
 

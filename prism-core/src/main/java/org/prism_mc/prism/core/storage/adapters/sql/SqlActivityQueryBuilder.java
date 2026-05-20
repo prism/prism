@@ -398,8 +398,6 @@ public class SqlActivityQueryBuilder {
             REPLACED_BLOCKS.BLOCK_ID.equal(PRISM_ACTIVITIES.REPLACED_BLOCK_ID)
         );
 
-        queryBuilder.addConditions(conditions(query));
-
         return queryBuilder;
     }
 
