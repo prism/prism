@@ -26,7 +26,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.prism_mc.prism.api.services.modifications.ModificationQueueService;
 import org.prism_mc.prism.core.services.cache.CacheService;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.paper.actions.GenericPaperAction;
@@ -34,6 +33,7 @@ import org.prism_mc.prism.paper.actions.types.PaperActionTypeRegistry;
 import org.prism_mc.prism.paper.api.activities.PaperActivity;
 import org.prism_mc.prism.paper.listeners.AbstractListener;
 import org.prism_mc.prism.paper.services.expectations.ExpectationService;
+import org.prism_mc.prism.paper.services.modifications.PaperModificationQueueService;
 import org.prism_mc.prism.paper.services.recording.PaperRecordingService;
 import org.prism_mc.prism.paper.services.wands.WandService;
 
@@ -47,7 +47,7 @@ public class PlayerQuitListener extends AbstractListener implements Listener {
     /**
      * The modification queue service.
      */
-    private final ModificationQueueService modificationQueueService;
+    private final PaperModificationQueueService modificationQueueService;
 
     /**
      * The cache service.
@@ -69,7 +69,7 @@ public class PlayerQuitListener extends AbstractListener implements Listener {
         ExpectationService expectationService,
         PaperRecordingService recordingService,
         WandService wandService,
-        ModificationQueueService modificationQueueService,
+        PaperModificationQueueService modificationQueueService,
         CacheService cacheService
     ) {
         super(configurationService, expectationService, recordingService);
@@ -87,8 +87,8 @@ public class PlayerQuitListener extends AbstractListener implements Listener {
     public void onPlayerQuit(final PlayerQuitEvent event) {
         final Player player = event.getPlayer();
 
-        // Cancel any modification queues for this player
-        modificationQueueService.clearEverythingForOwner(player);
+        // Cancel any modification queues for this player.
+        modificationQueueService.disconnectedOwner(player);
 
         // Deactivate any wands
         wandService.deactivateWand(player);

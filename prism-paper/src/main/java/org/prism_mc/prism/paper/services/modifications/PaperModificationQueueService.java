@@ -238,7 +238,11 @@ public class PaperModificationQueueService implements ModificationQueueService {
 
         ModificationQueueResult result = queueResults.getIfPresent(owner);
         if (result != null) {
-            if (previewQuery == null && result.queue() instanceof Previewable) {
+            if (
+                previewQuery == null &&
+                result.queue() instanceof Previewable &&
+                result.mode().equals(ModificationQueueMode.PLANNING)
+            ) {
                 previewQuery = result.queue().query();
             }
 
@@ -248,6 +252,16 @@ public class PaperModificationQueueService implements ModificationQueueService {
         if (previewQuery != null && owner instanceof Player player) {
             revealLiveBlocks(player, previewQuery);
         }
+    }
+
+    /**
+     * Cleanup for an owner who has disconnected.
+     *
+     * @param owner The owner
+     */
+    public void disconnectedOwner(Object owner) {
+        cancelQueueForOwner(owner);
+        queueResults.invalidate(owner);
     }
 
     /**
