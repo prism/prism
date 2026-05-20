@@ -25,7 +25,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import dev.triumphteam.cmd.core.argument.keyed.Arguments;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,16 +33,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
-import org.bukkit.Location;
+import org.bukkit.Bukkit;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
 import org.prism_mc.prism.api.services.modifications.ActivityStream;
 import org.prism_mc.prism.api.services.modifications.ModificationQueue;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueMode;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueResult;
 import org.prism_mc.prism.api.services.modifications.ModificationQueueService;
-import org.prism_mc.prism.api.services.modifications.ModificationResult;
 import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
 import org.prism_mc.prism.api.services.modifications.Previewable;
 import org.prism_mc.prism.api.storage.StorageAdapter;
@@ -53,7 +54,6 @@ import org.prism_mc.prism.core.services.cache.CacheService;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 import org.prism_mc.prism.paper.services.messages.MessageService;
-import org.prism_mc.prism.paper.services.modifications.state.BlockStateChange;
 import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 
 @Singleton
@@ -63,6 +63,11 @@ public class PaperModificationQueueService implements ModificationQueueService {
      * The configuration service.
      */
     private final ConfigurationService configurationService;
+
+    /**
+     * The logging service.
+     */
+    private final LoggingService loggingService;
 
     /**
      * The message service.
@@ -130,6 +135,7 @@ public class PaperModificationQueueService implements ModificationQueueService {
         StorageAdapter storageAdapter
     ) {
         this.configurationService = configurationService;
+        this.loggingService = loggingService;
         this.messageService = messageService;
         this.restoreFactory = restoreFactory;
         this.rollbackFactory = rollbackFactory;
@@ -197,45 +203,108 @@ public class PaperModificationQueueService implements ModificationQueueService {
 
     @Override
     public void clearEverythingForOwner(Object owner) {
+        // Capture the in-flight preview's query before destroy() nulls currentQueue.
+        // Without this, cancelling a preview before it finishes leaves phantom block
+        // changes on the player's client — finalizeResult never runs, so queueResults
+        // has no entry to drive the reveal below.
+        ActivityQuery previewQuery = null;
+        ModificationQueue active = currentQueue;
+        if (
+            active != null &&
+            active.owner().equals(owner) &&
+            active instanceof Previewable &&
+            active.mode().equals(ModificationQueueMode.PLANNING)
+        ) {
+            previewQuery = active.query();
+        }
+
         cancelQueueForOwner(owner);
 
         ModificationQueueResult result = queueResults.getIfPresent(owner);
         if (result != null) {
-            // If queue has a cancellable result, cancel it
-            if (result.queue() instanceof Previewable) {
-                cancelPreview(owner, result);
+            if (previewQuery == null && result.queue() instanceof Previewable) {
+                previewQuery = result.queue().query();
             }
 
             queueResults.invalidate(owner);
         }
+
+        if (previewQuery != null && owner instanceof Player player) {
+            revealLiveBlocks(player, previewQuery);
+        }
     }
 
     /**
-     * Re-send live blocks for ones we faked.
+     * Reveal live block state at every location the preview touched.
      *
-     * @param owner The owner
-     * @param queueResult The queue result
+     * @param player The previewing player
+     * @param query The query the preview was built from
      */
-    protected void cancelPreview(Object owner, ModificationQueueResult queueResult) {
-        if (!queueResult.mode().equals(ModificationQueueMode.PLANNING)) {
-            return;
-        }
+    protected void revealLiveBlocks(Player player, ActivityQuery query) {
+        prismScheduler.runAsync(() -> {
+            ActivityStream stream;
+            try {
+                stream = storageAdapter.streamActivities(query);
+            } catch (Exception e) {
+                loggingService.handleException(e);
+                return;
+            }
 
-        if (owner instanceof Player player) {
-            for (
-                final Iterator<ModificationResult> iterator = queueResult.results().listIterator();
-                iterator.hasNext();
-            ) {
-                final ModificationResult result = iterator.next();
+            revealNextBatch(player, stream);
+        });
+    }
 
-                if (result.stateChange() instanceof BlockStateChange blockStateChange) {
-                    Location loc = blockStateChange.oldState().getLocation();
-                    player.sendBlockChange(loc, blockStateChange.oldState().getBlockData());
+    /**
+     * Pull the next batch of previewed activities and reveal their live block
+     * state to the player. Recurses until the stream is drained, then closes
+     * it. Each batch hops to the player's region thread because
+     * {@code block.getBlockData()} and {@code sendBlockChange} must run there
+     * on Folia.
+     *
+     * @param player The previewing player
+     * @param stream The stream opened from the result's query
+     */
+    private void revealNextBatch(Player player, ActivityStream stream) {
+        int batchSize = Math.max(1, configurationService.prismConfig().modifications().cancelPreviewBatchSize());
+
+        prismScheduler.runAsync(() -> {
+            List<Activity> batch;
+            try {
+                batch = stream.next(batchSize);
+            } catch (Exception e) {
+                loggingService.handleException(e);
+                stream.close();
+                return;
+            }
+
+            if (batch.isEmpty()) {
+                stream.close();
+                return;
+            }
+
+            prismScheduler.runForEntity(player, () -> {
+                for (Activity activity : batch) {
+                    if (activity.coordinate() == null || activity.worldUuid() == null) {
+                        continue;
+                    }
+
+                    World world = Bukkit.getWorld(activity.worldUuid());
+                    if (world == null) {
+                        continue;
+                    }
+
+                    Block block = world.getBlockAt(
+                        activity.coordinate().intX(),
+                        activity.coordinate().intY(),
+                        activity.coordinate().intZ()
+                    );
+
+                    player.sendBlockChange(block.getLocation(), block.getBlockData());
                 }
 
-                iterator.remove();
-            }
-        }
+                revealNextBatch(player, stream);
+            });
+        });
     }
 
     @Nullable

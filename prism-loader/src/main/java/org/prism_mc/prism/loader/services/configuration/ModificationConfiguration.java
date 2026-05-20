@@ -46,6 +46,15 @@ public class ModificationConfiguration {
 
     @Comment(
         """
+        Batch size used when cancelling a preview. The original query is
+        re-streamed so the player can be shown live block data without
+        retaining state snapshots in memory; larger values mean fewer
+        database round-trips at the cost of more transient heap per batch."""
+    )
+    private int cancelPreviewBatchSize = 10000;
+
+    @Comment(
+        """
         When enabled, various processes dispatch /spark heapdump commands.
 
         REQUIRES the Spark plugin to be installed. Otherwise, command is
@@ -62,10 +71,11 @@ public class ModificationConfiguration {
     @Comment(
         """
         Hard limit on the number of modifications a single rollback/restore
-        operation can query. Prevents server hangs and memory issues from
-        overly broad queries. Set to 0 for unlimited (not recommended)."""
+        operation can query. Activities are streamed in batches so memory stays
+        bounded regardless of size, but the cap still guards against runaway
+        operations from overly broad queries. Set to 0 for unlimited (not recommended)."""
     )
-    private int maxPerOperation = 250000;
+    private int maxPerOperation = 1000000;
 
     @Comment(
         """
