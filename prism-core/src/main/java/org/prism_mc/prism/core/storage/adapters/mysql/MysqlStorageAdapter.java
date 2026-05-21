@@ -223,6 +223,9 @@ public class MysqlStorageAdapter extends AbstractSqlStorageAdapter {
 
             loggingService.info("sql_mode: {0}", dbVars.get("sql_mode"));
 
+            long maxAllowedPacketMb = Long.parseLong(dbVars.get("max_allowed_packet")) / 1024 / 1024;
+            loggingService.info("max_allowed_packet: {0}MB", maxAllowedPacketMb);
+
             var waitTimeout = Long.parseLong(dbVars.get("wait_timeout"));
             if (hikariConfig.getMaxLifetime() / 1000 >= waitTimeout) {
                 loggingService.info(

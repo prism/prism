@@ -238,8 +238,19 @@ public class SqlActivityProcedureBatch implements ActivityBatch {
 
         // Custom data
         if (activity.action() instanceof CustomData customDataAction && customDataAction.hasCustomData()) {
-            statement.setInt(serializerVersionIndex, serializerVersion);
-            statement.setString(serializedDataIndex, customDataAction.serializeCustomData());
+            String customData = SqlActivityBatch.guardSerializedDataSize(
+                customDataAction.serializeCustomData(),
+                activity.action().type().key(),
+                loggingService
+            );
+
+            if (customData != null) {
+                statement.setInt(serializerVersionIndex, serializerVersion);
+                statement.setString(serializedDataIndex, customData);
+            } else {
+                statement.setNull(serializerVersionIndex, Types.SMALLINT);
+                statement.setNull(serializedDataIndex, Types.VARCHAR);
+            }
         } else {
             statement.setNull(serializerVersionIndex, Types.SMALLINT);
             statement.setNull(serializedDataIndex, Types.VARCHAR);
@@ -319,9 +330,15 @@ public class SqlActivityProcedureBatch implements ActivityBatch {
             statement.setString(31, walRecord.getCauseBlockTranslationKey());
         }
 
-        if (walRecord.getSerializedData() != null) {
+        String customData = SqlActivityBatch.guardSerializedDataSize(
+            walRecord.getSerializedData(),
+            walRecord.getActionKey(),
+            loggingService
+        );
+
+        if (customData != null) {
             statement.setInt(32, walRecord.getSerializerVersion());
-            statement.setString(33, walRecord.getSerializedData());
+            statement.setString(33, customData);
         } else {
             statement.setNull(32, Types.SMALLINT);
             statement.setNull(33, Types.VARCHAR);

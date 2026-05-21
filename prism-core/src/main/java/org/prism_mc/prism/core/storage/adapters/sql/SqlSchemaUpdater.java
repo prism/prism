@@ -43,7 +43,7 @@ public class SqlSchemaUpdater {
     /**
      * The current/latest schema version for fresh installations.
      */
-    public static final String CURRENT_SCHEMA_VERSION = "401";
+    public static final String CURRENT_SCHEMA_VERSION = "402";
 
     /**
      * The logger.
@@ -71,6 +71,11 @@ public class SqlSchemaUpdater {
         if ("400".equals(schemaVersion)) {
             update400To401(dslContext, existingIndexes);
             schemaVersion = "401";
+        }
+
+        if ("401".equals(schemaVersion)) {
+            update401To402(dslContext);
+            schemaVersion = "402";
         }
     }
 
@@ -127,6 +132,16 @@ public class SqlSchemaUpdater {
         );
 
         update400To401Shared(dslContext, existingIndexes);
+    }
+
+    /**
+     * Update schema from 401 to 402.
+     *
+     * @param dslContext The DSL context
+     */
+    protected void update401To402(DSLContext dslContext) {
+        loggingService.info("Updating schema from 401 to 402...");
+        update401To402Shared(dslContext);
     }
 
     /**
@@ -201,5 +216,16 @@ public class SqlSchemaUpdater {
             dslContext.createIndex(index).on(table, fields).execute();
             existingIndexes.add(index.getName());
         }
+    }
+
+    /**
+     * Shared logic for the 401 to 402 update — just bumps the recorded schema version.
+     *
+     * @param dslContext The DSL context
+     */
+    protected void update401To402Shared(DSLContext dslContext) {
+        dslContext.update(PRISM_META).set(PRISM_META.V, "402").where(PRISM_META.K.eq("schema_ver")).execute();
+
+        loggingService.info("Schema updated to 402.");
     }
 }

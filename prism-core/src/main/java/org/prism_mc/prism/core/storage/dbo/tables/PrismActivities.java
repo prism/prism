@@ -266,10 +266,14 @@ public class PrismActivities extends TableImpl<PrismActivitiesRecord> {
 
     /**
      * The column <code>prism_activities.serialized_data</code>.
+     *
+     * <p>Length hint forces jOOQ to pick the largest TEXT variant per dialect — LONGTEXT on
+     * MySQL/MariaDB (where bare CLOB would otherwise become TEXT, 64KB) and the unlimited
+     * TEXT/CLOB on Postgres/H2/SQLite. Required to hold densely nested container NBT.
      */
     public final TableField<PrismActivitiesRecord, String> SERIALIZED_DATA = createField(
         DSL.name("serialized_data"),
-        SQLDataType.CLOB,
+        SQLDataType.CLOB.length(Integer.MAX_VALUE),
         this,
         ""
     );
