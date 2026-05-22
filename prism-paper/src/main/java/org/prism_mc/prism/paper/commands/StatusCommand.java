@@ -24,7 +24,9 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import dev.triumphteam.cmd.bukkit.annotation.Permission;
 import dev.triumphteam.cmd.core.annotations.Command;
+import dev.triumphteam.cmd.core.annotations.Optional;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.prism_mc.prism.api.services.recording.RecordingService;
 import org.prism_mc.prism.api.storage.StorageAdapter;
 import org.prism_mc.prism.api.storage.StorageConnectionStatus;
@@ -32,6 +34,7 @@ import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.paper.services.messages.MessageService;
 import org.prism_mc.prism.paper.services.purge.PurgeService;
 import org.prism_mc.prism.paper.services.recording.wal.WalService;
+import org.prism_mc.prism.paper.services.scoreboard.StatusScoreboardService;
 
 @Command(value = "prism", alias = { "pr" })
 public class StatusCommand {
@@ -57,6 +60,11 @@ public class StatusCommand {
     private final RecordingService recordingService;
 
     /**
+     * The status scoreboard service.
+     */
+    private final StatusScoreboardService statusScoreboardService;
+
+    /**
      * The storage adapter.
      */
     private final StorageAdapter storageAdapter;
@@ -78,6 +86,7 @@ public class StatusCommand {
      * @param messageService The message service
      * @param purgeService The purge service
      * @param recordingService The recording service
+     * @param statusScoreboardService The status scoreboard service
      * @param storageAdapter The storage adapter
      * @param version The prism version
      * @param walService The WAL service
@@ -88,6 +97,7 @@ public class StatusCommand {
         MessageService messageService,
         PurgeService purgeService,
         RecordingService recordingService,
+        StatusScoreboardService statusScoreboardService,
         StorageAdapter storageAdapter,
         @Named("version") String version,
         WalService walService
@@ -96,6 +106,7 @@ public class StatusCommand {
         this.messageService = messageService;
         this.purgeService = purgeService;
         this.recordingService = recordingService;
+        this.statusScoreboardService = statusScoreboardService;
         this.storageAdapter = storageAdapter;
         this.version = version;
         this.walService = walService;
@@ -105,10 +116,30 @@ public class StatusCommand {
      * Run the status command.
      *
      * @param sender The command sender
+     * @param mode The optional view mode
      */
     @Command("status")
     @Permission("prism.admin")
-    public void onStatus(final CommandSender sender) {
+    public void onStatus(final CommandSender sender, @Optional StatusMode mode) {
+        if (mode == StatusMode.SCOREBOARD) {
+            if (!(sender instanceof Player player)) {
+                messageService.errorPlayerOnly(sender);
+
+                return;
+            }
+
+            statusScoreboardService.toggle(player);
+
+            return;
+        }
+
+        // No mode: if the player has a scoreboard active, toggle it off; otherwise print chat status.
+        if (sender instanceof Player player && statusScoreboardService.isActive(player)) {
+            statusScoreboardService.remove(player);
+
+            return;
+        }
+
         messageService.statusHeader(sender);
 
         // Version

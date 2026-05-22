@@ -279,6 +279,16 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
         return Math.max(0, activityStream.total() - countProcessed);
     }
 
+    @Override
+    public int total() {
+        return progressTotal;
+    }
+
+    @Override
+    public int processed() {
+        return countProcessed;
+    }
+
     /**
      * Apply a modification.
      *
