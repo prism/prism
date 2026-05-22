@@ -83,6 +83,16 @@ public class FoliaScheduler implements PrismScheduler {
     }
 
     @Override
+    public ScheduledTask runForEntityFixedRate(
+        Entity entity,
+        Consumer<ScheduledTask> task,
+        long initialDelayTicks,
+        long periodTicks
+    ) {
+        return entity.getScheduler().runAtFixedRate(plugin, task, null, initialDelayTicks, periodTicks);
+    }
+
+    @Override
     public void teleport(Entity entity, Location destination) {
         entity.teleportAsync(destination);
     }

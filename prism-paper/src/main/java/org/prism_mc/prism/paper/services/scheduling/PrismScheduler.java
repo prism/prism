@@ -64,6 +64,23 @@ public interface PrismScheduler {
     void runForEntity(Entity entity, Runnable task);
 
     /**
+     * Run a repeating task on the thread appropriate for the given entity.
+     * On Folia the task stops automatically when the entity is removed.
+     *
+     * @param entity The entity
+     * @param task The task, receiving a handle that can be cancelled
+     * @param initialDelayTicks Initial delay in ticks
+     * @param periodTicks Period in ticks
+     * @return A scheduled task handle
+     */
+    io.papermc.paper.threadedregions.scheduler.ScheduledTask runForEntityFixedRate(
+        Entity entity,
+        Consumer<io.papermc.paper.threadedregions.scheduler.ScheduledTask> task,
+        long initialDelayTicks,
+        long periodTicks
+    );
+
+    /**
      * Teleport an entity to a destination.
      *
      * @param entity The entity

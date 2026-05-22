@@ -73,6 +73,16 @@ public class PaperScheduler implements PrismScheduler {
     }
 
     @Override
+    public ScheduledTask runForEntityFixedRate(
+        Entity entity,
+        Consumer<ScheduledTask> task,
+        long initialDelayTicks,
+        long periodTicks
+    ) {
+        return Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, task, initialDelayTicks, periodTicks);
+    }
+
+    @Override
     public void teleport(Entity entity, Location destination) {
         entity.teleport(destination);
     }
