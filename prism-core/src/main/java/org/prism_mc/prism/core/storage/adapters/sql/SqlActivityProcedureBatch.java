@@ -237,11 +237,9 @@ public class SqlActivityProcedureBatch implements ActivityBatch {
         statement.setString(worldUuidIndex, activity.world().key().toString());
 
         // Custom data
-        if (activity.action() instanceof CustomData) {
+        if (activity.action() instanceof CustomData customDataAction && customDataAction.hasCustomData()) {
             statement.setInt(serializerVersionIndex, serializerVersion);
-
-            String customData = ((CustomData) activity.action()).serializeCustomData();
-            statement.setString(serializedDataIndex, customData);
+            statement.setString(serializedDataIndex, customDataAction.serializeCustomData());
         } else {
             statement.setNull(serializerVersionIndex, Types.SMALLINT);
             statement.setNull(serializedDataIndex, Types.VARCHAR);

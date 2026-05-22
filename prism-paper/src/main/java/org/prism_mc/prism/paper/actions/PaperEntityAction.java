@@ -77,10 +77,14 @@ public class PaperEntityAction extends PaperAction implements EntityAction {
         super(type);
         this.entityContainer = new PaperEntityContainer(entity.getType());
 
-        readWriteNbt = NBT.createNBTObject();
+        if (type.reversible()) {
+            readWriteNbt = NBT.createNBTObject();
 
-        var nbtService = PrismPaper.instance().injectorProvider().injector().getInstance(NbtService.class);
-        nbtService.processEntityNbt(entity, readWriteNbt::mergeCompound);
+            var nbtService = PrismPaper.instance().injectorProvider().injector().getInstance(NbtService.class);
+            nbtService.processEntityNbt(entity, readWriteNbt::mergeCompound);
+        } else {
+            readWriteNbt = null;
+        }
     }
 
     /**
@@ -109,7 +113,7 @@ public class PaperEntityAction extends PaperAction implements EntityAction {
 
     @Override
     public @Nullable String serializeCustomData() {
-        return readWriteNbt.toString();
+        return readWriteNbt != null ? readWriteNbt.toString() : null;
     }
 
     @Override
