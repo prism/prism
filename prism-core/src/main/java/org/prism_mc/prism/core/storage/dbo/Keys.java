@@ -22,6 +22,7 @@ package org.prism_mc.prism.core.storage.dbo;
 
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ACTIONS;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ACTIVITIES;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_AIRTAGS;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_BLOCKS;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_CAUSES;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ENTITY_TYPES;
@@ -37,6 +38,7 @@ import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
 import org.prism_mc.prism.core.storage.dbo.records.PrismActionsRecord;
 import org.prism_mc.prism.core.storage.dbo.records.PrismActivitiesRecord;
+import org.prism_mc.prism.core.storage.dbo.records.PrismAirtagsRecord;
 import org.prism_mc.prism.core.storage.dbo.records.PrismBlocksRecord;
 import org.prism_mc.prism.core.storage.dbo.records.PrismCausesRecord;
 import org.prism_mc.prism.core.storage.dbo.records.PrismEntityTypesRecord;
@@ -64,6 +66,18 @@ public class Keys {
         PRISM_ACTIVITIES,
         DSL.name("KEY_prism_activities_PRIMARY"),
         new TableField[] { PRISM_ACTIVITIES.ACTIVITY_ID },
+        true
+    );
+    public static final UniqueKey<PrismAirtagsRecord> KEY_PRISM_AIRTAGS_PRIMARY = Internal.createUniqueKey(
+        PRISM_AIRTAGS,
+        DSL.name("KEY_prism_airtags_PRIMARY"),
+        new TableField[] { PRISM_AIRTAGS.AIRTAG_ID },
+        true
+    );
+    public static final UniqueKey<PrismAirtagsRecord> KEY_PRISM_AIRTAGS_AIRTAG = Internal.createUniqueKey(
+        PRISM_AIRTAGS,
+        DSL.name("KEY_prism_airtags_airtag"),
+        new TableField[] { PRISM_AIRTAGS.AIRTAG },
         true
     );
     public static final UniqueKey<PrismBlocksRecord> KEY_PRISM_BLOCKS_PRIMARY = Internal.createUniqueKey(

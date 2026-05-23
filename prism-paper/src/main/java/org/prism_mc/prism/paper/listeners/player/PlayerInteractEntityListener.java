@@ -71,8 +71,8 @@ public class PlayerInteractEntityListener extends AbstractListener implements Li
                 recordItemInsertActivity(event.getRightClicked().getLocation(), player, heldItem, 1);
             } else if (!ItemUtils.nullOrAir(itemFrame.getItem())) {
                 if (
-                    !configurationService.prismConfig().actions().itemRotate() ||
-                    !ItemUtils.isValidItem(itemFrame.getItem())
+                    !ItemUtils.isValidItem(itemFrame.getItem()) ||
+                    !shouldRecordItem(configurationService.prismConfig().actions().itemRotate(), itemFrame.getItem())
                 ) {
                     return;
                 }

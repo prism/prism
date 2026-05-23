@@ -98,7 +98,7 @@ public class SqlActivityProcedureBatch implements ActivityBatch {
 
         statement = connection.prepareCall(
             String.format(
-                "{ CALL %screate_activity(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) }",
+                "{ CALL %screate_activity(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) }",
                 prefix
             )
         );
@@ -141,6 +141,7 @@ public class SqlActivityProcedureBatch implements ActivityBatch {
         int serializedDataIndex = 33;
         int descriptorIndex = 34;
         int metadataIndex = 35;
+        int affectedItemAirtagIndex = 36;
 
         statement.setLong(timestampIndex, activity.timestamp() / 1000);
         statement.setInt(xIndex, activity.coordinate().intX());
@@ -197,10 +198,12 @@ public class SqlActivityProcedureBatch implements ActivityBatch {
             statement.setString(affectedItemMaterialIndex, itemAction.serializeMaterial());
             statement.setShort(affectedItemQuantityIndex, (short) itemAction.quantity());
             statement.setString(affectedItemDataIndex, itemAction.serializeItemData());
+            setStringOrNull(statement, affectedItemAirtagIndex, itemAction.itemAirtag());
         } else {
             statement.setNull(affectedItemMaterialIndex, Types.VARCHAR);
             statement.setNull(affectedItemQuantityIndex, Types.SMALLINT);
             statement.setNull(affectedItemDataIndex, Types.VARCHAR);
+            statement.setNull(affectedItemAirtagIndex, Types.VARCHAR);
         }
 
         // Block data
@@ -346,6 +349,7 @@ public class SqlActivityProcedureBatch implements ActivityBatch {
 
         setStringOrNull(statement, 34, TextUtils.truncateWithEllipsis(walRecord.getDescriptor(), 255));
         setStringOrNull(statement, 35, walRecord.getMetadata());
+        setStringOrNull(statement, 36, walRecord.getItemAirtag());
 
         statement.addBatch();
     }

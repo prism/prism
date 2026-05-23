@@ -45,6 +45,7 @@ import org.prism_mc.prism.loader.services.configuration.filters.FilterConfigurat
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 import org.prism_mc.prism.paper.utils.CustomTag;
 import org.prism_mc.prism.paper.utils.ListUtils;
+import org.prism_mc.prism.paper.utils.MaterialTagResolver;
 
 @Singleton
 public class PaperFilterService implements FilterService {
@@ -499,36 +500,16 @@ public class PaperFilterService implements FilterService {
         List<String> materialKeys,
         List<String> tagKeys
     ) {
-        CustomTag<Material> tags = new CustomTag<>(Material.class);
+        var result = MaterialTagResolver.resolve(materialKeys, tagKeys, tagKey);
 
-        if (!ListUtils.isNullOrEmpty(materialKeys)) {
-            for (String materialKey : materialKeys) {
-                try {
-                    Material material = Material.valueOf(materialKey.toUpperCase(Locale.ENGLISH));
-                    tags.append(material);
-                } catch (IllegalArgumentException e) {
-                    loggingService.warn("Filter error in {0}: No material matching {1}", filterName, materialKey);
-                }
-            }
+        for (String material : result.invalidMaterials()) {
+            loggingService.warn("Filter error in {0}: No material matching {1}", filterName, material);
         }
 
-        if (!ListUtils.isNullOrEmpty(tagKeys)) {
-            for (String itemTag : tagKeys) {
-                var namespacedKey = NamespacedKey.fromString(itemTag);
-                if (namespacedKey != null) {
-                    var tag = Bukkit.getTag(tagKey, namespacedKey, Material.class);
-
-                    if (tag != null) {
-                        tags.append(tag);
-
-                        continue;
-                    }
-                }
-
-                loggingService.warn("Filter error in {0}: Invalid tag {1}", filterName, itemTag);
-            }
+        for (String itemTag : result.invalidTags()) {
+            loggingService.warn("Filter error in {0}: Invalid tag {1}", filterName, itemTag);
         }
 
-        return tags;
+        return result.tags();
     }
 }

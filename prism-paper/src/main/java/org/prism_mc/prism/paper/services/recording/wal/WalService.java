@@ -491,7 +491,8 @@ public class WalService {
             builder
                 .itemMaterial(itemAction.serializeMaterial())
                 .itemData(itemAction.serializeItemData())
-                .itemQuantity(itemAction.quantity());
+                .itemQuantity(itemAction.quantity())
+                .itemAirtag(itemAction.itemAirtag());
         }
 
         if (activity.action() instanceof BlockAction blockAction) {

@@ -72,8 +72,12 @@ public class ProjectileLaunchListener extends AbstractListener implements Listen
         Action action = null;
         String descriptor = enumNameToString(event.getEntity().getType().name());
         if (event.getEntity() instanceof ThrowableProjectile throwableProjectile) {
-            // Ignore if this event is disabled
-            if (!configurationService.prismConfig().actions().itemThrow()) {
+            if (
+                !shouldRecordItem(
+                    configurationService.prismConfig().actions().itemThrow(),
+                    throwableProjectile.getItem()
+                )
+            ) {
                 return;
             }
 

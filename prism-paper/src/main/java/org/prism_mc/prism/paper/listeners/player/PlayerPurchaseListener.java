@@ -58,11 +58,11 @@ public class PlayerPurchaseListener extends AbstractListener implements Listener
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerTrade(final PlayerTradeEvent event) {
-        if (!configurationService.prismConfig().actions().itemTrade()) {
+        var result = event.getTrade().getResult();
+        if (!shouldRecordItem(configurationService.prismConfig().actions().itemTrade(), result)) {
             return;
         }
 
-        var result = event.getTrade().getResult();
         var action = new PaperItemStackAction(PaperActionTypeRegistry.ITEM_TRADE, result);
 
         var activity = PaperActivity.builder()

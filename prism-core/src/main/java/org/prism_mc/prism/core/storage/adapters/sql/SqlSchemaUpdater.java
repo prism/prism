@@ -20,7 +20,9 @@
 
 package org.prism_mc.prism.core.storage.adapters.sql;
 
+import static org.jooq.impl.DSL.constraint;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ACTIVITIES;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_AIRTAGS;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ITEMS;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_META;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_PLAYERS;
@@ -34,6 +36,7 @@ import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Index;
 import org.jooq.Table;
+import org.jooq.impl.SQLDataType;
 import org.prism_mc.prism.core.storage.dbo.Indexes;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 
@@ -166,6 +169,51 @@ public class SqlSchemaUpdater {
     }
 
     /**
+     * Update schema from 401 to 402.
+     *
+     * @param dslContext The DSL context
+     */
+    protected void update401To402(DSLContext dslContext) {
+        loggingService.info("Updating schema from 401 to 402...");
+
+        update401To402Shared(dslContext);
+    }
+
+    /**
+     * Shared logic updating the schema from 401 to 402.
+     *
+     * @param dslContext The DSL context
+     */
+    protected void update401To402Shared(DSLContext dslContext) {
+        dslContext.alterTable(PRISM_ITEMS).addColumn(PRISM_ITEMS.AIRTAG_ID, SQLDataType.INTEGERUNSIGNED).execute();
+
+        dslContext.createIndex(Indexes.PRISM_ITEMS_AIRTAG).on(PRISM_ITEMS, PRISM_ITEMS.AIRTAG_ID).execute();
+
+        dslContext
+            .createTable(PRISM_AIRTAGS)
+            .column(PRISM_AIRTAGS.AIRTAG_ID)
+            .column(PRISM_AIRTAGS.AIRTAG)
+            .column(PRISM_AIRTAGS.PLAYER_ID)
+            .column(PRISM_AIRTAGS.CREATED_AT)
+            .primaryKey(PRISM_AIRTAGS.AIRTAG_ID)
+            .unique(PRISM_AIRTAGS.AIRTAG)
+            .constraints(
+                constraint(String.format("%s_playerId", PRISM_AIRTAGS.getName()))
+                    .foreignKey(PRISM_AIRTAGS.PLAYER_ID)
+                    .references(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER_ID)
+                    .onDeleteCascade()
+            )
+            .execute();
+
+        dslContext.createIndex(Indexes.PRISM_AIRTAGS_PLAYER_ID).on(PRISM_AIRTAGS, PRISM_AIRTAGS.PLAYER_ID).execute();
+
+        // Update the schema version
+        dslContext.update(PRISM_META).set(PRISM_META.V, "402").where(PRISM_META.K.eq("schema_ver")).execute();
+
+        loggingService.info("Schema updated to 402.");
+    }
+
+    /**
      * Drop an index only if the database currently reports it as present.
      *
      * <p>The provided index list is mutated to reflect the drop so that subsequent existence
@@ -206,30 +254,5 @@ public class SqlSchemaUpdater {
             dslContext.createIndex(index).on(table, fields).execute();
             existingIndexes.add(index.getName());
         }
-    }
-
-    /**
-     * Update schema from 401 to 402.
-     *
-     * @param dslContext The DSL context
-     */
-    protected void update401To402(DSLContext dslContext) {
-        loggingService.info("Updating schema from 401 to 402...");
-
-        update401To402Shared(dslContext);
-    }
-
-    /**
-     * Shared logic updating the schema from 401 to 402.
-     *
-     * @param dslContext The DSL context
-     */
-    protected void update401To402Shared(DSLContext dslContext) {
-        loggingService.info("Updating schema from 401 to 402...");
-
-        // Update the schema version
-        dslContext.update(PRISM_META).set(PRISM_META.V, "402").where(PRISM_META.K.eq("schema_ver")).execute();
-
-        loggingService.info("Schema updated to 402.");
     }
 }

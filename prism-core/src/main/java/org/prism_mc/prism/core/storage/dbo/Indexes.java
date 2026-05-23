@@ -21,6 +21,7 @@
 package org.prism_mc.prism.core.storage.dbo;
 
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ACTIVITIES;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_AIRTAGS;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ITEMS;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_PLAYERS;
 
@@ -155,6 +156,20 @@ public class Indexes {
         DSL.name("idx_prism_material"),
         PRISM_ITEMS,
         new OrderField[] { PRISM_ITEMS.MATERIAL },
+        false
+    );
+
+    public static final Index PRISM_ITEMS_AIRTAG = Internal.createIndex(
+        DSL.name("idx_prism_items_airtag"),
+        PRISM_ITEMS,
+        new OrderField[] { PRISM_ITEMS.AIRTAG_ID },
+        false
+    );
+
+    public static final Index PRISM_AIRTAGS_PLAYER_ID = Internal.createIndex(
+        DSL.name("idx_prism_airtags_playerId"),
+        PRISM_AIRTAGS,
+        new OrderField[] { PRISM_AIRTAGS.PLAYER_ID },
         false
     );
 

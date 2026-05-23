@@ -56,11 +56,6 @@ public class PlayerTakeLecternBookListener extends AbstractListener implements L
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerTakeLecternBook(final PlayerTakeLecternBookEvent event) {
-        // Ignore if this event is disabled
-        if (!configurationService.prismConfig().actions().itemRemove()) {
-            return;
-        }
-
         if (!ItemUtils.isValidItem(event.getBook())) {
             return;
         }

@@ -38,6 +38,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -53,6 +54,7 @@ import org.jooq.Field;
 import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
+import org.jooq.types.UInteger;
 import org.jooq.types.UShort;
 import org.prism_mc.prism.api.actions.ActionData;
 import org.prism_mc.prism.api.actions.types.ActionTypeRegistry;
@@ -64,6 +66,7 @@ import org.prism_mc.prism.api.activities.GroupedActivity;
 import org.prism_mc.prism.api.containers.PlayerContainer;
 import org.prism_mc.prism.api.containers.StringContainer;
 import org.prism_mc.prism.api.containers.TranslatableContainer;
+import org.prism_mc.prism.api.services.airtags.AirtagSummary;
 import org.prism_mc.prism.api.services.pagination.PartialListPaginationResult;
 import org.prism_mc.prism.api.storage.ActivityBatch;
 import org.prism_mc.prism.api.storage.StorageAdapter;
@@ -81,6 +84,7 @@ import org.prism_mc.prism.core.storage.dbo.records.PrismEntityTypesRecord;
 import org.prism_mc.prism.core.storage.dbo.records.PrismWorldsRecord;
 import org.prism_mc.prism.core.storage.dbo.tables.PrismActions;
 import org.prism_mc.prism.core.storage.dbo.tables.PrismActivities;
+import org.prism_mc.prism.core.storage.dbo.tables.PrismAirtags;
 import org.prism_mc.prism.core.storage.dbo.tables.PrismBlocks;
 import org.prism_mc.prism.core.storage.dbo.tables.PrismCauses;
 import org.prism_mc.prism.core.storage.dbo.tables.PrismEntityTypes;
@@ -107,6 +111,11 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
      * The activities dbo.
      */
     public static PrismActivities PRISM_ACTIVITIES;
+
+    /**
+     * The airtags dbo.
+     */
+    public static PrismAirtags PRISM_AIRTAGS;
 
     /**
      * The blocks dbo.
@@ -294,6 +303,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
         // Initialize all of our DBOs
         PRISM_ACTIONS = new PrismActions(prefix);
         PRISM_ACTIVITIES = new PrismActivities(prefix);
+        PRISM_AIRTAGS = new PrismAirtags(prefix);
         PRISM_BLOCKS = new PrismBlocks(prefix);
         PRISM_CAUSES = new PrismCauses(prefix);
         PRISM_ENTITY_TYPES = new PrismEntityTypes(prefix);
@@ -307,6 +317,7 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             Arrays.asList(
                 PRISM_ACTIONS,
                 PRISM_ACTIVITIES,
+                PRISM_AIRTAGS,
                 PRISM_BLOCKS,
                 PRISM_CAUSES,
                 PRISM_ENTITY_TYPES,
@@ -509,7 +520,24 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
             .column(PRISM_ITEMS.ITEM_ID)
             .column(PRISM_ITEMS.MATERIAL)
             .column(PRISM_ITEMS.DATA)
+            .column(PRISM_ITEMS.AIRTAG_ID)
             .primaryKey(PRISM_ITEMS.ITEM_ID)
+            .execute();
+
+        dslContext
+            .createTableIfNotExists(PRISM_AIRTAGS)
+            .column(PRISM_AIRTAGS.AIRTAG_ID)
+            .column(PRISM_AIRTAGS.AIRTAG)
+            .column(PRISM_AIRTAGS.PLAYER_ID)
+            .column(PRISM_AIRTAGS.CREATED_AT)
+            .primaryKey(PRISM_AIRTAGS.AIRTAG_ID)
+            .unique(PRISM_AIRTAGS.AIRTAG)
+            .constraints(
+                constraint(String.format("%s_playerId", PRISM_AIRTAGS.getName()))
+                    .foreignKey(PRISM_AIRTAGS.PLAYER_ID)
+                    .references(PRISM_PLAYERS, PRISM_PLAYERS.PLAYER_ID)
+                    .onDeleteCascade()
+            )
             .execute();
 
         // Create the worlds table
@@ -709,6 +737,18 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
         var itemIndexNames = queryIndexNames(PRISM_ITEMS.getName());
         if (!itemIndexNames.contains(Indexes.PRISM_ITEMS_MATERIAL.getName())) {
             dslContext.createIndex(Indexes.PRISM_ITEMS_MATERIAL).on(PRISM_ITEMS, PRISM_ITEMS.MATERIAL).execute();
+        }
+
+        if (!itemIndexNames.contains(Indexes.PRISM_ITEMS_AIRTAG.getName())) {
+            dslContext.createIndex(Indexes.PRISM_ITEMS_AIRTAG).on(PRISM_ITEMS, PRISM_ITEMS.AIRTAG_ID).execute();
+        }
+
+        var airtagIndexNames = queryIndexNames(PRISM_AIRTAGS.getName());
+        if (!airtagIndexNames.contains(Indexes.PRISM_AIRTAGS_PLAYER_ID.getName())) {
+            dslContext
+                .createIndex(Indexes.PRISM_AIRTAGS_PLAYER_ID)
+                .on(PRISM_AIRTAGS, PRISM_AIRTAGS.PLAYER_ID)
+                .execute();
         }
     }
 
@@ -1083,6 +1123,105 @@ public abstract class AbstractSqlStorageAdapter implements StorageAdapter {
     @Override
     public Pair<Integer, Integer> getActivitiesPkBounds(ActivityQuery query) {
         return queryBuilder.queryActivitiesPkBounds(query);
+    }
+
+    @Override
+    public List<AirtagSummary> queryAirtagsForPlayer(UUID playerUuid, int limit) {
+        // Resolve each airtag to the affected item of its most recent activity
+        var latestItems = PRISM_ITEMS.as("latest_items");
+        Field<UInteger> latestItemId = dslContext
+            .select(PRISM_ACTIVITIES.AFFECTED_ITEM_ID)
+            .from(PRISM_ACTIVITIES)
+            .join(latestItems)
+            .on(latestItems.ITEM_ID.eq(PRISM_ACTIVITIES.AFFECTED_ITEM_ID))
+            .where(latestItems.AIRTAG_ID.eq(PRISM_AIRTAGS.AIRTAG_ID))
+            .orderBy(PRISM_ACTIVITIES.TIMESTAMP.desc(), PRISM_ACTIVITIES.ACTIVITY_ID.desc())
+            .limit(1)
+            .asField();
+
+        return dslContext
+            .select(PRISM_AIRTAGS.AIRTAG, PRISM_ITEMS.MATERIAL, PRISM_ITEMS.DATA, PRISM_AIRTAGS.CREATED_AT)
+            .from(PRISM_AIRTAGS)
+            .join(PRISM_PLAYERS)
+            .on(PRISM_PLAYERS.PLAYER_ID.eq(PRISM_AIRTAGS.PLAYER_ID))
+            .join(PRISM_ITEMS)
+            .on(PRISM_ITEMS.ITEM_ID.eq(latestItemId))
+            .where(PRISM_PLAYERS.PLAYER_UUID.eq(playerUuid.toString()))
+            .orderBy(PRISM_AIRTAGS.CREATED_AT.desc())
+            .limit(limit)
+            .fetch()
+            .map(r ->
+                new AirtagSummary(
+                    r.get(PRISM_AIRTAGS.AIRTAG),
+                    r.get(PRISM_ITEMS.MATERIAL),
+                    r.get(PRISM_ITEMS.DATA),
+                    r.get(PRISM_AIRTAGS.CREATED_AT).longValue()
+                )
+            );
+    }
+
+    @Override
+    public int countAirtagsForPlayer(UUID playerUuid) {
+        return dslContext.fetchCount(
+            dslContext
+                .selectFrom(PRISM_AIRTAGS)
+                .where(
+                    PRISM_AIRTAGS.PLAYER_ID.in(
+                        dslContext
+                            .select(PRISM_PLAYERS.PLAYER_ID)
+                            .from(PRISM_PLAYERS)
+                            .where(PRISM_PLAYERS.PLAYER_UUID.eq(playerUuid.toString()))
+                    )
+                )
+        );
+    }
+
+    @Override
+    public int createAirtag(String airtag, UUID playerUuid, String playerName) throws SQLException {
+        UInteger playerId = UInteger.valueOf(
+            SqlActivityBatch.getOrCreatePlayerId(dslContext, cacheService, playerUuid, playerName)
+        );
+
+        return dslContext
+            .insertInto(PRISM_AIRTAGS)
+            .columns(PRISM_AIRTAGS.AIRTAG, PRISM_AIRTAGS.PLAYER_ID, PRISM_AIRTAGS.CREATED_AT)
+            .values(airtag, playerId, UInteger.valueOf(Instant.now().getEpochSecond()))
+            .onConflict(PRISM_AIRTAGS.AIRTAG)
+            .doNothing()
+            .execute();
+    }
+
+    @Override
+    public int deleteAirtag(String airtag, UUID playerUuid) {
+        var condition = PRISM_AIRTAGS.AIRTAG.eq(airtag);
+
+        if (playerUuid != null) {
+            condition = condition.and(
+                PRISM_AIRTAGS.PLAYER_ID.in(
+                    dslContext
+                        .select(PRISM_PLAYERS.PLAYER_ID)
+                        .from(PRISM_PLAYERS)
+                        .where(PRISM_PLAYERS.PLAYER_UUID.eq(playerUuid.toString()))
+                )
+            );
+        }
+
+        dslContext
+            .update(PRISM_ITEMS)
+            .set(PRISM_ITEMS.AIRTAG_ID, (UInteger) null)
+            .where(
+                PRISM_ITEMS.AIRTAG_ID.in(
+                    dslContext.select(PRISM_AIRTAGS.AIRTAG_ID).from(PRISM_AIRTAGS).where(condition)
+                )
+            )
+            .execute();
+
+        return dslContext.deleteFrom(PRISM_AIRTAGS).where(condition).execute();
+    }
+
+    @Override
+    public boolean airtagExists(String airtag) {
+        return dslContext.fetchExists(PRISM_AIRTAGS, PRISM_AIRTAGS.AIRTAG.eq(airtag));
     }
 
     @Override

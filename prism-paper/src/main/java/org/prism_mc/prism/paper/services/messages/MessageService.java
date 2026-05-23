@@ -86,6 +86,18 @@ public interface MessageService {
     @Message("prism.error.nothing-to-paginate")
     void errorNothingToPaginate(CommandSender receiver);
 
+    @Message("prism.error.item-not-airtaggable")
+    void errorItemNotAirtaggable(CommandSender receiver);
+
+    @Message("prism.error.airtag-generation-failed")
+    void errorAirtagGenerationFailed(CommandSender receiver);
+
+    @Message("prism.error.airtag-limit-reached")
+    void errorAirtagLimitReached(CommandSender receiver, @Placeholder Integer limit);
+
+    @Message("prism.error.no-item-in-hand")
+    void errorNoItemInHand(CommandSender receiver);
+
     @Message("prism.error.non-item-action")
     void errorNonItemAction(CommandSender receiver);
 
@@ -217,6 +229,39 @@ public interface MessageService {
 
     @Message("prism.hikari-file-written")
     void hikariFileWritten(CommandSender receiver);
+
+    @Message("prism.airtags-header")
+    void airtagsHeader(CommandSender receiver, @Placeholder Integer results);
+
+    @Message("prism.airtags-vault-header")
+    void airtagsVaultHeader(CommandSender receiver, @Placeholder Integer results);
+
+    @Message("prism.airtags-vault-reminder")
+    void airtagsVaultReminder(CommandSender receiver);
+
+    @Message("prism.airtags-header-other")
+    void airtagsHeaderOther(CommandSender receiver, @Placeholder String playername, @Placeholder Integer results);
+
+    @Message("prism.item-already-airtagged")
+    void itemAlreadyAirtagged(CommandSender receiver, @Placeholder String airtag);
+
+    @Message("prism.item-airtagged")
+    void itemAirtagged(CommandSender receiver, @Placeholder String airtag);
+
+    @Message("prism.item-airtag-removed")
+    void itemAirtagRemoved(CommandSender receiver, @Placeholder String airtag);
+
+    @Message("prism.error.item-not-airtagged")
+    void errorItemNotAirtagged(CommandSender receiver);
+
+    @Message("prism.airtag-deleted")
+    void airtagDeleted(CommandSender receiver, @Placeholder String airtag);
+
+    @Message("prism.error.airtag-not-found")
+    void errorAirtagNotFound(CommandSender receiver);
+
+    @Message("prism.no-airtags-found")
+    void noAirtagsFound(CommandSender receiver);
 
     @Message("prism.modifications-applied")
     void modificationsApplied(CommandSender receiver, @Placeholder Integer count);

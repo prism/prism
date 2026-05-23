@@ -26,6 +26,7 @@ import java.time.Duration;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.bukkit.GameMode;
+import org.prism_mc.prism.api.actions.ItemAction;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.services.recording.RecordingService;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
@@ -163,7 +164,8 @@ public class PaperRecordingService implements RecordingService {
 
         if (
             configurationService.prismConfig().recording().aggregateActivities() &&
-            activity.action().type().aggregatable()
+            activity.action().type().aggregatable() &&
+            !airtagged(activity)
         ) {
             aggregator.aggregate(activity);
             return true;
@@ -174,6 +176,20 @@ public class PaperRecordingService implements RecordingService {
         }
 
         return true;
+    }
+
+    /**
+     * Whether the activity's affected item carries an airtag.
+     *
+     * <p>Airtagged items bypass aggregation so each is recorded individually and promptly. The
+     * aggregation buffer groups by material only, so several same-material items passing through the
+     * same location would otherwise merge into one entry and drop the per-item airtag.</p>
+     *
+     * @param activity The activity
+     * @return True if the affected item is airtagged
+     */
+    private boolean airtagged(Activity activity) {
+        return activity.action() instanceof ItemAction itemAction && itemAction.itemAirtag() != null;
     }
 
     /**

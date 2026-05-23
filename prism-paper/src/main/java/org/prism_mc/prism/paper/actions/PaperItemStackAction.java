@@ -38,6 +38,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.prism_mc.prism.api.actions.ItemAction;
 import org.prism_mc.prism.api.actions.types.ActionResultType;
 import org.prism_mc.prism.api.actions.types.ActionType;
@@ -49,6 +50,7 @@ import org.prism_mc.prism.api.services.modifications.ModificationResult;
 import org.prism_mc.prism.api.services.modifications.ModificationRuleset;
 import org.prism_mc.prism.api.services.modifications.ModificationSkipReason;
 import org.prism_mc.prism.paper.actions.types.PaperActionTypeRegistry;
+import org.prism_mc.prism.paper.services.airtags.Airtags;
 import org.prism_mc.prism.paper.services.modifications.state.ItemStackStateChange;
 import org.prism_mc.prism.paper.utils.TagLib;
 
@@ -136,6 +138,16 @@ public class PaperItemStackAction extends PaperMaterialAction implements ItemAct
     @Override
     public String serializeItemData() {
         return readWriteNbt.toString();
+    }
+
+    @Override
+    public String itemAirtag() {
+        var meta = itemStack.getItemMeta();
+        if (meta == null) {
+            return null;
+        }
+
+        return meta.getPersistentDataContainer().get(Airtags.KEY, PersistentDataType.STRING);
     }
 
     @Override

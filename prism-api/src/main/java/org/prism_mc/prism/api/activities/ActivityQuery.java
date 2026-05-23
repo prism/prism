@@ -222,6 +222,12 @@ public class ActivityQuery {
     private String descriptor;
 
     /**
+     * The airtag ID to search for. Matches activities whose affected item was airtagged via
+     * {@code /prism airtag} with this ID.
+     */
+    private String airtag;
+
+    /**
      * The reference coordinate.
      * If defined, this location will be used as the center for the Radius, In, and World parameters.
      */

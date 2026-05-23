@@ -60,12 +60,11 @@ public class EntityDamageByEntityListener extends AbstractListener implements Li
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityDamageByEntity(final EntityDamageByEntityEvent event) {
-        // Ignore if this event is disabled
-        if (!configurationService.prismConfig().actions().itemRemove()) {
-            return;
-        }
-
         if (event.getEntity() instanceof ItemFrame itemFrame && ItemUtils.isValidItem(itemFrame.getItem())) {
+            if (!shouldRecordItem(configurationService.prismConfig().actions().itemRemove(), itemFrame.getItem())) {
+                return;
+            }
+
             var action = new PaperItemStackAction(PaperActionTypeRegistry.ITEM_REMOVE, itemFrame.getItem());
             var builder = PaperActivity.builder()
                 .action(action)

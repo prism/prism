@@ -43,6 +43,7 @@ import org.prism_mc.prism.paper.actions.PaperEntityAction;
 import org.prism_mc.prism.paper.actions.PaperItemStackAction;
 import org.prism_mc.prism.paper.actions.types.PaperActionTypeRegistry;
 import org.prism_mc.prism.paper.api.activities.PaperActivity;
+import org.prism_mc.prism.paper.services.airtags.Airtags;
 import org.prism_mc.prism.paper.services.expectations.ExpectationService;
 import org.prism_mc.prism.paper.services.recording.PaperRecordingService;
 import org.prism_mc.prism.paper.utils.BlockUtils;
@@ -184,6 +185,17 @@ public class AbstractListener {
     }
 
     /**
+     * Whether the given item action should be recorded.
+     *
+     * @param configEnabled The configured value for the action's enable flag
+     * @param itemStack The item stack
+     * @return True if the action should be recorded
+     */
+    protected boolean shouldRecordItem(boolean configEnabled, ItemStack itemStack) {
+        return configEnabled || Airtags.has(itemStack);
+    }
+
+    /**
      * Record an item drop activity.
      *
      * @param location The location
@@ -203,7 +215,7 @@ public class AbstractListener {
      * @param amount The amount
      */
     protected void recordItemDropActivity(Location location, Object cause, ItemStack itemStack, Integer amount) {
-        if (!configurationService.prismConfig().actions().itemDrop()) {
+        if (!shouldRecordItem(configurationService.prismConfig().actions().itemDrop(), itemStack)) {
             return;
         }
 
@@ -257,12 +269,9 @@ public class AbstractListener {
      * @param cause The player or named cause
      */
     protected void recordItemDropFromInventory(Inventory inventory, Location location, Object cause) {
-        if (!configurationService.prismConfig().actions().itemDrop()) {
-            return;
-        }
-
+        boolean configEnabled = configurationService.prismConfig().actions().itemDrop();
         for (ItemStack item : inventory.getContents()) {
-            if (item != null) {
+            if (item != null && shouldRecordItem(configEnabled, item)) {
                 recordItemDropActivity(location, cause, item, null);
             }
         }
@@ -277,7 +286,7 @@ public class AbstractListener {
      * @param amount The amount
      */
     protected void recordItemInsertActivity(Location location, Object cause, ItemStack itemStack, int amount) {
-        if (!configurationService.prismConfig().actions().itemInsert()) {
+        if (!shouldRecordItem(configurationService.prismConfig().actions().itemInsert(), itemStack)) {
             return;
         }
 
@@ -292,7 +301,7 @@ public class AbstractListener {
      * @param itemStack The item stack
      */
     protected void recordItemInsertActivity(Location location, Object cause, ItemStack itemStack) {
-        if (!configurationService.prismConfig().actions().itemInsert()) {
+        if (!shouldRecordItem(configurationService.prismConfig().actions().itemInsert(), itemStack)) {
             return;
         }
 
@@ -307,7 +316,7 @@ public class AbstractListener {
      * @param itemStack The item stack
      */
     protected void recordItemRemoveActivity(Location location, Object cause, ItemStack itemStack) {
-        if (!configurationService.prismConfig().actions().itemRemove()) {
+        if (!shouldRecordItem(configurationService.prismConfig().actions().itemRemove(), itemStack)) {
             return;
         }
 
@@ -323,7 +332,7 @@ public class AbstractListener {
      * @param amount The amount
      */
     protected void recordItemRemoveActivity(Location location, Object cause, ItemStack itemStack, int amount) {
-        if (!configurationService.prismConfig().actions().itemRemove()) {
+        if (!shouldRecordItem(configurationService.prismConfig().actions().itemRemove(), itemStack)) {
             return;
         }
 
@@ -338,7 +347,7 @@ public class AbstractListener {
      * @param itemStack The item stack
      */
     protected void recordItemUseActivity(Location location, Player player, ItemStack itemStack) {
-        if (!configurationService.prismConfig().actions().itemUse()) {
+        if (!shouldRecordItem(configurationService.prismConfig().actions().itemUse(), itemStack)) {
             return;
         }
 

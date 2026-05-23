@@ -118,6 +118,9 @@ public class PaperActionTypeRegistry extends AbstractActionTypeRegistry {
         true
     );
     public static final ActionType INVENTORY_OPEN = new BlockActionType("inventory-open", ActionResultType.NONE, false);
+    public static final ActionType ITEM_AIRTAG = new ItemActionType("item-airtag", ActionResultType.NONE, false);
+    public static final ActionType ITEM_DESPAWN = new ItemActionType("item-despawn", ActionResultType.REMOVES, false);
+    public static final ActionType ITEM_DESTROY = new ItemActionType("item-destroy", ActionResultType.REMOVES, false);
     public static final ActionType ITEM_DISPENSE = new ItemActionType(
         "item-dispense",
         ActionResultType.NONE,
@@ -132,6 +135,7 @@ public class PaperActionTypeRegistry extends AbstractActionTypeRegistry {
     public static final ActionType ITEM_TRADE = new ItemActionType("item-trade", ActionResultType.NONE, false);
     // This is a generic action type because a. it can be an item or entity and b. it can't be modified
     public static final ActionType ITEM_THROW = new GenericActionType("item-throw", ActionResultType.NONE, false);
+    public static final ActionType ITEM_UNTAG = new ItemActionType("item-untag", ActionResultType.NONE, false);
     public static final ActionType ITEM_USE = new GenericActionType("item-use", ActionResultType.NONE, false);
     public static final ActionType PLAYER_CHAT = new GenericActionType("player-chat", ActionResultType.NONE, false);
     public static final ActionType PLAYER_COMMAND = new GenericActionType(
@@ -224,6 +228,9 @@ public class PaperActionTypeRegistry extends AbstractActionTypeRegistry {
         registerAction(HOPPER_INSERT);
         registerAction(HOPPER_REMOVE);
         registerAction(INVENTORY_OPEN);
+        registerAction(ITEM_AIRTAG);
+        registerAction(ITEM_DESPAWN);
+        registerAction(ITEM_DESTROY);
         registerAction(ITEM_DISPENSE);
         registerAction(ITEM_DROP);
         registerAction(ITEM_INSERT);
@@ -232,6 +239,7 @@ public class PaperActionTypeRegistry extends AbstractActionTypeRegistry {
         registerAction(ITEM_ROTATE);
         registerAction(ITEM_THROW);
         registerAction(ITEM_TRADE);
+        registerAction(ITEM_UNTAG);
         registerAction(ITEM_USE);
         registerAction(PLAYER_CHAT);
         registerAction(PLAYER_COMMAND);

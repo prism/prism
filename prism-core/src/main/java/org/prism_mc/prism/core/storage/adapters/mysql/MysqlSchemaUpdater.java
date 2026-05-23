@@ -128,6 +128,8 @@ public class MysqlSchemaUpdater extends SqlSchemaUpdater {
 
     @Override
     protected void update401To402(DSLContext dslContext) {
+        loggingService.info("Updating schema from 401 to 402...");
+
         Table<?>[] tables = {
             PRISM_ACTIONS,
             PRISM_ACTIVITIES,

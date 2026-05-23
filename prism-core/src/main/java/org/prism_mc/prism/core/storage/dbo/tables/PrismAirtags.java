@@ -20,9 +20,11 @@
 
 package org.prism_mc.prism.core.storage.dbo.tables;
 
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_AIRTAGS;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_DATABASE;
-import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ITEMS;
 
+import java.util.Arrays;
+import java.util.List;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
 import org.jooq.Identity;
@@ -38,12 +40,11 @@ import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 import org.jooq.types.UInteger;
-import org.jooq.types.UShort;
 import org.prism_mc.prism.core.storage.dbo.Keys;
-import org.prism_mc.prism.core.storage.dbo.records.PrismItemsRecord;
+import org.prism_mc.prism.core.storage.dbo.records.PrismAirtagsRecord;
 
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
-public class PrismItems extends TableImpl<PrismItemsRecord> {
+public class PrismAirtags extends TableImpl<PrismAirtagsRecord> {
 
     private static final long serialVersionUID = 1L;
 
@@ -56,50 +57,55 @@ public class PrismItems extends TableImpl<PrismItemsRecord> {
      * The class holding records for this type.
      */
     @Override
-    public Class<PrismItemsRecord> getRecordType() {
-        return PrismItemsRecord.class;
+    public Class<PrismAirtagsRecord> getRecordType() {
+        return PrismAirtagsRecord.class;
     }
 
     /**
-     * The column <code>prism_items.item_id</code>.
+     * The column <code>prism_airtags.airtag_id</code>.
      */
-    public final TableField<PrismItemsRecord, UInteger> ITEM_ID = createField(
-        DSL.name("item_id"),
+    public final TableField<PrismAirtagsRecord, UInteger> AIRTAG_ID = createField(
+        DSL.name("airtag_id"),
         SQLDataType.INTEGERUNSIGNED.nullable(false).identity(true),
         this,
         ""
     );
 
     /**
-     * The column <code>prism_items.material</code>.
+     * The column <code>prism_airtags.airtag</code>.
      */
-    public final TableField<PrismItemsRecord, String> MATERIAL = createField(
-        DSL.name("material"),
-        SQLDataType.VARCHAR(45),
+    public final TableField<PrismAirtagsRecord, String> AIRTAG = createField(
+        DSL.name("airtag"),
+        SQLDataType.CHAR(6).nullable(false),
         this,
         ""
     );
 
     /**
-     * The column <code>prism_items.data</code>.
+     * The column <code>prism_airtags.player_id</code>.
      */
-    public final TableField<PrismItemsRecord, String> DATA = createField(DSL.name("data"), SQLDataType.CLOB, this, "");
-
-    /**
-     * The column <code>prism_items.airtag_id</code>.
-     */
-    public final TableField<PrismItemsRecord, UInteger> AIRTAG_ID = createField(
-        DSL.name("airtag_id"),
-        SQLDataType.INTEGERUNSIGNED,
+    public final TableField<PrismAirtagsRecord, UInteger> PLAYER_ID = createField(
+        DSL.name("player_id"),
+        SQLDataType.INTEGERUNSIGNED.nullable(false),
         this,
         ""
     );
 
-    private PrismItems(String prefix, Name alias, Table<PrismItemsRecord> aliased) {
+    /**
+     * The column <code>prism_airtags.created_at</code>.
+     */
+    public final TableField<PrismAirtagsRecord, UInteger> CREATED_AT = createField(
+        DSL.name("created_at"),
+        SQLDataType.INTEGERUNSIGNED.nullable(false),
+        this,
+        ""
+    );
+
+    private PrismAirtags(String prefix, Name alias, Table<PrismAirtagsRecord> aliased) {
         this(prefix, alias, aliased, null);
     }
 
-    private PrismItems(String prefix, Name alias, Table<PrismItemsRecord> aliased, Field<?>[] parameters) {
+    private PrismAirtags(String prefix, Name alias, Table<PrismAirtagsRecord> aliased, Field<?>[] parameters) {
         super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
         this.prefix = prefix;
     }
@@ -109,8 +115,8 @@ public class PrismItems extends TableImpl<PrismItemsRecord> {
      *
      * @param prefix The prefix
      */
-    public PrismItems(String prefix) {
-        this(prefix, DSL.name(prefix + "items"), null);
+    public PrismAirtags(String prefix) {
+        this(prefix, DSL.name(prefix + "airtags"), null);
     }
 
     /**
@@ -121,8 +127,8 @@ public class PrismItems extends TableImpl<PrismItemsRecord> {
      * @param key The key
      * @param <O> The record type
      */
-    public <O extends Record> PrismItems(String prefix, Table<O> child, ForeignKey<O, PrismItemsRecord> key) {
-        super(child, key, PRISM_ITEMS);
+    public <O extends Record> PrismAirtags(String prefix, Table<O> child, ForeignKey<O, PrismAirtagsRecord> key) {
+        super(child, key, PRISM_AIRTAGS);
         this.prefix = prefix;
     }
 
@@ -132,37 +138,42 @@ public class PrismItems extends TableImpl<PrismItemsRecord> {
     }
 
     @Override
-    public Identity<PrismItemsRecord, UShort> getIdentity() {
-        return (Identity<PrismItemsRecord, UShort>) super.getIdentity();
+    public Identity<PrismAirtagsRecord, UInteger> getIdentity() {
+        return (Identity<PrismAirtagsRecord, UInteger>) super.getIdentity();
     }
 
     @Override
-    public UniqueKey<PrismItemsRecord> getPrimaryKey() {
-        return Keys.KEY_PRISM_ITEMS_PRIMARY;
+    public UniqueKey<PrismAirtagsRecord> getPrimaryKey() {
+        return Keys.KEY_PRISM_AIRTAGS_PRIMARY;
     }
 
     @Override
-    public PrismItems as(String alias) {
-        return new PrismItems(prefix, DSL.name(alias), this);
+    public List<UniqueKey<PrismAirtagsRecord>> getUniqueKeys() {
+        return Arrays.asList(Keys.KEY_PRISM_AIRTAGS_AIRTAG);
     }
 
     @Override
-    public PrismItems as(Name alias) {
-        return new PrismItems(prefix, alias, this);
+    public PrismAirtags as(String alias) {
+        return new PrismAirtags(prefix, DSL.name(alias), this);
     }
 
     @Override
-    public PrismItems rename(String name) {
-        return new PrismItems(prefix, DSL.name(name), null);
+    public PrismAirtags as(Name alias) {
+        return new PrismAirtags(prefix, alias, this);
     }
 
     @Override
-    public PrismItems rename(Name name) {
-        return new PrismItems(prefix, name, null);
+    public PrismAirtags rename(String name) {
+        return new PrismAirtags(prefix, DSL.name(name), null);
     }
 
     @Override
-    public Row4<UShort, String, String, String> fieldsRow() {
+    public PrismAirtags rename(Name name) {
+        return new PrismAirtags(prefix, name, null);
+    }
+
+    @Override
+    public Row4<UInteger, String, UInteger, UInteger> fieldsRow() {
         return (Row4) super.fieldsRow();
     }
 }

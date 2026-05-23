@@ -40,6 +40,7 @@ import org.prism_mc.prism.paper.services.messages.MessageService;
 import org.prism_mc.prism.paper.services.query.parsers.QueryArgumentParser;
 import org.prism_mc.prism.paper.services.query.parsers.parameters.AboveParameterParser;
 import org.prism_mc.prism.paper.services.query.parsers.parameters.ActionParameterParser;
+import org.prism_mc.prism.paper.services.query.parsers.parameters.AirtagParameterParser;
 import org.prism_mc.prism.paper.services.query.parsers.parameters.AtParameterParser;
 import org.prism_mc.prism.paper.services.query.parsers.parameters.BeforeParameterParser;
 import org.prism_mc.prism.paper.services.query.parsers.parameters.BelowParameterParser;
@@ -146,6 +147,7 @@ public class QueryService {
         parsers.add(
             new InParameterParser(messageService, configurationService.prismConfig().defaults(), worldEditIntegration)
         );
+        parsers.add(new AirtagParameterParser(messageService, configurationService.prismConfig().defaults()));
         parsers.add(new ItemParameterParser(messageService, configurationService.prismConfig().defaults()));
         parsers.add(new ItemTagParameterParser(messageService, configurationService.prismConfig().defaults()));
         parsers.add(new DescriptorParameterParser(messageService, configurationService.prismConfig().defaults()));

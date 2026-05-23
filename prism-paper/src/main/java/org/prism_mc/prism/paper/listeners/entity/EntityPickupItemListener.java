@@ -61,8 +61,11 @@ public class EntityPickupItemListener extends AbstractListener implements Listen
     public void onEntityPickupItem(final EntityPickupItemEvent event) {
         var itemStack = event.getItem().getItemStack();
 
-        // Ignore if this event is disabled
-        if (!configurationService.prismConfig().actions().itemPickup() || !ItemUtils.isValidItem(itemStack)) {
+        if (!ItemUtils.isValidItem(itemStack)) {
+            return;
+        }
+
+        if (!shouldRecordItem(configurationService.prismConfig().actions().itemPickup(), itemStack)) {
             return;
         }
 

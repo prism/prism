@@ -186,7 +186,9 @@ public class ActivityPlaceholderResolver implements IPlaceholderResolver<Command
         if (cause == null) {
             return Component.translatable("prism.unknown-cause");
         } else if (cause.container() instanceof StringContainer stringContainer) {
-            return Component.text().append(Component.text(stringContainer.value())).build();
+            String value = stringContainer.value();
+            String key = "prism.cause." + value.toLowerCase(Locale.ROOT).replace(' ', '-').replace('_', '-');
+            return Component.translatable(key, Component.text(value));
         } else if (cause.container() instanceof PlayerContainer playerContainer) {
             OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerContainer.uuid());
 

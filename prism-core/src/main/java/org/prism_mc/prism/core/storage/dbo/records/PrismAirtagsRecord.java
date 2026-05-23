@@ -20,7 +20,7 @@
 
 package org.prism_mc.prism.core.storage.dbo.records;
 
-import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ITEMS;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_AIRTAGS;
 
 import org.jooq.Field;
 import org.jooq.Record1;
@@ -28,72 +28,71 @@ import org.jooq.Record4;
 import org.jooq.Row4;
 import org.jooq.impl.UpdatableRecordImpl;
 import org.jooq.types.UInteger;
-import org.jooq.types.UShort;
 
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
-public class PrismItemsRecord
-    extends UpdatableRecordImpl<PrismItemsRecord>
-    implements Record4<UInteger, String, String, UInteger> {
+public class PrismAirtagsRecord
+    extends UpdatableRecordImpl<PrismAirtagsRecord>
+    implements Record4<UInteger, String, UInteger, UInteger> {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * Setter for <code>prism_items.item_id</code>.
+     * Setter for <code>prism_airtags.airtag_id</code>.
      */
-    public PrismItemsRecord setItemId(UInteger value) {
+    public PrismAirtagsRecord setAirtagId(UInteger value) {
         set(0, value);
         return this;
     }
 
     /**
-     * Getter for <code>prism_items.item_id</code>.
+     * Getter for <code>prism_airtags.airtag_id</code>.
      */
-    public UInteger getItemId() {
+    public UInteger getAirtagId() {
         return (UInteger) get(0);
     }
 
     /**
-     * Setter for <code>prism_items.material</code>.
+     * Setter for <code>prism_airtags.airtag</code>.
      */
-    public PrismItemsRecord setMaterial(String value) {
+    public PrismAirtagsRecord setAirtag(String value) {
         set(1, value);
         return this;
     }
 
     /**
-     * Getter for <code>prism_items.material</code>.
+     * Getter for <code>prism_airtags.airtag</code>.
      */
-    public String getMaterial() {
+    public String getAirtag() {
         return (String) get(1);
     }
 
     /**
-     * Setter for <code>prism_items.data</code>.
+     * Setter for <code>prism_airtags.player_id</code>.
      */
-    public PrismItemsRecord setData(String value) {
+    public PrismAirtagsRecord setPlayerId(UInteger value) {
         set(2, value);
         return this;
     }
 
     /**
-     * Getter for <code>prism_items.data</code>.
+     * Getter for <code>prism_airtags.player_id</code>.
      */
-    public String getData() {
-        return (String) get(2);
+    public UInteger getPlayerId() {
+        return (UInteger) get(2);
     }
 
     /**
-     * Setter for <code>prism_items.airtag_id</code>.
+     * Setter for <code>prism_airtags.created_at</code>.
      */
-    public PrismItemsRecord setAirtagId(UInteger value) {
+    public PrismAirtagsRecord setCreatedAt(UInteger value) {
         set(3, value);
         return this;
     }
 
     /**
-     * Getter for <code>prism_items.airtag_id</code>.
+     * Getter for <code>prism_airtags.created_at</code>.
      */
-    public UInteger getAirtagId() {
+    public UInteger getCreatedAt() {
         return (UInteger) get(3);
     }
 
@@ -102,7 +101,7 @@ public class PrismItemsRecord
     // -------------------------------------------------------------------------
 
     @Override
-    public Record1<UShort> key() {
+    public Record1<UInteger> key() {
         return (Record1) super.key();
     }
 
@@ -111,101 +110,101 @@ public class PrismItemsRecord
     // -------------------------------------------------------------------------
 
     @Override
-    public Row4<UInteger, String, String, UInteger> fieldsRow() {
+    public Row4<UInteger, String, UInteger, UInteger> fieldsRow() {
         return (Row4) super.fieldsRow();
     }
 
     @Override
-    public Row4<UInteger, String, String, UInteger> valuesRow() {
+    public Row4<UInteger, String, UInteger, UInteger> valuesRow() {
         return (Row4) super.valuesRow();
     }
 
     @Override
     public Field<UInteger> field1() {
-        return PRISM_ITEMS.ITEM_ID;
+        return PRISM_AIRTAGS.AIRTAG_ID;
     }
 
     @Override
     public Field<String> field2() {
-        return PRISM_ITEMS.MATERIAL;
+        return PRISM_AIRTAGS.AIRTAG;
     }
 
     @Override
-    public Field<String> field3() {
-        return PRISM_ITEMS.DATA;
+    public Field<UInteger> field3() {
+        return PRISM_AIRTAGS.PLAYER_ID;
     }
 
     @Override
     public Field<UInteger> field4() {
-        return PRISM_ITEMS.AIRTAG_ID;
+        return PRISM_AIRTAGS.CREATED_AT;
     }
 
     @Override
     public UInteger component1() {
-        return getItemId();
+        return getAirtagId();
     }
 
     @Override
     public String component2() {
-        return getMaterial();
+        return getAirtag();
     }
 
     @Override
-    public String component3() {
-        return getData();
+    public UInteger component3() {
+        return getPlayerId();
     }
 
     @Override
     public UInteger component4() {
-        return getAirtagId();
+        return getCreatedAt();
     }
 
     @Override
     public UInteger value1() {
-        return getItemId();
-    }
-
-    @Override
-    public PrismItemsRecord value1(UInteger value) {
-        setItemId(value);
-        return this;
-    }
-
-    @Override
-    public String value2() {
-        return getMaterial();
-    }
-
-    @Override
-    public PrismItemsRecord value2(String value) {
-        setMaterial(value);
-        return this;
-    }
-
-    @Override
-    public String value3() {
-        return getData();
-    }
-
-    @Override
-    public PrismItemsRecord value3(String value) {
-        setData(value);
-        return this;
-    }
-
-    @Override
-    public UInteger value4() {
         return getAirtagId();
     }
 
     @Override
-    public PrismItemsRecord value4(UInteger value) {
+    public PrismAirtagsRecord value1(UInteger value) {
         setAirtagId(value);
         return this;
     }
 
     @Override
-    public PrismItemsRecord values(UInteger value1, String value2, String value3, UInteger value4) {
+    public String value2() {
+        return getAirtag();
+    }
+
+    @Override
+    public PrismAirtagsRecord value2(String value) {
+        setAirtag(value);
+        return this;
+    }
+
+    @Override
+    public UInteger value3() {
+        return getPlayerId();
+    }
+
+    @Override
+    public PrismAirtagsRecord value3(UInteger value) {
+        setPlayerId(value);
+        return this;
+    }
+
+    @Override
+    public UInteger value4() {
+        return getCreatedAt();
+    }
+
+    @Override
+    public PrismAirtagsRecord value4(UInteger value) {
+        setCreatedAt(value);
+        return this;
+    }
+
+    @Override
+    public PrismAirtagsRecord values(UInteger value1, String value2, UInteger value3, UInteger value4) {
         value1(value1);
         value2(value2);
         value3(value3);
@@ -218,20 +217,20 @@ public class PrismItemsRecord
     // -------------------------------------------------------------------------
 
     /**
-     * Create a detached PrismItemsRecord.
+     * Create a detached PrismAirtagsRecord.
      */
-    public PrismItemsRecord() {
-        super(PRISM_ITEMS);
+    public PrismAirtagsRecord() {
+        super(PRISM_AIRTAGS);
     }
 
     /**
-     * Create a detached, initialised PrismItemsRecord.
+     * Create a detached, initialised PrismAirtagsRecord.
      */
-    public PrismItemsRecord(UInteger itemId, String material, String data, UInteger airtagId) {
-        super(PRISM_ITEMS);
-        setItemId(itemId);
-        setMaterial(material);
-        setData(data);
+    public PrismAirtagsRecord(UInteger airtagId, String airtag, UInteger playerId, UInteger createdAt) {
+        super(PRISM_AIRTAGS);
         setAirtagId(airtagId);
+        setAirtag(airtag);
+        setPlayerId(playerId);
+        setCreatedAt(createdAt);
     }
 }

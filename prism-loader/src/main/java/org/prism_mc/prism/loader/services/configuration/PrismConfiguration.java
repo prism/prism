@@ -49,6 +49,9 @@ public class PrismConfiguration {
     @Comment("Activities represent an action, location, cause, timestamp, etc.")
     private ActivitiesConfiguration activities = new ActivitiesConfiguration();
 
+    @Comment("Restrict which items players are allowed to airtag.")
+    private AirtagsConfiguration airtags = new AirtagsConfiguration();
+
     private AlertsConfiguration alerts = new AlertsConfiguration();
 
     @Comment("Configure automatic rollback.")

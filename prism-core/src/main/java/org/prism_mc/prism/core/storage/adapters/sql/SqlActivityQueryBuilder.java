@@ -32,6 +32,7 @@ import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAda
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.CAUSE_ENTITY_TYPES_TRANSLATION_KEY;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ACTIONS;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ACTIVITIES;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_AIRTAGS;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_BLOCKS;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_CAUSES;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ENTITY_TYPES;
@@ -659,6 +660,25 @@ public class SqlActivityQueryBuilder {
             conditions.add(PRISM_ACTIVITIES.Y.greaterOrEqual(query.above()));
         } else if (query.below() != null) {
             conditions.add(PRISM_ACTIVITIES.Y.lessOrEqual(query.below()));
+        }
+
+        // Item airtag
+        if (query.airtag() != null) {
+            conditions.add(
+                PRISM_ACTIVITIES.AFFECTED_ITEM_ID.in(
+                    dslContext
+                        .select(PRISM_ITEMS.ITEM_ID)
+                        .from(PRISM_ITEMS)
+                        .where(
+                            PRISM_ITEMS.AIRTAG_ID.in(
+                                dslContext
+                                    .select(PRISM_AIRTAGS.AIRTAG_ID)
+                                    .from(PRISM_AIRTAGS)
+                                    .where(PRISM_AIRTAGS.AIRTAG.equal(query.airtag()))
+                            )
+                        )
+                )
+            );
         }
 
         // Query

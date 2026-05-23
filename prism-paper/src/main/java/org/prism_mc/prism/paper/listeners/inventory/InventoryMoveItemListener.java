@@ -63,34 +63,30 @@ public class InventoryMoveItemListener extends AbstractListener implements Liste
                 event.getSource().getHolder() instanceof BlockState sourceBlockState &&
                 !sourceBlockState.getType().equals(Material.HOPPER)
             ) {
-                if (!configurationService.prismConfig().actions().hopperRemove()) {
-                    return;
+                if (shouldRecordItem(configurationService.prismConfig().actions().hopperRemove(), event.getItem())) {
+                    recordItemActivity(
+                        PaperActionTypeRegistry.HOPPER_REMOVE,
+                        sourceBlockState.getLocation(),
+                        initiatorBlockState,
+                        event.getItem(),
+                        event.getItem().getAmount()
+                    );
                 }
-
-                recordItemActivity(
-                    PaperActionTypeRegistry.HOPPER_REMOVE,
-                    sourceBlockState.getLocation(),
-                    initiatorBlockState,
-                    event.getItem(),
-                    event.getItem().getAmount()
-                );
             }
 
             if (
                 event.getDestination().getHolder() instanceof BlockState destBlockState &&
                 !destBlockState.getType().equals(Material.HOPPER)
             ) {
-                if (!configurationService.prismConfig().actions().hopperInsert()) {
-                    return;
+                if (shouldRecordItem(configurationService.prismConfig().actions().hopperInsert(), event.getItem())) {
+                    recordItemActivity(
+                        PaperActionTypeRegistry.HOPPER_INSERT,
+                        destBlockState.getLocation(),
+                        initiatorBlockState,
+                        event.getItem(),
+                        event.getItem().getAmount()
+                    );
                 }
-
-                recordItemActivity(
-                    PaperActionTypeRegistry.HOPPER_INSERT,
-                    destBlockState.getLocation(),
-                    initiatorBlockState,
-                    event.getItem(),
-                    event.getItem().getAmount()
-                );
             }
         }
     }

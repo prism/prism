@@ -64,22 +64,20 @@ public class PlayerArmorStandManipulateListener extends AbstractListener impleme
     public void onPlayerArmorStandManipulate(final PlayerArmorStandManipulateEvent event) {
         Action action = null;
         if (event.getArmorStandItem().getType() == Material.AIR) {
-            // Ignore if this event is disabled or the player is not holding a valid item
             if (
-                !configurationService.prismConfig().actions().itemInsert() ||
                 !ItemUtils.isValidItem(event.getPlayerItem()) ||
-                !TagLib.ALL_ARMOR.isTagged(event.getPlayerItem().getType())
+                !TagLib.ALL_ARMOR.isTagged(event.getPlayerItem().getType()) ||
+                !shouldRecordItem(configurationService.prismConfig().actions().itemInsert(), event.getPlayerItem())
             ) {
                 return;
             }
 
             action = new PaperItemStackAction(PaperActionTypeRegistry.ITEM_INSERT, event.getPlayerItem());
         } else {
-            // Ignore if this event is disabled or the player is holding an item
             if (
-                !configurationService.prismConfig().actions().itemRemove() ||
                 !ItemUtils.nullOrAir(event.getPlayerItem()) ||
-                !ItemUtils.isValidItem(event.getArmorStandItem())
+                !ItemUtils.isValidItem(event.getArmorStandItem()) ||
+                !shouldRecordItem(configurationService.prismConfig().actions().itemRemove(), event.getArmorStandItem())
             ) {
                 return;
             }

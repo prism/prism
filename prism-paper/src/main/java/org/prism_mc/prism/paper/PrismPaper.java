@@ -65,6 +65,8 @@ import org.prism_mc.prism.paper.actions.types.PaperActionTypeRegistry;
 import org.prism_mc.prism.paper.api.PrismPaperApi;
 import org.prism_mc.prism.paper.api.actions.PrismPaperActionFactory;
 import org.prism_mc.prism.paper.commands.AboutCommand;
+import org.prism_mc.prism.paper.commands.AirtagCommand;
+import org.prism_mc.prism.paper.commands.AirtagsCommand;
 import org.prism_mc.prism.paper.commands.CacheCommand;
 import org.prism_mc.prism.paper.commands.ConfigsCommand;
 import org.prism_mc.prism.paper.commands.DrainCommand;
@@ -105,6 +107,7 @@ import org.prism_mc.prism.paper.listeners.entity.EntityDeathListener;
 import org.prism_mc.prism.paper.listeners.entity.EntityExplodeListener;
 import org.prism_mc.prism.paper.listeners.entity.EntityPickupItemListener;
 import org.prism_mc.prism.paper.listeners.entity.EntityPlaceListener;
+import org.prism_mc.prism.paper.listeners.entity.EntityRemoveListener;
 import org.prism_mc.prism.paper.listeners.entity.EntityTransformListener;
 import org.prism_mc.prism.paper.listeners.entity.EntityUnleashListener;
 import org.prism_mc.prism.paper.listeners.hanging.HangingBreakByEntityListener;
@@ -113,6 +116,7 @@ import org.prism_mc.prism.paper.listeners.hanging.HangingPlaceListener;
 import org.prism_mc.prism.paper.listeners.inventory.InventoryClickListener;
 import org.prism_mc.prism.paper.listeners.inventory.InventoryDragListener;
 import org.prism_mc.prism.paper.listeners.inventory.InventoryMoveItemListener;
+import org.prism_mc.prism.paper.listeners.inventory.PrepareItemCraftListener;
 import org.prism_mc.prism.paper.listeners.leaves.LeavesDecayListener;
 import org.prism_mc.prism.paper.listeners.player.AsyncPlayerChatListener;
 import org.prism_mc.prism.paper.listeners.player.PlayerArmorStandManipulateListener;
@@ -344,6 +348,7 @@ public class PrismPaper implements PrismPaperApi {
             registerEvent(EntityExplodeListener.class);
             registerEvent(EntityPickupItemListener.class);
             registerEvent(EntityPlaceListener.class);
+            registerEvent(EntityRemoveListener.class);
             registerEvent(EntityTransformListener.class);
             registerEvent(EntityUnleashListener.class);
             registerEvent(HangingBreakListener.class);
@@ -352,6 +357,7 @@ public class PrismPaper implements PrismPaperApi {
             registerEvent(InventoryClickListener.class);
             registerEvent(InventoryDragListener.class);
             registerEvent(InventoryMoveItemListener.class);
+            registerEvent(PrepareItemCraftListener.class);
             registerEvent(LeavesDecayListener.class);
             registerEvent(PlayerArmorStandManipulateListener.class);
             registerEvent(PlayerBedEnterListener.class);
@@ -603,6 +609,8 @@ public class PrismPaper implements PrismPaperApi {
             );
 
             commandManager.registerCommand(injectorProvider.injector().getInstance(AboutCommand.class));
+            commandManager.registerCommand(injectorProvider.injector().getInstance(AirtagCommand.class));
+            commandManager.registerCommand(injectorProvider.injector().getInstance(AirtagsCommand.class));
             commandManager.registerCommand(injectorProvider.injector().getInstance(CacheCommand.class));
             commandManager.registerCommand(injectorProvider.injector().getInstance(ConfigsCommand.class));
             commandManager.registerCommand(injectorProvider.injector().getInstance(DrainCommand.class));
@@ -660,6 +668,7 @@ public class PrismPaper implements PrismPaperApi {
             Argument.listOf(String.class).name("bc!").suggestion(SuggestionKey.of("blocks")).build(),
             Argument.listOf(Material.class).name("i").build(),
             Argument.listOf(Material.class).name("i!").build(),
+            Argument.forString().name("airtag").build(),
             Argument.listOf(EntityType.class).name("e").build(),
             Argument.listOf(EntityType.class).name("e!").build(),
             Argument.listOf(EntityType.class).name("ec").build(),

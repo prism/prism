@@ -71,6 +71,7 @@ public class WalRecord {
     private String itemMaterial;
     private String itemData;
     private int itemQuantity;
+    private String itemAirtag;
 
     // Block action fields
     private String blockNamespace;

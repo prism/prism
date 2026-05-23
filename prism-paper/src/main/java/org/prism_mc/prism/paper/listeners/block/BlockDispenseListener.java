@@ -59,7 +59,11 @@ public class BlockDispenseListener extends AbstractListener implements Listener 
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockDispense(final BlockDispenseEvent event) {
-        if (!configurationService.prismConfig().actions().itemDispense() || !ItemUtils.isValidItem(event.getItem())) {
+        if (!ItemUtils.isValidItem(event.getItem())) {
+            return;
+        }
+
+        if (!shouldRecordItem(configurationService.prismConfig().actions().itemDispense(), event.getItem())) {
             return;
         }
 

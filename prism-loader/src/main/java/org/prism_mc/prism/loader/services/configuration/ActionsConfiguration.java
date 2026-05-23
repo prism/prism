@@ -166,9 +166,25 @@ public class ActionsConfiguration {
 
     @Comment(
         """
-        item-dispense is when a block dispenses an item.
-        This event is aggregated. See the docs for more details.
+        item-despawn is when an item entity naturally despawns from age (5 minutes by default).
+        Note: this toggle currently has no effect. Only airtagged items are logged for this event,
+        and they are always logged. Full toggle support will be implemented in the future."""
+    )
+    private boolean itemDespawn = false;
+
+    @Comment(
         """
+        item-destroy is when an item entity is destroyed by the environment - lava, fire,
+        cactus, the void, or an explosion.
+        Note: this toggle currently has no effect. Only airtagged items are logged for this event,
+        and they are always logged. Full toggle support will be implemented in the future."""
+    )
+    private boolean itemDestroy = true;
+
+    @Comment(
+        """
+        item-dispense is when a block dispenses an item.
+        This event is aggregated. See the docs for more details."""
     )
     private boolean itemDispense = true;
 

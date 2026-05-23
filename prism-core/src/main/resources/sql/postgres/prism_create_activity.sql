@@ -33,7 +33,8 @@ CREATE OR REPLACE FUNCTION %prefix%create_activity (
     p_serializerVersion INTEGER,
     p_serializedData TEXT,
     p_descriptor VARCHAR(255),
-    p_metadata VARCHAR(255)
+    p_metadata VARCHAR(255),
+    p_affectedItemAirtag CHAR(6)
 )
 RETURNS VOID AS $$
 DECLARE
@@ -55,7 +56,7 @@ BEGIN
 
      -- Get or create affected item
     IF p_affectedItemMaterial IS NOT NULL THEN
-        SELECT %prefix%get_or_create_item(p_affectedItemMaterial, p_affectedItemData) INTO v_affectedItemId;
+        SELECT %prefix%get_or_create_item(p_affectedItemMaterial, p_affectedItemData, p_affectedItemAirtag) INTO v_affectedItemId;
     END IF;
 
     -- Get or create affected block

@@ -18,30 +18,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package org.prism_mc.prism.api.actions;
+package org.prism_mc.prism.api.services.airtags;
 
-public interface ItemAction extends MaterialAction {
-    /**
-     * Get the quantity.
-     *
-     * @return The quantity
-     */
-    int quantity();
-
-    /**
-     * Serialize item data.
-     *
-     * @return The item data string
-     */
-    String serializeItemData();
-
-    /**
-     * The Prism airtag identifier applied to the item, or {@code null} when the item has not
-     * been airtagged via {@code /prism airtag}.
-     *
-     * @return The airtag ID, or {@code null}
-     */
-    default String itemAirtag() {
-        return null;
-    }
-}
+/**
+ * A row from {@code prism_airtags} joined with the airtagged item's material and NBT data.
+ *
+ * @param airtag The airtag ID
+ * @param itemMaterial The Bukkit material key of the airtagged item
+ * @param itemData The serialized NBT of the airtagged item at the time of airtagging
+ * @param createdAtSeconds The epoch-seconds timestamp of when the airtag was created
+ */
+public record AirtagSummary(String airtag, String itemMaterial, String itemData, long createdAtSeconds) {}

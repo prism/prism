@@ -234,16 +234,8 @@ public class PlayerInteractListener extends AbstractListener implements Listener
      */
     private void recordJukeboxActivity(Jukebox jukebox, Location location, Player player) {
         if (jukebox.isPlaying()) {
-            if (!configurationService.prismConfig().actions().itemRemove()) {
-                return;
-            }
-
             recordItemRemoveActivity(location, player, new ItemStack(jukebox.getPlaying()));
         } else if (!ItemUtils.nullOrAir((player.getInventory().getItemInMainHand()))) {
-            if (!configurationService.prismConfig().actions().itemInsert()) {
-                return;
-            }
-
             recordItemInsertActivity(location, player, player.getInventory().getItemInMainHand());
         }
     }

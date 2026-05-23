@@ -22,9 +22,11 @@ package org.prism_mc.prism.api.storage;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 import org.prism_mc.prism.api.activities.AbstractActivity;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.ActivityQuery;
+import org.prism_mc.prism.api.services.airtags.AirtagSummary;
 import org.prism_mc.prism.api.services.pagination.PartialListPaginationResult;
 import org.prism_mc.prism.api.util.Pair;
 
@@ -93,6 +95,56 @@ public interface StorageAdapter {
      * @throws Exception Storage layer exception
      */
     PartialListPaginationResult<AbstractActivity> queryActivitiesPaginated(ActivityQuery query) throws Exception;
+
+    /**
+     * List the airtags owned by a player, newest first.
+     *
+     * @param playerUuid The owning player's UUID
+     * @param limit The maximum number of results to return
+     * @return The airtag summaries
+     * @throws Exception Storage layer exception
+     */
+    List<AirtagSummary> queryAirtagsForPlayer(UUID playerUuid, int limit) throws Exception;
+
+    /**
+     * Count the airtags owned by a player.
+     *
+     * @param playerUuid The owning player's UUID
+     * @return The number of airtags owned
+     * @throws Exception Storage layer exception
+     */
+    int countAirtagsForPlayer(UUID playerUuid) throws Exception;
+
+    /**
+     * Create an airtag owned by a player.
+     *
+     * @param airtag The airtag id
+     * @param playerUuid The owning player's UUID
+     * @param playerName The owning player's name
+     * @return The number of rows inserted (0 if the airtag already exists)
+     * @throws Exception Storage layer exception
+     */
+    int createAirtag(String airtag, UUID playerUuid, String playerName) throws Exception;
+
+    /**
+     * Delete the airtag association row for the given airtag id.
+     *
+     * @param airtag The airtag id
+     * @param playerUuid When non-null, the row is only deleted if it belongs to this player;
+     *     when null, the row is deleted regardless of owner
+     * @return The number of rows deleted (0 if no matching, owned airtag existed)
+     * @throws Exception Storage layer exception
+     */
+    int deleteAirtag(String airtag, UUID playerUuid) throws Exception;
+
+    /**
+     * Whether an airtag with the given id already exists in storage.
+     *
+     * @param airtag The airtag id
+     * @return True if a row with this airtag id exists
+     * @throws Exception Storage layer exception
+     */
+    boolean airtagExists(String airtag) throws Exception;
 
     /**
      * Get the connection pool status.
