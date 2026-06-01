@@ -135,16 +135,6 @@ public class SqlSchemaUpdater {
     }
 
     /**
-     * Update schema from 401 to 402.
-     *
-     * @param dslContext The DSL context
-     */
-    protected void update401To402(DSLContext dslContext) {
-        loggingService.info("Updating schema from 401 to 402...");
-        update401To402Shared(dslContext);
-    }
-
-    /**
      * Shared logic updating the schema from 4oo to 401.
      *
      * @param dslContext - The DSL context
@@ -219,11 +209,25 @@ public class SqlSchemaUpdater {
     }
 
     /**
-     * Shared logic for the 401 to 402 update — just bumps the recorded schema version.
+     * Update schema from 401 to 402.
+     *
+     * @param dslContext The DSL context
+     */
+    protected void update401To402(DSLContext dslContext) {
+        loggingService.info("Updating schema from 401 to 402...");
+
+        update401To402Shared(dslContext);
+    }
+
+    /**
+     * Shared logic updating the schema from 401 to 402.
      *
      * @param dslContext The DSL context
      */
     protected void update401To402Shared(DSLContext dslContext) {
+        loggingService.info("Updating schema from 401 to 402...");
+
+        // Update the schema version
         dslContext.update(PRISM_META).set(PRISM_META.V, "402").where(PRISM_META.K.eq("schema_ver")).execute();
 
         loggingService.info("Schema updated to 402.");

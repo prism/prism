@@ -248,6 +248,30 @@ public class MysqlStorageAdapter extends AbstractSqlStorageAdapter {
 
     @Override
     protected void prepareSchema() throws Exception {
+        // Ensure the database default character set is utf8mb4 before any tables or
+        // stored procedures are created. Both inherit the database default, so this
+        // makes fresh installs able to store 4-byte characters (e.g. private-use
+        // resource pack glyphs in item names).
+        try (Connection connection = dataSource.getConnection(); Statement stmt = connection.createStatement()) {
+            stmt.execute(
+                String.format(
+                    "ALTER DATABASE `%s` CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci",
+                    dataSourceConfiguration.database()
+                )
+            );
+
+            // Tables and stored procedure parameters inherit character_set_database at
+            // creation time, and a connection caches that value when it is opened.
+            // Evict the pool so the DDL below runs on fresh connections that observe utf8mb4.
+            dataSource.getHikariPoolMXBean().softEvictConnections();
+        } catch (SQLException e) {
+            loggingService.warn(
+                "Could not set the database default character set to utf8mb4. If you store 4-byte " +
+                "characters you may need ALTER privilege on the database or to convert it manually. Error: {0}",
+                e.getMessage()
+            );
+        }
+
         super.prepareSchema();
 
         if (dataSourceConfiguration.useStoredProcedures()) {

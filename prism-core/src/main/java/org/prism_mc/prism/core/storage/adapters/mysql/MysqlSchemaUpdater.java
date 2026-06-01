@@ -20,7 +20,15 @@
 
 package org.prism_mc.prism.core.storage.adapters.mysql;
 
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ACTIONS;
 import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ACTIVITIES;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_BLOCKS;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_CAUSES;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ENTITY_TYPES;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_ITEMS;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_META;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_PLAYERS;
+import static org.prism_mc.prism.core.storage.adapters.sql.AbstractSqlStorageAdapter.PRISM_WORLDS;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -28,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.jooq.DSLContext;
+import org.jooq.Table;
 import org.prism_mc.prism.core.storage.adapters.sql.SqlSchemaUpdater;
 import org.prism_mc.prism.core.storage.dbo.Indexes;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
@@ -119,7 +128,26 @@ public class MysqlSchemaUpdater extends SqlSchemaUpdater {
 
     @Override
     protected void update401To402(DSLContext dslContext) {
-        loggingService.info("Updating schema from 401 to 402...");
+        Table<?>[] tables = {
+            PRISM_ACTIONS,
+            PRISM_ACTIVITIES,
+            PRISM_BLOCKS,
+            PRISM_CAUSES,
+            PRISM_ENTITY_TYPES,
+            PRISM_ITEMS,
+            PRISM_META,
+            PRISM_PLAYERS,
+            PRISM_WORLDS,
+        };
+
+        for (Table<?> table : tables) {
+            dslContext.execute(
+                String.format(
+                    "ALTER TABLE `%s` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
+                    table.getName()
+                )
+            );
+        }
 
         dslContext.execute(
             String.format("ALTER TABLE `%s` MODIFY COLUMN `serialized_data` LONGTEXT", PRISM_ACTIVITIES.getName())
