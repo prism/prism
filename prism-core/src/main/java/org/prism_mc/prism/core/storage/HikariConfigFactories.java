@@ -116,6 +116,8 @@ public class HikariConfigFactories {
             "jdbc:" + (enableSpy ? "p6spy:" : "") + String.format("mariadb://%s:%s/%s", host, port, database)
         );
 
+        hikariConfig.setConnectionInitSql("SET NAMES utf8mb4");
+
         if (storageConfiguration.mariadb().useHikariOptimizations()) applyHikariOptimizations(hikariConfig);
 
         hikariConfig.setTransactionIsolation("TRANSACTION_READ_COMMITTED");
@@ -148,8 +150,12 @@ public class HikariConfigFactories {
         String database = storageConfiguration.mysql().database();
 
         hikariConfig.setJdbcUrl(
-            "jdbc:" + (enableSpy ? "p6spy:" : "") + String.format("mysql://%s:%s/%s", host, port, database)
+            "jdbc:" +
+            (enableSpy ? "p6spy:" : "") +
+            String.format("mysql://%s:%s/%s?characterEncoding=UTF-8", host, port, database)
         );
+
+        hikariConfig.setConnectionInitSql("SET NAMES utf8mb4");
 
         if (storageConfiguration.mysql().useHikariOptimizations()) applyHikariOptimizations(hikariConfig);
 
