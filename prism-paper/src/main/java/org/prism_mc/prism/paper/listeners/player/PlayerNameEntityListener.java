@@ -46,9 +46,9 @@ public class PlayerNameEntityListener extends AbstractListener implements Listen
      */
     @Inject
     public PlayerNameEntityListener(
-            ConfigurationService configurationService,
-            ExpectationService expectationService,
-            PaperRecordingService recordingService
+        ConfigurationService configurationService,
+        ExpectationService expectationService,
+        PaperRecordingService recordingService
     ) {
         super(configurationService, expectationService, recordingService);
     }
@@ -76,10 +76,10 @@ public class PlayerNameEntityListener extends AbstractListener implements Listen
         }
 
         var activity = PaperActivity.builder()
-                .action(action)
-                .location(event.getEntity().getLocation())
-                .cause(event.getPlayer())
-                .build();
+            .action(action)
+            .location(event.getEntity().getLocation())
+            .cause(event.getPlayer())
+            .build();
 
         recordingService.addToQueue(activity);
     }
