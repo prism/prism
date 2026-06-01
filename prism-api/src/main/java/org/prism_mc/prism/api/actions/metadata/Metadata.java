@@ -40,6 +40,7 @@ public class Metadata {
         SIGN_LINE_4,
         USING,
         ORIGINAL_MESSAGE,
+        NEW_NAME,
     }
 
     @Getter
@@ -90,6 +91,17 @@ public class Metadata {
          */
         public MetadataBuilder originalMessage(final String value) {
             entry(MetadataKey.ORIGINAL_MESSAGE.toString().toLowerCase(Locale.ENGLISH), value);
+            return this;
+        }
+
+        /**
+         * Sets the new name metadata
+         *
+         * @param value The new name
+         * @return The builder
+         */
+        public MetadataBuilder newName(final String value) {
+            entry(MetadataKey.NEW_NAME.toString().toLowerCase(Locale.ENGLISH), value);
             return this;
         }
     }

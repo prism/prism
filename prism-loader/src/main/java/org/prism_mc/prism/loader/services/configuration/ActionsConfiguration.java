@@ -102,6 +102,9 @@ public class ActionsConfiguration {
     @Comment("entity-remove is when a player collects an entity, like fish with a water bucket.")
     private boolean entityRemove = true;
 
+    @Comment("entity-rename is when a player renames an entity using a nametag.")
+    private boolean entityRename = true;
+
     @Comment("entity-ride is when a player rides an entity.")
     private boolean entityRide = false;
 

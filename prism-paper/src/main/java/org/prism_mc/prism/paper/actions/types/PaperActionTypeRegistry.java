@@ -72,6 +72,7 @@ public class PaperActionTypeRegistry extends AbstractActionTypeRegistry {
         ActionResultType.REMOVES,
         true
     );
+    public static final ActionType ENTITY_RENAME = new EntityActionType("entity-rename", ActionResultType.REPLACES, false);
     public static final ActionType ENTITY_SHEAR = new EntityActionType("entity-shear", ActionResultType.CREATES, true);
     public static final ActionType ENTITY_RIDE = new EntityActionType("entity-ride", ActionResultType.NONE, false);
     public static final ActionType ENTITY_TRANSFORM = new EntityActionType(
@@ -207,6 +208,7 @@ public class PaperActionTypeRegistry extends AbstractActionTypeRegistry {
         registerAction(ENTITY_LEASH);
         registerAction(ENTITY_PLACE);
         registerAction(ENTITY_REMOVE);
+        registerAction(ENTITY_RENAME);
         registerAction(ENTITY_RIDE);
         registerAction(ENTITY_SHEAR);
         registerAction(ENTITY_TRANSFORM);
