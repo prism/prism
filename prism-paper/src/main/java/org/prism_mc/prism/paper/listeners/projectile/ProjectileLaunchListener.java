@@ -25,6 +25,7 @@ import static org.prism_mc.prism.paper.api.activities.PaperActivity.enumNameToSt
 import com.google.inject.Inject;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Firework;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.ThrowableProjectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -69,16 +70,11 @@ public class ProjectileLaunchListener extends AbstractListener implements Listen
             return;
         }
 
+        var shooter = event.getEntity().getShooter();
+
         Action action = null;
         String descriptor = enumNameToString(event.getEntity().getType().name());
-        if (event.getEntity() instanceof ThrowableProjectile throwableProjectile) {
-            // Ignore if this event is disabled
-            if (!configurationService.prismConfig().actions().itemThrow()) {
-                return;
-            }
-
-            action = new PaperItemStackAction(PaperActionTypeRegistry.ITEM_THROW, throwableProjectile.getItem());
-        } else if (event.getEntity() instanceof Firework) {
+        if (event.getEntity() instanceof Firework) {
             // Ignore if this event is disabled
             if (!configurationService.prismConfig().actions().fireworkLaunch()) {
                 return;
@@ -91,13 +87,18 @@ public class ProjectileLaunchListener extends AbstractListener implements Listen
                 return;
             }
 
-            action = new GenericPaperAction(PaperActionTypeRegistry.ITEM_THROW, descriptor);
+            if (!(shooter instanceof Player)) {
+                return;
+            }
+
+            if (event.getEntity() instanceof ThrowableProjectile throwableProjectile) {
+                action = new PaperItemStackAction(PaperActionTypeRegistry.ITEM_THROW, throwableProjectile.getItem());
+            } else {
+                action = new GenericPaperAction(PaperActionTypeRegistry.ITEM_THROW, descriptor);
+            }
         }
 
-        var builder = PaperActivity.builder()
-            .action(action)
-            .location(event.getLocation())
-            .cause(event.getEntity().getShooter());
+        var builder = PaperActivity.builder().action(action).location(event.getLocation()).cause(shooter);
 
         recordingService.addToQueue(builder.build());
     }
