@@ -42,8 +42,27 @@ public class VersionUtils {
     private static byte serverPatchVersion;
 
     static {
-        var segments = Bukkit.getServer().getBukkitVersion().split("-");
-        String[] split = segments[0].split("\\.");
+        String version = Bukkit.getServer().getBukkitVersion();
+
+        final int dashIndex = version.indexOf('-');
+
+        // Strip after "-"
+        if (dashIndex != -1) {
+            version = version.substring(0, dashIndex);
+        }
+
+        // Process Paper's version schema
+        final int buildIndex = version.indexOf(".build");
+        if (buildIndex != -1) {
+            version = version.substring(0, buildIndex);
+        } else {
+            final int localIndex = version.indexOf(".local");
+            if (localIndex != -1) {
+                version = version.substring(0, localIndex);
+            }
+        }
+
+        String[] split = version.split("\\.");
         serverMajorVersion = Byte.parseByte(split[0]);
         serverMinorVersion = split.length > 1 ? Byte.parseByte(split[1]) : 0;
         serverPatchVersion = split.length > 2 ? Byte.parseByte(split[2]) : 0;
