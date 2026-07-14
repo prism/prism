@@ -43,15 +43,17 @@ public class WorldsHandler extends ApiHandler {
      * @param objectMapper The object mapper
      * @param apiKey The API key
      * @param loggingService The logging service
+     * @param allowedOrigins The browser origins permitted to call the API cross-origin
      * @param storageAdapter The storage adapter
      */
     protected WorldsHandler(
         ObjectMapper objectMapper,
         String apiKey,
         LoggingService loggingService,
+        List<String> allowedOrigins,
         StorageAdapter storageAdapter
     ) {
-        super(objectMapper, apiKey, loggingService);
+        super(objectMapper, apiKey, loggingService, allowedOrigins);
         this.storageAdapter = storageAdapter;
     }
 

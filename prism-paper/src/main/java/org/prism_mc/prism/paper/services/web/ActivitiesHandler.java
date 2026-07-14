@@ -69,6 +69,7 @@ public class ActivitiesHandler extends ApiHandler {
      * @param objectMapper The object mapper
      * @param apiKey The API key
      * @param loggingService The logging service
+     * @param allowedOrigins The browser origins permitted to call the API cross-origin
      * @param storageAdapter The storage adapter
      * @param maxResults The maximum number of results a query may return
      */
@@ -76,10 +77,11 @@ public class ActivitiesHandler extends ApiHandler {
         ObjectMapper objectMapper,
         String apiKey,
         LoggingService loggingService,
+        List<String> allowedOrigins,
         StorageAdapter storageAdapter,
         int maxResults
     ) {
-        super(objectMapper, apiKey, loggingService);
+        super(objectMapper, apiKey, loggingService, allowedOrigins);
         this.storageAdapter = storageAdapter;
         this.maxResults = maxResults;
     }

@@ -28,6 +28,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 
@@ -49,20 +50,43 @@ public abstract class ApiHandler implements HttpHandler {
     private final LoggingService loggingService;
 
     /**
+     * Browser origins permitted to call the API cross-origin. Empty means CORS is disabled and the
+     * API is reachable same-origin only.
+     */
+    private final List<String> allowedOrigins;
+
+    /**
      * Constructor.
      *
      * @param objectMapper The object mapper
      * @param apiKey The API key
      * @param loggingService The logging service
+     * @param allowedOrigins The browser origins permitted to call the API cross-origin
      */
-    protected ApiHandler(ObjectMapper objectMapper, String apiKey, LoggingService loggingService) {
+    protected ApiHandler(
+        ObjectMapper objectMapper,
+        String apiKey,
+        LoggingService loggingService,
+        List<String> allowedOrigins
+    ) {
         this.objectMapper = objectMapper;
         this.apiKey = apiKey;
         this.loggingService = loggingService;
+        this.allowedOrigins = allowedOrigins;
     }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        applyCorsHeaders(exchange);
+
+        // Answer CORS preflight requests before authentication: they carry no Authorization header
+        // by design, and only need the CORS headers set above plus an empty success response.
+        if ("OPTIONS".equals(exchange.getRequestMethod())) {
+            exchange.sendResponseHeaders(204, -1);
+            exchange.close();
+            return;
+        }
+
         exchange.getResponseHeaders().set("Content-Type", "application/json");
 
         if (!authenticate(exchange)) {
@@ -81,6 +105,37 @@ public abstract class ApiHandler implements HttpHandler {
             loggingService.handleThrowable("Error handling web request: " + exchange.getRequestURI().getPath(), e);
             sendError(exchange, 500, "Internal server error");
         }
+    }
+
+    /**
+     * Apply CORS response headers when the request's Origin is permitted by the configuration. Does
+     * nothing when no origins are configured (the default), leaving the API same-origin only.
+     *
+     * @param exchange The HTTP exchange
+     */
+    private void applyCorsHeaders(HttpExchange exchange) {
+        String origin = exchange.getRequestHeaders().getFirst("Origin");
+        if (origin == null || allowedOrigins.isEmpty()) {
+            return;
+        }
+
+        boolean wildcard = allowedOrigins.contains("*");
+        if (!wildcard && !allowedOrigins.contains(origin)) {
+            return;
+        }
+
+        var responseHeaders = exchange.getResponseHeaders();
+        if (wildcard) {
+            responseHeaders.set("Access-Control-Allow-Origin", "*");
+        } else {
+            // Echo the specific origin and vary on it so shared caches don't serve one origin's
+            // response to another.
+            responseHeaders.set("Access-Control-Allow-Origin", origin);
+            responseHeaders.set("Vary", "Origin");
+        }
+        responseHeaders.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+        responseHeaders.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
+        responseHeaders.set("Access-Control-Max-Age", "3600");
     }
 
     /**
