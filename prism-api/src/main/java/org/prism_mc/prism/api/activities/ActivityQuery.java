@@ -239,6 +239,11 @@ public class ActivityQuery {
     private Boolean reversed;
 
     /**
+     * The name of an additional player the results should be shown to.
+     */
+    private String shareWith;
+
+    /**
      * The sort direction.
      */
     @Builder.Default

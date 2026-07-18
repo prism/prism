@@ -63,7 +63,8 @@ public class PrismFlags {
         new Definition("ph", "physics", Boolean.class),
         new Definition("rd", "removedrops", Boolean.class),
         new Definition("c", "count", null),
-        new Definition("s", "sort", String.class)
+        new Definition("s", "sort", String.class),
+        new Definition("sh", "share", String.class)
     );
 
     /** Flags exposed only by {@code /pr purge start}. */

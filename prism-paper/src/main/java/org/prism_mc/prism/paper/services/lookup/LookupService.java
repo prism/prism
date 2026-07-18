@@ -102,23 +102,16 @@ public class LookupService {
         prismScheduler.runAsync(() -> {
             try {
                 var paginationResult = storageAdapter.queryActivitiesPaginated(query);
-                var paginationHandler = createPaginationHandler(
-                    sender,
-                    paginationResult,
-                    page -> {
-                        paginationResult.currentPage(page);
 
-                        final ActivityQuery newQuery = query.toBuilder().offset(paginationResult.offset()).build();
-                        lookup(sender, newQuery);
-                    },
-                    query
-                );
+                showResults(sender, paginationResult, query, null);
 
-                Runnable showTask = () -> paginationService.show(sender, paginationHandler);
-                if (sender instanceof Player player) {
-                    prismScheduler.runForEntity(player, showTask);
-                } else {
-                    prismScheduler.runGlobal(showTask);
+                if (query.shareWith() != null) {
+                    prismScheduler.runGlobal(() -> {
+                        Player recipient = Bukkit.getPlayerExact(query.shareWith());
+                        if (recipient != null && !isSameSender(sender, recipient)) {
+                            showResults(recipient, paginationResult, query, sender.getName());
+                        }
+                    });
                 }
             } catch (Exception ex) {
                 loggingService.handleException(ex);
@@ -130,6 +123,60 @@ public class LookupService {
                 }
             }
         });
+    }
+
+    /**
+     * Render a page of results to a single viewer and cache the pagination handler for them so
+     * they can page independently. The query runs once in {@link #lookup(CommandSender, ActivityQuery)};
+     * this only handles per-viewer rendering and scheduling.
+     *
+     * @param viewer The viewer to show the results to
+     * @param paginationResult The already-computed page of results
+     * @param query The activity query
+     * @param sharedBy The name of the player who shared these results, or null when the viewer ran
+     *     the query themselves
+     */
+    private void showResults(
+        CommandSender viewer,
+        ListPaginationResult<AbstractActivity> paginationResult,
+        ActivityQuery query,
+        String sharedBy
+    ) {
+        var paginationHandler = createPaginationHandler(
+            viewer,
+            paginationResult,
+            page -> {
+                // Paging is private to the viewer, so drop the share target: navigating pages
+                // must never re-broadcast to the other player.
+                final ActivityQuery newQuery = query
+                    .toBuilder()
+                    .offset(paginationResult.offsetForPage(page))
+                    .shareWith(null)
+                    .build();
+                lookup(viewer, newQuery);
+            },
+            query,
+            sharedBy
+        );
+
+        Runnable showTask = () -> paginationService.show(viewer, paginationHandler);
+        if (viewer instanceof Player player) {
+            prismScheduler.runForEntity(player, showTask);
+        } else {
+            prismScheduler.runGlobal(showTask);
+        }
+    }
+
+    /**
+     * Determine whether a resolved recipient is the same as the command sender, so a player who
+     * shares with themselves is not shown the results twice.
+     *
+     * @param sender The command sender
+     * @param recipient The resolved share recipient
+     * @return True if they are the same player
+     */
+    private boolean isSameSender(CommandSender sender, Player recipient) {
+        return sender instanceof Player player && player.getUniqueId().equals(recipient.getUniqueId());
     }
 
     /**
@@ -150,6 +197,15 @@ public class LookupService {
                             }
 
                             messageService.countResult(sender, count);
+
+                            // The share flag additionally shows the count to another player.
+                            if (query.shareWith() != null) {
+                                Player recipient = Bukkit.getPlayerExact(query.shareWith());
+                                if (recipient != null && !isSameSender(sender, recipient)) {
+                                    messageService.sharedResults(recipient, sender.getName());
+                                    messageService.countResult(recipient, count);
+                                }
+                            }
                         });
                 } catch (Exception ex) {
                     loggingService.handleException(ex);
@@ -202,41 +258,48 @@ public class LookupService {
     }
 
     /**
-     * Display paginated lookup results to a command sender.
+     * Display paginated lookup results to a viewer.
      *
-     * @param sender The command sender
+     * @param viewer The viewer to render the results to
      * @param paginationSource The pagination source
+     * @param paginator The paginator
+     * @param query The activity query
+     * @param sharedBy The name of the player who shared these results, or null when the viewer ran
+     *     the query themselves
      */
     private PaginationHandler<AbstractActivity> createPaginationHandler(
-        CommandSender sender,
+        CommandSender viewer,
         ListPaginationResult<AbstractActivity> paginationSource,
         PaginationHandler.Paginator paginator,
-        ActivityQuery query
+        ActivityQuery query,
+        String sharedBy
     ) {
         return new PaginationHandler<>(
             paginationSource,
             paginator,
             () -> {
-                if (!query.defaultsUsed().isEmpty()) {
-                    messageService.defaultsUsed(sender, String.join(" ", query.defaultsUsed()));
+                if (sharedBy != null) {
+                    messageService.sharedResults(viewer, sharedBy);
+                } else if (!query.defaultsUsed().isEmpty()) {
+                    messageService.defaultsUsed(viewer, String.join(" ", query.defaultsUsed()));
                 }
             },
             activity -> {
                 if (activity instanceof GroupedActivity groupedActivity) {
                     if (activity.action().type().usesDescriptor() && groupedActivity.count() > 1) {
-                        messageService.listActivityRowGrouped(sender, activity);
+                        messageService.listActivityRowGrouped(viewer, activity);
                     } else if (activity.action().type().usesDescriptor() && groupedActivity.count() == 1) {
-                        messageService.listActivityRowGroupedNoQuantity(sender, activity);
+                        messageService.listActivityRowGroupedNoQuantity(viewer, activity);
                     } else if (!activity.action().type().usesDescriptor() && groupedActivity.count() == 1) {
-                        messageService.listActivityRowGroupedNoDescriptorNoQuantity(sender, activity);
+                        messageService.listActivityRowGroupedNoDescriptorNoQuantity(viewer, activity);
                     } else {
-                        messageService.listActivityRowGroupedNoDescriptor(sender, activity);
+                        messageService.listActivityRowGroupedNoDescriptor(viewer, activity);
                     }
                 } else {
                     if (activity.action().type().usesDescriptor()) {
-                        messageService.listActivityRowUngrouped(sender, activity);
+                        messageService.listActivityRowUngrouped(viewer, activity);
                     } else {
-                        messageService.listActivityRowUngroupedNoDescriptor(sender, activity);
+                        messageService.listActivityRowUngroupedNoDescriptor(viewer, activity);
                     }
                 }
             }
