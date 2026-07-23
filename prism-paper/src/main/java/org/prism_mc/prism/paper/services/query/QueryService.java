@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -520,6 +521,17 @@ public class QueryService {
                     // Ignore invalid configured default
                 }
             }
+        }
+
+        Optional<String> shareFlag = arguments.getFlagValue("share", String.class);
+        if (shareFlag.isPresent()) {
+            Player target = Bukkit.getPlayerExact(shareFlag.get());
+            if (target == null) {
+                messageService.errorPlayerNotFound(sender, shareFlag.get());
+                return Optional.empty();
+            }
+
+            builder.shareWith(target.getName());
         }
 
         // If an ID is provided, no other parameters matter

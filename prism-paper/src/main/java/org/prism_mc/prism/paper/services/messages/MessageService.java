@@ -68,6 +68,9 @@ public interface MessageService {
     @Message("prism.defaults-used")
     void defaultsUsed(CommandSender receiver, @Placeholder String defaults);
 
+    @Message("prism.shared-results")
+    void sharedResults(CommandSender receiver, @Placeholder String player);
+
     @Message("prism.error.console-only")
     void errorConsoleOnly(CommandSender receiver);
 
@@ -169,6 +172,9 @@ public interface MessageService {
 
     @Message("prism.error.limit-value-not-allowed")
     void errorLimitValueNotAllowed(CommandSender receiver, @Placeholder String param, @Placeholder String value);
+
+    @Message("prism.error.player-not-found")
+    void errorPlayerNotFound(CommandSender receiver, @Placeholder String player);
 
     @Message("prism.error.player-only")
     void errorPlayerOnly(CommandSender receiver);
