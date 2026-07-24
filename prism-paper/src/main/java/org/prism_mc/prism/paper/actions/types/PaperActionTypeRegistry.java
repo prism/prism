@@ -168,7 +168,7 @@ public class PaperActionTypeRegistry extends AbstractActionTypeRegistry {
         false,
         false
     );
-    public static final ActionType SIGN_EDIT = new BlockActionType("sign-edit", ActionResultType.CREATES, false);
+    public static final ActionType SIGN_EDIT = new BlockActionType("sign-edit", ActionResultType.REPLACES, true);
     public static final ActionType VEHICLE_BREAK = new EntityActionType(
         "vehicle-break",
         ActionResultType.REMOVES,

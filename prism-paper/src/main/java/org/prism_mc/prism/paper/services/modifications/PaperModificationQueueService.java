@@ -800,6 +800,13 @@ public class PaperModificationQueueService implements ModificationQueueService {
                         NBT.modify(liveState, nbt -> {
                             nbt.mergeCompound(block.oldTileNbt());
                         });
+
+                        // In-place tile edits (e.g. sign-edit) replay identical block data, so
+                        // setBlockData sends no client update and the merged tile NBT never
+                        // reaches players. Force a block-entity update to broadcast it.
+                        if (writtenData.matches(replacedData)) {
+                            live.getState().update(true, physics);
+                        }
                     }
 
                     // Double-chest halves are separate snapshots. Re-placing one must reconnect its

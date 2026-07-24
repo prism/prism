@@ -222,20 +222,6 @@ public class PaperBlockAction extends PaperAction implements BlockAction {
         return this.readWriteNbt != null;
     }
 
-    /**
-     * Allow merging in custom NBT data if we need to override something.
-     *
-     * @param nbtString The nbt string
-     */
-    public void mergeCompound(String nbtString) {
-        if (readWriteNbt != null) {
-            readWriteNbt.mergeCompound(NBT.parseNBT(nbtString));
-
-            // Mutating the container invalidates any cached serialization.
-            serializedCustomData = null;
-        }
-    }
-
     @Override
     public @Nullable String serializeCustomData() {
         if (this.readWriteNbt == null) {
@@ -333,6 +319,18 @@ public class PaperBlockAction extends PaperAction implements BlockAction {
             if (mode.equals(ModificationQueueMode.COMPLETING) && finalBlockData instanceof Chest chest) {
                 BlockUtils.downgradeChestPartner(block, chest, applyPhysics);
             }
+        } else if (type().resultType().equals(ActionResultType.REPLACES) && readWriteNbt != null) {
+            undoEntry = setBlock(
+                activityContext,
+                block,
+                location,
+                finalBlockData,
+                finalBlockData,
+                replacedTileState(false),
+                owner,
+                mode,
+                applyPhysics
+            );
         }
 
         return resultBuilder.undoEntry(undoEntry).build();
@@ -420,9 +418,63 @@ public class PaperBlockAction extends PaperAction implements BlockAction {
             if (mode.equals(ModificationQueueMode.COMPLETING) && finalBlockData instanceof Chest chest) {
                 BlockUtils.downgradeChestPartner(block, chest, applyPhysics);
             }
+        } else if (type().resultType().equals(ActionResultType.REPLACES)) {
+            ReadWriteNBT restoreNbt = replacedTileState(true);
+            if (restoreNbt != null) {
+                undoEntry = setBlock(
+                    activityContext,
+                    block,
+                    location,
+                    finalBlockData,
+                    finalBlockData,
+                    restoreNbt,
+                    owner,
+                    mode,
+                    applyPhysics
+                );
+            }
         }
 
         return resultBuilder.undoEntry(undoEntry).build();
+    }
+
+    /**
+     * Resolve the tile snapshot to apply for a REPLACES modification.
+     *
+     * @param after True for the post-edit (restore) snapshot, false for pre-edit (rollback)
+     * @return The tile snapshot, or null when no custom data was stored
+     */
+    protected @Nullable ReadWriteNBT replacedTileState(boolean after) {
+        if (readWriteNbt == null) {
+            return null;
+        }
+
+        if (readWriteNbt.hasTag("before") && readWriteNbt.hasTag("after")) {
+            return readWriteNbt.getCompound(after ? "after" : "before");
+        }
+
+        return readWriteNbt;
+    }
+
+    /**
+     * Capture the post-edit tile snapshot for a reversible replace.
+     *
+     * @param blockState The post-edit block state
+     */
+    public void captureReplacedTileState(BlockState blockState) {
+        if (readWriteNbt == null || !(blockState instanceof TileState)) {
+            return;
+        }
+
+        ReadWriteNBT after = NBT.createNBTObject();
+        NBT.get(blockState, after::mergeCompound);
+
+        ReadWriteNBT snapshots = NBT.createNBTObject();
+        snapshots.getOrCreateCompound("before").mergeCompound(readWriteNbt);
+        snapshots.getOrCreateCompound("after").mergeCompound(after);
+
+        this.readWriteNbt = snapshots;
+        this.serializedCustomData = null;
     }
 
     /**
@@ -567,6 +619,15 @@ public class PaperBlockAction extends PaperAction implements BlockAction {
             NBT.modify(newLiveState, nbt -> {
                 nbt.mergeCompound(readWriteNbt);
             });
+
+            // An in-place tile edit (e.g. a sign-edit rollback) rewrites the block with the
+            // same data it already has, so the setBlockData above is a no-op at the server
+            // level and sends no packet — and NBT.modify never broadcasts on its own. The
+            // merged tile NBT is applied server-side but clients keep rendering the stale
+            // state. Force a block-entity update so the reverted text/contents are sent.
+            if (newBlockData.matches(oldLiveData)) {
+                block.getState().update(true, physics);
+            }
         }
 
         return new BlockUndoEntry(
