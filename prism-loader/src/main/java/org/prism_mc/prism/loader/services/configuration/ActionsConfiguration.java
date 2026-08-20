@@ -170,8 +170,7 @@ public class ActionsConfiguration {
     @Comment(
         """
         item-despawn is when an item entity naturally despawns from age (5 minutes by default).
-        Note: this toggle currently has no effect. Only airtagged items are logged for this event,
-        and they are always logged. Full toggle support will be implemented in the future."""
+        Enabling this records every despawning item and can produce a lot of data."""
     )
     private boolean itemDespawn = false;
 
@@ -179,10 +178,9 @@ public class ActionsConfiguration {
         """
         item-destroy is when an item entity is destroyed by the environment - lava, fire,
         cactus, the void, or an explosion.
-        Note: this toggle currently has no effect. Only airtagged items are logged for this event,
-        and they are always logged. Full toggle support will be implemented in the future."""
+        Enabling this records every destroyed item and can produce a lot of data."""
     )
-    private boolean itemDestroy = true;
+    private boolean itemDestroy = false;
 
     @Comment(
         """
