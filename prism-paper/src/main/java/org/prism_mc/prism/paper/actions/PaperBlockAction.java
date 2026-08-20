@@ -49,6 +49,7 @@ import org.prism_mc.prism.api.util.Coordinate;
 import org.prism_mc.prism.paper.api.containers.PaperBlockContainer;
 import org.prism_mc.prism.paper.services.modifications.BlockUndoEntry;
 import org.prism_mc.prism.paper.utils.BlockUtils;
+import org.prism_mc.prism.paper.utils.TagLib;
 
 public class PaperBlockAction extends PaperAction implements BlockAction {
 
@@ -276,12 +277,19 @@ public class PaperBlockAction extends PaperAction implements BlockAction {
             finalReplacedBlockData = Bukkit.createBlockData(Material.AIR);
         }
 
+        finalReplacedBlockData = airIfTransient(finalReplacedBlockData);
+
         var location = location(activityContext.worldUuid(), activityContext.coordinate());
         var block = location.getWorld().getBlockAt(location);
         var applyPhysics = modificationRuleset.applyPhysics();
 
         BlockUndoEntry undoEntry = null;
         if (type().resultType().equals(ActionResultType.REMOVES)) {
+            var canWrite = canWrite(finalBlockData, activityContext);
+            if (canWrite != null) {
+                return canWrite;
+            }
+
             var canSet = canSet(block, finalBlockData, modificationRuleset, activityContext);
             if (canSet != null) {
                 return canSet;
@@ -356,12 +364,19 @@ public class PaperBlockAction extends PaperAction implements BlockAction {
             }
         }
 
+        finalReplacedBlockData = airIfTransient(finalReplacedBlockData);
+
         var location = location(activityContext.worldUuid(), activityContext.coordinate());
         var block = location.getWorld().getBlockAt(location);
         var applyPhysics = modificationRuleset.applyPhysics();
 
         BlockUndoEntry undoEntry = null;
         if (type().resultType().equals(ActionResultType.CREATES)) {
+            var canWrite = canWrite(finalBlockData, activityContext);
+            if (canWrite != null) {
+                return canWrite;
+            }
+
             var canSet = canSet(block, finalBlockData, modificationRuleset, activityContext);
             if (canSet != null) {
                 return canSet;
@@ -424,6 +439,40 @@ public class PaperBlockAction extends PaperAction implements BlockAction {
         }
 
         return new Location(world, coordinate.x(), coordinate.y(), coordinate.z());
+    }
+
+    /**
+     * Determine whether block data may be written into the world at all.
+     *
+     * @param newBlockData The new block data
+     * @param activityContext The activity context
+     * @return A skipped result if the block data cannot be written, otherwise null
+     */
+    protected ModificationResult canWrite(@Nullable BlockData newBlockData, Activity activityContext) {
+        if (newBlockData != null && TagLib.TRANSIENT_BLOCKS.isTagged(newBlockData.getMaterial())) {
+            return ModificationResult.builder()
+                .activity(activityContext)
+                .skipped()
+                .target(blockContainer.translationKey())
+                .skipReason(ModificationSkipReason.NOT_APPLICABLE)
+                .build();
+        }
+
+        return null;
+    }
+
+    /**
+     * Reduce block data to air when it names a transient block.
+     *
+     * @param blockData The block data
+     * @return Air if the block data is transient, otherwise the block data
+     */
+    protected @Nullable BlockData airIfTransient(@Nullable BlockData blockData) {
+        if (blockData != null && TagLib.TRANSIENT_BLOCKS.isTagged(blockData.getMaterial())) {
+            return Bukkit.createBlockData(Material.AIR);
+        }
+
+        return blockData;
     }
 
     /**
@@ -506,16 +555,16 @@ public class PaperBlockAction extends PaperAction implements BlockAction {
         // so /pr undo can replay world state without re-deriving from the log.
         BlockData oldLiveData = block.getBlockData();
         ReadWriteNBT oldLiveNbt = null;
-        if (block.getState() instanceof TileState) {
+        if (block.getState() instanceof TileState oldLiveState) {
             oldLiveNbt = NBT.createNBTObject();
-            NBT.get(block.getState(), oldLiveNbt::mergeCompound);
+            NBT.get(oldLiveState, oldLiveNbt::mergeCompound);
         }
 
         block.setBlockData(newBlockData, physics);
 
-        // Set NBT for the new state (e.g., restoring chest contents)
-        if (block.getType() != Material.AIR && readWriteNbt != null) {
-            NBT.modify(block.getState(), nbt -> {
+        // Set NBT for the new state, while ensuring the written block is a valid block entity
+        if (readWriteNbt != null && block.getState() instanceof TileState newLiveState) {
+            NBT.modify(newLiveState, nbt -> {
                 nbt.mergeCompound(readWriteNbt);
             });
         }

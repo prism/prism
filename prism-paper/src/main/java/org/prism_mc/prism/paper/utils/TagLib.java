@@ -42,6 +42,17 @@ public class TagLib {
     );
 
     /**
+     * Blocks that exist only for the duration of a world mechanic and never at rest.
+     *
+     * <p>minecraft:moving_piston occupies a cell for the two ticks a piston is pushing or
+     * pulling, backed by a block entity the server only creates as part of that push. A plain
+     * setBlockData cannot recreate it, so re-placing one leaves an invisible, undrivable ghost
+     * that occupies the cell. The cell's real occupant once the push settles - the pushed block
+     * or the piston head - is recorded separately and restores on its own.</p>
+     */
+    public static final CustomTag<Material> TRANSIENT_BLOCKS = new CustomTag<>(Material.class, Material.MOVING_PISTON);
+
+    /**
      * Some blocks are always "waterlogged" and not actually subclasses of Waterlogged.
      */
     public static final CustomTag<Material> WATER_BLOCKS = new CustomTag<>(

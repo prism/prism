@@ -39,6 +39,7 @@ import javax.annotation.Nullable;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.command.CommandSender;
@@ -63,6 +64,7 @@ import org.prism_mc.prism.loader.services.logging.LoggingService;
 import org.prism_mc.prism.paper.services.messages.MessageService;
 import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 import org.prism_mc.prism.paper.utils.BlockUtils;
+import org.prism_mc.prism.paper.utils.TagLib;
 
 @Singleton
 public class PaperModificationQueueService implements ModificationQueueService {
@@ -776,14 +778,26 @@ public class PaperModificationQueueService implements ModificationQueueService {
                     BlockData writtenData = block.oldBlockData();
                     BlockData replacedData = block.newBlockData();
 
+                    // The snapshot is taken from the live world, so it can catch a block mid-mechanic
+                    // that no plain write can reproduce. Replaying one would strand a ghost block, so
+                    // leave the cell as the modification left it.
+                    if (TagLib.TRANSIENT_BLOCKS.isTagged(writtenData.getMaterial())) {
+                        skipped[0]++;
+                        continue;
+                    }
+
                     boolean physics = writtenData.getMaterial() != org.bukkit.Material.AIR;
 
                     BlockUtils.reconcileBedPartner(live, writtenData, replacedData, physics);
                     BlockUtils.reconcileBisectedPartner(live, writtenData, replacedData, physics);
 
                     live.setBlockData(writtenData, physics);
-                    if (block.oldTileNbt() != null && live.getType() != org.bukkit.Material.AIR) {
-                        NBT.modify(live.getState(), nbt -> {
+
+                    // Same guard as the forward write in PaperBlockAction#setBlock: a snapshot
+                    // can carry tile NBT for a block whose block entity setBlockData cannot
+                    // recreate (minecraft:moving_piston), and NBT-API throws on such a state.
+                    if (block.oldTileNbt() != null && live.getState() instanceof TileState liveState) {
+                        NBT.modify(liveState, nbt -> {
                             nbt.mergeCompound(block.oldTileNbt());
                         });
                     }

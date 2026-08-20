@@ -26,16 +26,19 @@ import java.time.Duration;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.bukkit.GameMode;
+import org.prism_mc.prism.api.actions.BlockAction;
 import org.prism_mc.prism.api.actions.ItemAction;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.services.recording.RecordingService;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.loader.services.logging.LoggingService;
 import org.prism_mc.prism.paper.api.activities.PaperActivity;
+import org.prism_mc.prism.paper.api.containers.PaperBlockContainer;
 import org.prism_mc.prism.paper.api.containers.PaperPlayerContainer;
 import org.prism_mc.prism.paper.services.filters.PaperFilterService;
 import org.prism_mc.prism.paper.services.recording.wal.WalService;
 import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
+import org.prism_mc.prism.paper.utils.TagLib;
 
 @Singleton
 public class PaperRecordingService implements RecordingService {
@@ -154,6 +157,18 @@ public class PaperRecordingService implements RecordingService {
             activity instanceof PaperActivity paperActivity &&
             paperActivity.cause().container() instanceof PaperPlayerContainer paperPlayerContainer &&
             paperPlayerContainer.player().getGameMode().equals(GameMode.CREATIVE)
+        ) {
+            return false;
+        }
+
+        // Never record a block that only exists mid-mechanic. Such a block is gone by the time
+        // anyone queries for it and cannot be put back, so the record is dead weight that only
+        // surfaces as a failed modification later. Checked here rather than in the listeners
+        // because every recording path funnels through this method.
+        if (
+            activity.action() instanceof BlockAction blockAction &&
+            blockAction.blockContainer() instanceof PaperBlockContainer blockContainer &&
+            TagLib.TRANSIENT_BLOCKS.isTagged(blockContainer.blockData().getMaterial())
         ) {
             return false;
         }
