@@ -34,7 +34,6 @@ import org.prism_mc.prism.paper.actions.PaperItemStackAction;
 import org.prism_mc.prism.paper.actions.types.PaperActionTypeRegistry;
 import org.prism_mc.prism.paper.api.activities.PaperActivity;
 import org.prism_mc.prism.paper.listeners.AbstractListener;
-import org.prism_mc.prism.paper.services.airtags.Airtags;
 import org.prism_mc.prism.paper.services.expectations.ExpectationService;
 import org.prism_mc.prism.paper.services.recording.PaperRecordingService;
 import org.prism_mc.prism.paper.utils.ItemUtils;
@@ -74,16 +73,23 @@ public class EntityRemoveListener extends AbstractListener implements Listener {
         }
 
         ActionType actionType;
+        boolean configEnabled;
 
         switch (event.getCause()) {
-            case DESPAWN -> actionType = PaperActionTypeRegistry.ITEM_DESPAWN;
-            case OUT_OF_WORLD, DEATH, EXPLODE -> actionType = PaperActionTypeRegistry.ITEM_DESTROY;
+            case DESPAWN -> {
+                actionType = PaperActionTypeRegistry.ITEM_DESPAWN;
+                configEnabled = configurationService.prismConfig().actions().itemDespawn();
+            }
+            case OUT_OF_WORLD, DEATH, EXPLODE -> {
+                actionType = PaperActionTypeRegistry.ITEM_DESTROY;
+                configEnabled = configurationService.prismConfig().actions().itemDestroy();
+            }
             default -> {
                 return;
             }
         }
 
-        if (!Airtags.has(itemStack)) {
+        if (!shouldRecordItem(configEnabled, itemStack)) {
             return;
         }
 
