@@ -30,6 +30,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -60,10 +61,16 @@ import org.prism_mc.prism.api.containers.TranslatableContainer;
 import org.prism_mc.prism.api.util.Coordinate;
 import org.prism_mc.prism.api.util.Pair;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
+import org.prism_mc.prism.loader.services.logging.LoggingService;
 import org.prism_mc.prism.paper.services.translation.PaperTranslationService;
 
 @Singleton
 public class ActivityPlaceholderResolver implements IPlaceholderResolver<CommandSender, AbstractActivity, Component> {
+
+    /**
+     * The timestamp format used when the configured pattern is invalid.
+     */
+    private static final String DEFAULT_TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
     /**
      * The configuration service.
@@ -71,22 +78,35 @@ public class ActivityPlaceholderResolver implements IPlaceholderResolver<Command
     private final ConfigurationService configurationService;
 
     /**
+     * The logging service.
+     */
+    private final LoggingService loggingService;
+
+    /**
      * The translation service.
      */
     private final PaperTranslationService translationService;
 
     /**
+     * Timestamp formatters, keyed by the configured pattern.
+     */
+    private final Map<String, DateTimeFormatter> timestampFormatters = new ConcurrentHashMap<>();
+
+    /**
      * Construct an activity placeholder resolver.
      *
      * @param configurationService The configuration service
+     * @param loggingService The logging service
      * @param translationService The translation service
      */
     @Inject
     public ActivityPlaceholderResolver(
         ConfigurationService configurationService,
+        LoggingService loggingService,
         PaperTranslationService translationService
     ) {
         this.configurationService = configurationService;
+        this.loggingService = loggingService;
         this.translationService = translationService;
     }
 
@@ -377,10 +397,29 @@ public class ActivityPlaceholderResolver implements IPlaceholderResolver<Command
      */
     protected Component timestamp(long timestamp) {
         String pattern = configurationService.prismConfig().activities().timestampFormat();
-        String formatted = DateTimeFormatter.ofPattern(pattern)
-            .withZone(ZoneId.systemDefault())
-            .format(Instant.ofEpochSecond(timestamp));
+        DateTimeFormatter formatter = timestampFormatters.computeIfAbsent(pattern, this::timestampFormatter);
 
-        return Component.text(formatted);
+        return Component.text(formatter.format(Instant.ofEpochSecond(timestamp)));
+    }
+
+    /**
+     * Build a formatter for a configured timestamp pattern.
+     *
+     * @param pattern The configured pattern
+     * @return The formatter
+     */
+    private DateTimeFormatter timestampFormatter(String pattern) {
+        try {
+            return DateTimeFormatter.ofPattern(pattern).withZone(ZoneId.systemDefault());
+        } catch (IllegalArgumentException e) {
+            loggingService.warn(
+                "Invalid activities.timestamp-format \"{0}\": {1}. Falling back to \"{2}\".",
+                pattern,
+                e.getMessage(),
+                DEFAULT_TIMESTAMP_FORMAT
+            );
+
+            return DateTimeFormatter.ofPattern(DEFAULT_TIMESTAMP_FORMAT).withZone(ZoneId.systemDefault());
+        }
     }
 }
