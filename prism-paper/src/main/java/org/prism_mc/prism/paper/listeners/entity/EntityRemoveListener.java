@@ -22,9 +22,12 @@ package org.prism_mc.prism.paper.listeners.entity;
 
 import com.google.inject.Inject;
 import org.bukkit.entity.Item;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByBlockEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.inventory.ItemStack;
@@ -93,37 +96,57 @@ public class EntityRemoveListener extends AbstractListener implements Listener {
             return;
         }
 
-        // Resolve the cause label only once we know the activity will be recorded.
-        String causeLabel =
+        // Resolve the cause only once we know the activity will be recorded.
+        Object cause =
             switch (event.getCause()) {
                 case DESPAWN -> "despawn";
                 case OUT_OF_WORLD -> "void";
-                case DEATH -> labelFromLastDamage(item);
+                case DEATH -> causeFromLastDamage(item);
                 case EXPLODE -> "explosion";
                 default -> "damage";
             };
 
         var action = new PaperItemStackAction(actionType, itemStack);
-        var activity = PaperActivity.builder().action(action).location(item.getLocation()).cause(causeLabel).build();
+        var activity = PaperActivity.builder().action(action).location(item.getLocation()).cause(cause).build();
         recordingService.addToQueue(activity);
     }
 
     /**
-     * Convert the item's last damage cause into a short label for the activity cause.
+     * Convert the item's last damage cause into an activity cause.
+     *
+     * <p>The damaging entity or block is preferred because it names the real
+     * cause. Damage that identifies neither falls back to a short label.</p>
      *
      * @param item The item entity
-     * @return The cause label
+     * @return The cause
      */
-    private String labelFromLastDamage(Item item) {
+    private Object causeFromLastDamage(Item item) {
         EntityDamageEvent last = item.getLastDamageCause();
         if (last == null) {
             return "damage";
         }
 
+        if (last instanceof EntityDamageByEntityEvent entityDamageByEntityEvent) {
+            var damager = entityDamageByEntityEvent.getDamager();
+
+            if (damager instanceof Projectile projectile && projectile.getShooter() != null) {
+                return projectile.getShooter();
+            }
+
+            return damager;
+        }
+
+        if (last instanceof EntityDamageByBlockEvent entityDamageByBlockEvent) {
+            var damagerBlockState = entityDamageByBlockEvent.getDamagerBlockState();
+
+            if (damagerBlockState != null) {
+                return damagerBlockState;
+            }
+        }
+
         return switch (last.getCause()) {
             case LAVA -> "lava";
             case FIRE, FIRE_TICK -> "fire";
-            case CONTACT -> "cactus";
             case BLOCK_EXPLOSION, ENTITY_EXPLOSION -> "explosion";
             default -> "damage";
         };

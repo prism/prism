@@ -22,8 +22,6 @@ package org.prism_mc.prism.paper.listeners.vehicle;
 
 import com.google.inject.Inject;
 import org.bukkit.entity.ChestBoat;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -71,21 +69,11 @@ public class VehicleDestroyListener extends AbstractListener implements Listener
 
         var builder = PaperActivity.builder().action(action).location(location);
         if (event.getAttacker() != null) {
-            if (event.getAttacker() instanceof Player player) {
-                builder.cause(player);
-            } else {
-                builder.cause(event.getAttacker().toString());
-            }
+            builder.cause(event.getAttacker());
 
             recordingService.addToQueue(builder.build());
         } else if (!event.getVehicle().getPassengers().isEmpty()) {
-            Entity passenger = event.getVehicle().getPassengers().getFirst();
-
-            if (passenger instanceof Player player) {
-                builder.cause(player);
-            } else {
-                builder.cause(passenger.toString());
-            }
+            builder.cause(event.getVehicle().getPassengers().getFirst());
 
             recordingService.addToQueue(builder.build());
         }

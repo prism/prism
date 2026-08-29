@@ -67,6 +67,8 @@ public class BlockPistonRetractListener extends AbstractListener implements List
             return;
         }
 
+        var cause = PaperActivity.toCause(event.getBlock());
+
         for (Block block : event.getBlocks()) {
             // Ignore blocks that we already tracked or won't be affected
             if (
@@ -83,11 +85,7 @@ public class BlockPistonRetractListener extends AbstractListener implements List
                 newBlockLocation.getBlock().getState()
             );
 
-            var activity = PaperActivity.builder()
-                .action(action)
-                .location(newBlockLocation)
-                .cause(event.getBlock())
-                .build();
+            var activity = PaperActivity.builder().action(action).location(newBlockLocation).cause(cause).build();
 
             recordingService.addToQueue(activity);
         }

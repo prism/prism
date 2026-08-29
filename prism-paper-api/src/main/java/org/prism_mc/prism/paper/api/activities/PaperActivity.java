@@ -35,6 +35,8 @@ import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.TNTPrimeEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityUnleashEvent;
+import org.bukkit.event.world.PortalCreateEvent;
+import org.bukkit.projectiles.BlockProjectileSource;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.activities.Cause;
 import org.prism_mc.prism.api.containers.StringContainer;
@@ -94,6 +96,8 @@ public class PaperActivity extends Activity {
             return new Cause(new PaperBlockContainer(block.getState()));
         } else if (cause instanceof BlockState causeBlockState) {
             return new Cause(new PaperBlockContainer(causeBlockState));
+        } else if (cause instanceof BlockProjectileSource blockProjectileSource) {
+            return toCause(blockProjectileSource.getBlock());
         } else if (cause instanceof BlockIgniteEvent.IgniteCause igniteCause) {
             return new Cause(new StringContainer(enumNameToString(igniteCause.name())));
         } else if (cause instanceof EntityDamageEvent.DamageCause damageCause) {
@@ -104,6 +108,8 @@ public class PaperActivity extends Activity {
             return new Cause(new StringContainer(enumNameToString(unleashReason.name())));
         } else if (cause instanceof TNTPrimeEvent.PrimeCause primeCause) {
             return new Cause(new StringContainer(enumNameToString(primeCause.name())));
+        } else if (cause instanceof PortalCreateEvent.CreateReason createReason) {
+            return new Cause(new StringContainer(enumNameToString(createReason.name())));
         } else if (cause instanceof String causeStr) {
             return new Cause(new StringContainer(causeStr));
         }
