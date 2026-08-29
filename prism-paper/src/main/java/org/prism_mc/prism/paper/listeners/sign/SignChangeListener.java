@@ -20,11 +20,10 @@
 
 package org.prism_mc.prism.paper.listeners.sign;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import org.bukkit.block.sign.Side;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -32,25 +31,20 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.SignChangeEvent;
 import org.prism_mc.prism.api.actions.metadata.Metadata;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
-import org.prism_mc.prism.loader.services.logging.LoggingService;
 import org.prism_mc.prism.paper.actions.PaperBlockAction;
 import org.prism_mc.prism.paper.actions.types.PaperActionTypeRegistry;
 import org.prism_mc.prism.paper.api.activities.PaperActivity;
 import org.prism_mc.prism.paper.listeners.AbstractListener;
 import org.prism_mc.prism.paper.services.expectations.ExpectationService;
 import org.prism_mc.prism.paper.services.recording.PaperRecordingService;
+import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 
 public class SignChangeListener extends AbstractListener implements Listener {
 
     /**
-     * The logging service.
+     * The scheduler.
      */
-    private final LoggingService loggingService;
-
-    /**
-     * The object mapper
-     */
-    final ObjectMapper objectMapper = new ObjectMapper();
+    private final PrismScheduler prismScheduler;
 
     /**
      * Construct the listener.
@@ -58,17 +52,17 @@ public class SignChangeListener extends AbstractListener implements Listener {
      * @param configurationService The configuration service
      * @param expectationService The expectation service
      * @param recordingService The recording service
-     * @param loggingService The logging service
+     * @param prismScheduler The scheduler
      */
     @Inject
     public SignChangeListener(
         ConfigurationService configurationService,
         ExpectationService expectationService,
         PaperRecordingService recordingService,
-        LoggingService loggingService
+        PrismScheduler prismScheduler
     ) {
         super(configurationService, expectationService, recordingService);
-        this.loggingService = loggingService;
+        this.prismScheduler = prismScheduler;
     }
 
     /**
@@ -83,36 +77,29 @@ public class SignChangeListener extends AbstractListener implements Listener {
             return;
         }
 
-        try {
-            var lines = event
-                .lines()
-                .stream()
-                .map(line -> PlainTextComponentSerializer.plainText().serialize(line))
-                .toArray(String[]::new);
-            final Player player = event.getPlayer();
+        var lines = event
+            .lines()
+            .stream()
+            .map(line -> PlainTextComponentSerializer.plainText().serialize(line))
+            .toArray(String[]::new);
+        final Player player = event.getPlayer();
+        final var block = event.getBlock();
 
-            var signMetadata = Metadata.builder().signText(lines).build();
-            var action = new PaperBlockAction(
-                PaperActionTypeRegistry.SIGN_EDIT,
-                event.getBlock().getState(),
-                null,
-                signMetadata
-            );
-            var side = event.getSide().equals(Side.FRONT) ? "front_text" : "back_text";
+        var signMetadata = Metadata.builder().signText(lines).build();
+        var action = new PaperBlockAction(PaperActionTypeRegistry.SIGN_EDIT, block.getState(), null, signMetadata);
 
-            // Because the block state doesn't have the new lines from a sign change event,
-            // we need to fake it by merging in the text so it gets recorded.
-            action.mergeCompound(String.format("{%s:{messages:[%s]}}", side, objectMapper.writeValueAsString(lines)));
+        var activity = PaperActivity.builder().action(action).location(block.getLocation()).cause(player).build();
 
-            var activity = PaperActivity.builder()
-                .action(action)
-                .location(event.getBlock().getLocation())
-                .cause(player)
-                .build();
+        // The event fires before the new lines reach the block entity, and tile nbt is always
+        // read live, so the post-edit snapshot has to wait a tick. Reading it back from the
+        // sign lets the server encode the text in whatever format the running version uses.
+        prismScheduler.runAtLocation(block.getLocation(), () -> {
+            BlockState state = block.getState();
+            if (state instanceof Sign) {
+                action.captureReplacedTileState(state);
+            }
 
             recordingService.addToQueue(activity);
-        } catch (JsonProcessingException e) {
-            loggingService.handleException(e);
-        }
+        });
     }
 }
