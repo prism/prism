@@ -73,7 +73,7 @@ public class PortalCreateListener extends AbstractListener implements Listener {
             if (event.getEntity() != null) {
                 builder.cause(event.getEntity());
             } else {
-                builder.cause("nature");
+                builder.cause(event.getReason());
             }
 
             if (event.getReason().equals(PortalCreateEvent.CreateReason.FIRE)) {

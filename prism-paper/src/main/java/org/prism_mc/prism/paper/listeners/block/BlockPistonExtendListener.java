@@ -62,15 +62,26 @@ public class BlockPistonExtendListener extends AbstractListener implements Liste
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockPistonExtend(final BlockPistonExtendEvent event) {
+        var blockBreak = configurationService.prismConfig().actions().blockBreak();
+        var blockShift = configurationService.prismConfig().actions().blockShift();
+
+        if (!blockBreak && !blockShift) {
+            return;
+        }
+
+        var cause = PaperActivity.toCause(event.getBlock());
+
         // Allow tracking block-break of dragon eggs even if block-shift false
-        for (Block block : event.getBlocks()) {
-            if (block.getPistonMoveReaction().equals(PistonMoveReaction.BREAK)) {
-                recordBlockBreakAction(block, "piston");
+        if (blockBreak) {
+            for (Block block : event.getBlocks()) {
+                if (block.getPistonMoveReaction().equals(PistonMoveReaction.BREAK)) {
+                    recordBlockBreakAction(block, cause);
+                }
             }
         }
 
         // Ignore if this event is disabled
-        if (!configurationService.prismConfig().actions().blockShift()) {
+        if (!blockShift) {
             return;
         }
 
@@ -93,7 +104,7 @@ public class BlockPistonExtendListener extends AbstractListener implements Liste
                 newBlockLocation.getBlock().getState()
             );
 
-            var activity = PaperActivity.builder().action(action).location(newBlockLocation).cause("piston").build();
+            var activity = PaperActivity.builder().action(action).location(newBlockLocation).cause(cause).build();
 
             recordingService.addToQueue(activity);
         }

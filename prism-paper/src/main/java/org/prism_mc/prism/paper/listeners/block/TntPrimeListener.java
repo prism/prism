@@ -69,6 +69,8 @@ public class TntPrimeListener extends AbstractListener implements Listener {
 
         if (event.getPrimingEntity() != null) {
             builder.cause(event.getPrimingEntity());
+        } else if (event.getPrimingBlock() != null) {
+            builder.cause(event.getPrimingBlock());
         } else {
             builder.cause(event.getCause());
         }

@@ -33,7 +33,6 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.projectiles.BlockProjectileSource;
 import org.prism_mc.prism.api.actions.Action;
 import org.prism_mc.prism.loader.services.configuration.ConfigurationService;
 import org.prism_mc.prism.paper.actions.PaperEntityAction;
@@ -106,10 +105,6 @@ public class EntityDeathListener extends AbstractListener implements Listener {
 
                 if (causeObj instanceof Projectile projectile) {
                     causeObj = projectile.getShooter();
-
-                    if (causeObj instanceof BlockProjectileSource blockProjectileSource) {
-                        causeObj = blockProjectileSource.getBlock();
-                    }
                 }
             } else if (damageEvent instanceof EntityDamageByBlockEvent entityDamageByBlockEvent) {
                 causeObj = entityDamageByBlockEvent.getDamagerBlockState();
