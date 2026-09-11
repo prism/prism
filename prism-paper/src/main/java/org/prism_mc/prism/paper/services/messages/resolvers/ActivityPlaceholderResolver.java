@@ -207,6 +207,11 @@ public class ActivityPlaceholderResolver implements IPlaceholderResolver<Command
             return Component.translatable("prism.unknown-cause");
         } else if (cause.container() instanceof StringContainer stringContainer) {
             String value = stringContainer.value();
+
+            if (value.equalsIgnoreCase("unknown")) {
+                return Component.translatable("prism.unknown-cause");
+            }
+
             String key = "prism.cause." + value.toLowerCase(Locale.ROOT).replace(' ', '-').replace('_', '-');
             return Component.translatable().key(key).fallback(value).asComponent();
         } else if (cause.container() instanceof PlayerContainer playerContainer) {
