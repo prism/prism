@@ -20,6 +20,8 @@
 
 package org.prism_mc.prism.loader.services.configuration;
 
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 import org.spongepowered.configurate.objectmapping.meta.Comment;
@@ -54,6 +56,13 @@ public class WebConfiguration {
 
     @Comment("API key for authenticating web requests. Set this to a secure random value before enabling.")
     private String apiKey = "";
+
+    @Comment(
+        """
+        Browser origins permitted to call the web API cross-origin (CORS).
+        Only needed when the web UI is hosted separately from this server."""
+    )
+    private List<String> allowedOrigins = new ArrayList<>();
 
     @Comment("Maximum number of results returned per query.")
     private int maxResults = 1000;

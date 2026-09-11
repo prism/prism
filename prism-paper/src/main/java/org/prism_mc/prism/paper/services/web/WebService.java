@@ -27,6 +27,7 @@ import com.google.inject.name.Named;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.concurrent.Executors;
 import org.prism_mc.prism.api.services.recording.RecordingService;
 import org.prism_mc.prism.api.storage.StorageAdapter;
@@ -178,6 +179,7 @@ public class WebService {
             String storageType = configurationService.storageConfig().primaryStorageType().name().toLowerCase();
             int queueMaxCapacity = configurationService.prismConfig().recording().queueMaxCapacity();
             String walMode = configurationService.prismConfig().recording().walMode();
+            List<String> allowedOrigins = config.allowedOrigins();
 
             server = HttpServer.create(new InetSocketAddress(config.bindAddress(), config.port()), 0);
             server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
@@ -189,12 +191,19 @@ public class WebService {
             // API endpoints
             server.createContext(
                 prefix + "/api/v1/activities",
-                new ActivitiesHandler(objectMapper, apiKey, loggingService, storageAdapter, config.maxResults())
+                new ActivitiesHandler(
+                    objectMapper,
+                    apiKey,
+                    loggingService,
+                    allowedOrigins,
+                    storageAdapter,
+                    config.maxResults()
+                )
             );
 
             server.createContext(
                 prefix + "/api/v1/worlds",
-                new WorldsHandler(objectMapper, apiKey, loggingService, storageAdapter)
+                new WorldsHandler(objectMapper, apiKey, loggingService, allowedOrigins, storageAdapter)
             );
 
             server.createContext(
@@ -203,6 +212,7 @@ public class WebService {
                     objectMapper,
                     apiKey,
                     loggingService,
+                    allowedOrigins,
                     recordingService,
                     queueMaxCapacity
                 )
@@ -214,6 +224,7 @@ public class WebService {
                     objectMapper,
                     apiKey,
                     loggingService,
+                    allowedOrigins,
                     version,
                     storageType,
                     queueMaxCapacity,

@@ -81,6 +81,7 @@ public class StatusHandler extends ApiHandler {
      * @param objectMapper The object mapper
      * @param apiKey The API key
      * @param loggingService The logging service
+     * @param allowedOrigins The browser origins permitted to call the API cross-origin
      * @param version The plugin version
      * @param storageType The primary storage type
      * @param queueCapacity The recording queue capacity
@@ -94,6 +95,7 @@ public class StatusHandler extends ApiHandler {
         ObjectMapper objectMapper,
         String apiKey,
         LoggingService loggingService,
+        List<String> allowedOrigins,
         String version,
         String storageType,
         int queueCapacity,
@@ -103,7 +105,7 @@ public class StatusHandler extends ApiHandler {
         PurgeService purgeService,
         String defaultActivityRange
     ) {
-        super(objectMapper, apiKey, loggingService);
+        super(objectMapper, apiKey, loggingService, allowedOrigins);
         this.version = version;
         this.storageType = storageType;
         this.queueCapacity = queueCapacity;

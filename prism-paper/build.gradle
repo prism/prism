@@ -109,6 +109,25 @@ def buildWeb = tasks.register('buildWeb', Exec) {
 
 processResources.dependsOn buildWeb
 
+// Package the built web assets as a standalone, versioned zip so they can be
+// distributed independently of the plugin jar (e.g. served by a separate web
+// host). The assets keep the "__PRISM_BASE_PATH__" and "__PRISM_API_BASE_URL__"
+// placeholders because the deploy URL — root, sub-path, subdomain — is
+// unknowable at build time; the deployer replaces them per the docs website.
+// (In the bundled case the plugin rewrites the base path at serve time and an
+// untouched API placeholder means same-origin.) Emitted to
+// build/distributions/prism-web-<version>.zip.
+def webZip = tasks.register('webZip', Zip) {
+    dependsOn buildWeb
+    onlyIf { buildWebUi }
+    from webOutput
+    archiveBaseName = 'prism-web'
+    archiveVersion = project.version.toString()
+}
+
+// Produce the zip as part of a normal build (skipped when the web UI isn't built).
+assemble.dependsOn webZip
+
 gradle.taskGraph.whenReady { graph ->
     if (!graph.hasTask(tasks.getByName('processResources'))) {
         return

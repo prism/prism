@@ -23,6 +23,7 @@ package org.prism_mc.prism.paper.services.web;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.prism_mc.prism.api.activities.Activity;
 import org.prism_mc.prism.api.services.recording.RecordingService;
@@ -46,6 +47,7 @@ public class RecordingQueueReportHandler extends ApiHandler {
      * @param objectMapper The object mapper
      * @param apiKey The API key
      * @param loggingService The logging service
+     * @param allowedOrigins The browser origins permitted to call the API cross-origin
      * @param recordingService The recording service
      * @param queueMaxCapacity The recording queue capacity
      */
@@ -53,10 +55,11 @@ public class RecordingQueueReportHandler extends ApiHandler {
         ObjectMapper objectMapper,
         String apiKey,
         LoggingService loggingService,
+        List<String> allowedOrigins,
         RecordingService recordingService,
         int queueMaxCapacity
     ) {
-        super(objectMapper, apiKey, loggingService);
+        super(objectMapper, apiKey, loggingService, allowedOrigins);
         this.recordingService = recordingService;
         this.queueMaxCapacity = queueMaxCapacity;
     }

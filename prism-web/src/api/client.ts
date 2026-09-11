@@ -1,5 +1,16 @@
 const API_KEY_STORAGE_KEY = "prism-api-key";
 
+/**
+ * Placeholder for the absolute base URL of the Prism web server.
+ */
+const API_BASE_URL = "__PRISM_API_BASE_URL__";
+
+function apiBaseUrl(): string {
+  // An unreplaced placeholder still starts with "__"; anything else is a configured URL.
+  const configured = API_BASE_URL.startsWith("__") ? "" : API_BASE_URL.trim();
+  return configured ? configured.replace(/\/$/, "") : "";
+}
+
 type AuthErrorListener = () => void;
 const authErrorListeners = new Set<AuthErrorListener>();
 
@@ -27,9 +38,13 @@ export function clearApiKey(): void {
 }
 
 export async function apiFetch<T>(path: string): Promise<T> {
-  // Resolve the request against the app's base URL so it works when hosted under a sub-path.
-  // BASE_URL is slash-terminated ("/" or "/prism/"); strip the path's leading slash to join cleanly.
-  const url = `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
+  const base = apiBaseUrl();
+  // Standalone: apiBaseUrl already encodes scheme/host/port and any base path, so the API path is
+  // appended directly. Bundled: resolve against the app's own base URL so the request stays
+  // same-origin and honors the sub-path the plugin serves under (BASE_URL is slash-terminated).
+  const url = base
+    ? `${base}${path.startsWith("/") ? "" : "/"}${path}`
+    : `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${getApiKey()}` },
   });
