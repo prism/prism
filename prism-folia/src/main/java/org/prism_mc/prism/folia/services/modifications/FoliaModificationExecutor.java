@@ -171,7 +171,7 @@ public class FoliaModificationExecutor implements ModificationExecutor {
             regionLocations.add(regionLocation);
 
             // Clip the overall bounding box to this region's boundaries
-            BoundingBox regionBounds = regionBoundingBox(regionKey);
+            BoundingBox regionBounds = regionBoundingBox(world, regionKey.regionX, regionKey.regionZ);
             boolean[] regionPreProcessed = { false };
             // Persisted read pointer for PLANNING mode (see processRegionBatch).
             int[] regionReadIndex = { 0 };
@@ -239,8 +239,15 @@ public class FoliaModificationExecutor implements ModificationExecutor {
     ) {
         // Run pre-processing once on the first tick for this region
         if (!regionPreProcessed[0] && preProcessor != null) {
-            preProcessor.accept(world, regionBounds);
+            // Flag first, so a pre-processing failure doesn't repeat every tick
+            // and doesn't stop the batch itself from running and completing.
             regionPreProcessed[0] = true;
+
+            try {
+                preProcessor.accept(world, regionBounds);
+            } catch (Throwable t) {
+                loggingService.handleThrowable("A pre-modification error occurred.", t);
+            }
         }
 
         int iterationCount = 0;
@@ -320,13 +327,17 @@ public class FoliaModificationExecutor implements ModificationExecutor {
                 World regionWorld = regionLocation.getWorld();
                 int regionX = (int) Math.floor(regionLocation.getX()) >> REGION_BLOCK_SHIFT;
                 int regionZ = (int) Math.floor(regionLocation.getZ()) >> REGION_BLOCK_SHIFT;
-                BoundingBox regionBounds = regionBoundingBox(new RegionKey(regionWorld.getUID(), regionX, regionZ));
+                BoundingBox regionBounds = regionBoundingBox(regionWorld, regionX, regionZ);
 
-                postProcessor.accept(regionWorld, regionBounds);
-
-                if (postProcessRemaining.decrementAndGet() == 0) {
-                    // All regions post-processed, fire final completion
-                    onComplete.run();
+                try {
+                    postProcessor.accept(regionWorld, regionBounds);
+                } catch (Throwable t) {
+                    loggingService.handleThrowable("A post-modification error occurred.", t);
+                } finally {
+                    if (postProcessRemaining.decrementAndGet() == 0) {
+                        // All regions post-processed, fire final completion
+                        onComplete.run();
+                    }
                 }
             });
         }
@@ -335,14 +346,23 @@ public class FoliaModificationExecutor implements ModificationExecutor {
     /**
      * Compute the bounding box for a region in block coordinates.
      *
-     * @param key The region key
+     * @param world The world the region belongs to
+     * @param regionX The region x coordinate
+     * @param regionZ The region z coordinate
      * @return A bounding box covering the entire region
      */
-    private BoundingBox regionBoundingBox(RegionKey key) {
-        int minX = key.regionX * REGION_BLOCK_SIZE;
-        int minZ = key.regionZ * REGION_BLOCK_SIZE;
-        // Full world height range
-        return new BoundingBox(minX, -64, minZ, minX + REGION_BLOCK_SIZE, 320, minZ + REGION_BLOCK_SIZE);
+    private BoundingBox regionBoundingBox(World world, int regionX, int regionZ) {
+        int minX = regionX * REGION_BLOCK_SIZE;
+        int minZ = regionZ * REGION_BLOCK_SIZE;
+        // Full height range of this world, which is not always -64..320
+        return new BoundingBox(
+            minX,
+            world.getMinHeight(),
+            minZ,
+            minX + REGION_BLOCK_SIZE,
+            world.getMaxHeight(),
+            minZ + REGION_BLOCK_SIZE
+        );
     }
 
     /**

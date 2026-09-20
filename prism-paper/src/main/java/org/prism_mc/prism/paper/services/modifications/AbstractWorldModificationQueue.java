@@ -309,8 +309,8 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      * @param regionBounds The region-safe bounding box to clip operations to
      */
     protected void preProcess(World world, BoundingBox regionBounds) {
-        BoundingBox effectiveBox = modificationBoundingBox().intersection(regionBounds);
-        if (effectiveBox.getVolume() <= 0) {
+        BoundingBox effectiveBox = effectiveBoundingBox(regionBounds);
+        if (effectiveBox == null) {
             return;
         }
 
@@ -352,8 +352,8 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
             return;
         }
 
-        BoundingBox effectiveBox = modificationBoundingBox().intersection(regionBounds);
-        if (effectiveBox.getVolume() <= 0) {
+        BoundingBox effectiveBox = effectiveBoundingBox(regionBounds);
+        if (effectiveBox == null) {
             return;
         }
 
@@ -361,6 +361,23 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
         synchronized (this) {
             countMovedEntities += count;
         }
+    }
+
+    /**
+     * Clip the modification's bounding box to the given region bounds.
+     *
+     * @param regionBounds The region-safe bounding box to clip to
+     * @return The clipped box, or null if there is nothing to process here
+     */
+    private BoundingBox effectiveBoundingBox(BoundingBox regionBounds) {
+        BoundingBox boundingBox = modificationBoundingBox();
+        if (boundingBox.getVolume() <= 0 || !boundingBox.overlaps(regionBounds)) {
+            return null;
+        }
+
+        BoundingBox effectiveBox = boundingBox.intersection(regionBounds);
+
+        return effectiveBox.getVolume() <= 0 ? null : effectiveBox;
     }
 
     /**
