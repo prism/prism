@@ -241,7 +241,7 @@ public class WebService {
             server.createContext("/", new StaticFileHandler(prefix, config.baseHref()));
 
             server.start();
-            loggingService.info("Web server started on port {0}", config.port());
+            loggingService.info("Web server started on port {0}", String.valueOf(config.port()));
             return StartResult.STARTED;
         } catch (IOException e) {
             loggingService.error("Failed to start web server: {0}", e.getMessage());
