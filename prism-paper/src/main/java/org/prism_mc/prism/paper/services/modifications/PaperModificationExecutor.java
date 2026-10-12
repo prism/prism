@@ -48,20 +48,6 @@ import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 public class PaperModificationExecutor implements ModificationExecutor {
 
     /**
-     * A bounding box covering the full world. Used on Paper where there are
-     * no region boundaries, so intersection with the modification bounding
-     * box always produces the modification bounding box unchanged.
-     */
-    private static final BoundingBox FULL_WORLD = new BoundingBox(
-        -30_000_000,
-        -64,
-        -30_000_000,
-        30_000_000,
-        320,
-        30_000_000
-    );
-
-    /**
      * The logging service.
      */
     private final LoggingService loggingService;
@@ -118,8 +104,16 @@ public class PaperModificationExecutor implements ModificationExecutor {
             task -> {
                 // Run pre-processing once on the first tick
                 if (!preProcessed && preProcessor != null && schedulerLocation != null) {
-                    preProcessor.accept(schedulerLocation.getWorld(), FULL_WORLD);
+                    // Flag first, so a pre-processing failure doesn't repeat every
+                    // tick and doesn't stop the batch itself from running.
                     preProcessed = true;
+
+                    try {
+                        World world = schedulerLocation.getWorld();
+                        preProcessor.accept(world, fullWorldBoundingBox(world));
+                    } catch (Throwable t) {
+                        loggingService.handleThrowable("A pre-modification error occurred.", t);
+                    }
                 }
 
                 loggingService.debug("New modification run beginning...");
@@ -127,17 +121,14 @@ public class PaperModificationExecutor implements ModificationExecutor {
                 int iterationCount = 0;
                 int index = countModificationsRead;
 
-                while (index < queue.size()) {
+                // Limit the absolute max number of steps per execution of this task
+                while (index < queue.size() && iterationCount < ruleset.maxPerTask()) {
                     final Activity activity = queue.get(index);
+                    iterationCount++;
 
                     // Simulate queue pointer advancement for previews
                     if (mode.equals(ModificationQueueMode.PLANNING)) {
                         countModificationsRead++;
-                    }
-
-                    // Limit the absolute max number of steps per execution of this task
-                    if (++iterationCount >= ruleset.maxPerTask()) {
-                        break;
                     }
 
                     ModificationResult result = ModificationResult.builder().activity(activity).build();
@@ -156,7 +147,16 @@ public class PaperModificationExecutor implements ModificationExecutor {
                         }
                     }
 
-                    onResult.accept(result);
+                    // A failure here must not skip the removal/advance below, or
+                    // this activity is re-applied on every subsequent tick.
+                    try {
+                        onResult.accept(result);
+                    } catch (Throwable t) {
+                        loggingService.handleThrowable(
+                            String.format("A modification result error occurred. %s", activity),
+                            t
+                        );
+                    }
 
                     // Remove from the queue if we're not previewing
                     if (mode.equals(ModificationQueueMode.COMPLETING)) {
@@ -173,16 +173,42 @@ public class PaperModificationExecutor implements ModificationExecutor {
                     // Cancel the repeating task
                     task.cancel();
 
-                    // Run post-processing
-                    if (postProcessor != null && schedulerLocation != null) {
-                        postProcessor.accept(schedulerLocation.getWorld(), FULL_WORLD);
+                    try {
+                        // Run post-processing
+                        if (postProcessor != null && schedulerLocation != null) {
+                            World world = schedulerLocation.getWorld();
+                            postProcessor.accept(world, fullWorldBoundingBox(world));
+                        }
+                    } catch (Throwable t) {
+                        loggingService.handleThrowable("A post-modification error occurred.", t);
+                    } finally {
+                        // The task is already cancelled; without this the queue
+                        // would never fetch another batch or finalize.
+                        onComplete.run();
                     }
-
-                    onComplete.run();
                 }
             },
             1,
             ruleset.taskDelay()
+        );
+    }
+
+    /**
+     * Build a bounding box covering a world's full extent and height range. Used
+     * on Paper where there are no region boundaries, so intersection with the
+     * modification bounding box produces that box unchanged.
+     *
+     * @param world The world
+     * @return A bounding box covering the entire world
+     */
+    private BoundingBox fullWorldBoundingBox(World world) {
+        return new BoundingBox(
+            -30_000_000,
+            world.getMinHeight(),
+            -30_000_000,
+            30_000_000,
+            world.getMaxHeight(),
+            30_000_000
         );
     }
 

@@ -209,6 +209,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
 
     /**
      * Incrementally tracked bounding box min/max from result coordinates.
+     * Guarded by {@code this} — results are tracked from region threads on Folia.
      */
     private double bbMinX = Double.MAX_VALUE;
     private double bbMinY = Double.MAX_VALUE;
@@ -223,7 +224,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      * (drain lava, remove blocks, remove drops) must only fire on the first
      * batch; subsequent refills pass a null pre-processor.
      */
-    private boolean preProcessRan = false;
+    private volatile boolean preProcessRan = false;
 
     /**
      * Whether the operation has been canceled or finalized.
@@ -301,30 +302,38 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
 
     /**
      * Apply pre-modification tasks within the given region bounds. The actual
-     * area affected is the intersection of the modification bounding box and
-     * the region bounds. On Paper, regionBounds covers the full world. On Folia,
+     * area affected is the intersection of the query's bounding box and the
+     * region bounds. On Paper, regionBounds covers the full world. On Folia,
      * regionBounds is clipped to the current region.
+     *
+     * <p>This clips the query's box because pre-processing runs before any
+     * modification is applied. The result-tracked box is empty at that point
+     * on Paper, and on Folia it describes blocks another region has
+     * already applied rather than this region's area.</p>
      *
      * @param world The world
      * @param regionBounds The region-safe bounding box to clip operations to
      */
     protected void preProcess(World world, BoundingBox regionBounds) {
-        BoundingBox effectiveBox = modificationBoundingBox().intersection(regionBounds);
-        if (effectiveBox.getVolume() <= 0) {
+        BoundingBox effectiveBox = effectiveBoundingBox(queryBoundingBox(), regionBounds);
+        if (effectiveBox == null) {
             return;
         }
 
-        synchronized (this) {
+        // Scan outside the lock. On Folia each region pre-processes on its own
+        // thread, and holding the queue monitor across a full-region block scan
+        // would stall every other region thread for the duration.
+        int drainedLava = 0;
+        int removedDrops = 0;
+        int removedBlocks = 0;
+
+        try {
             if (modificationRuleset.drainLava()) {
-                countDrainedLava += BlockUtils.removeBlocksByMaterial(
-                    world,
-                    effectiveBox,
-                    List.of(Material.LAVA)
-                ).size();
+                drainedLava = BlockUtils.removeBlocksByMaterial(world, effectiveBox, List.of(Material.LAVA)).size();
             }
 
             if (modificationRuleset.removeDrops()) {
-                countRemovedDrops += EntityUtils.removeDropsInRange(world, effectiveBox);
+                removedDrops = EntityUtils.removeDropsInRange(world, effectiveBox);
             }
 
             if (!modificationRuleset.removeBlocks().isEmpty()) {
@@ -334,7 +343,13 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
                     .map(m -> Material.valueOf(m.toUpperCase()))
                     .toList();
 
-                countRemovedBlocks += BlockUtils.removeBlocksByMaterial(world, effectiveBox, materials).size();
+                removedBlocks = BlockUtils.removeBlocksByMaterial(world, effectiveBox, materials).size();
+            }
+        } finally {
+            synchronized (this) {
+                countDrainedLava += drainedLava;
+                countRemovedDrops += removedDrops;
+                countRemovedBlocks += removedBlocks;
             }
         }
     }
@@ -352,8 +367,8 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
             return;
         }
 
-        BoundingBox effectiveBox = modificationBoundingBox().intersection(regionBounds);
-        if (effectiveBox.getVolume() <= 0) {
+        BoundingBox effectiveBox = effectiveBoundingBox(modificationBoundingBox(), regionBounds);
+        if (effectiveBox == null) {
             return;
         }
 
@@ -364,30 +379,51 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
     }
 
     /**
-     * Get the modification's bounding box.
+     * Clip a bounding box to the given region bounds.
      *
-     * @return The result set bounding box, the query's, or empty
+     * @param boundingBox The box to clip, or null if none could be derived
+     * @param regionBounds The region-safe bounding box to clip to
+     * @return The clipped box, or null if there is nothing to process here
      */
-    private BoundingBox modificationBoundingBox() {
-        var boundingBox = boundingBoxFromResults();
-
-        if (
-            boundingBox == null &&
-            query.worldUuid() != null &&
-            query.minCoordinate() != null &&
-            query.maxCoordinate() != null
-        ) {
-            boundingBox = boundingBoxFromQuery();
-        }
-
+    private BoundingBox effectiveBoundingBox(BoundingBox boundingBox, BoundingBox regionBounds) {
         if (boundingBox == null || checkBoundingBoxExceedsLimits(boundingBox)) {
-            return new BoundingBox();
+            return null;
         }
 
         // Expand by 1 block so entities on/adjacent to affected blocks are included
         boundingBox.expand(1);
 
-        return boundingBox;
+        if (boundingBox.getVolume() <= 0 || !boundingBox.overlaps(regionBounds)) {
+            return null;
+        }
+
+        BoundingBox effectiveBox = boundingBox.intersection(regionBounds);
+
+        return effectiveBox.getVolume() <= 0 ? null : effectiveBox;
+    }
+
+    /**
+     * Get the modification's bounding box.
+     *
+     * @return The result set bounding box, the query's, or null if neither is available
+     */
+    private BoundingBox modificationBoundingBox() {
+        BoundingBox boundingBox = boundingBoxFromResults();
+
+        return boundingBox != null ? boundingBox : queryBoundingBox();
+    }
+
+    /**
+     * Get the bounding box described by the query.
+     *
+     * @return A bounding box, or null if the query is not bounded
+     */
+    private BoundingBox queryBoundingBox() {
+        if (query.worldUuid() == null || query.minCoordinate() == null || query.maxCoordinate() == null) {
+            return null;
+        }
+
+        return boundingBoxFromQuery();
     }
 
     /**
@@ -410,7 +446,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      *
      * @param result The modification result
      */
-    private void trackBoundingBox(ModificationResult result) {
+    private synchronized void trackBoundingBox(ModificationResult result) {
         Coordinate coordinate = result.activity().coordinate();
         if (coordinate == null) {
             return;
@@ -430,12 +466,25 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
      *
      * @return A bounding box, or null if no results have coordinates
      */
-    private BoundingBox boundingBoxFromResults() {
+    private synchronized BoundingBox boundingBoxFromResults() {
         if (!bbHasCoordinates) {
             return null;
         }
 
         return new BoundingBox(bbMinX, bbMinY, bbMinZ, bbMaxX, bbMaxY, bbMaxZ);
+    }
+
+    /**
+     * Clear the incrementally tracked bounding box.
+     */
+    private synchronized void resetBoundingBox() {
+        bbMinX = Double.MAX_VALUE;
+        bbMinY = Double.MAX_VALUE;
+        bbMinZ = Double.MAX_VALUE;
+        bbMaxX = -Double.MAX_VALUE;
+        bbMaxY = -Double.MAX_VALUE;
+        bbMaxZ = -Double.MAX_VALUE;
+        bbHasCoordinates = false;
     }
 
     /**
@@ -479,6 +528,7 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
         reversalErrorReported = false;
         preProcessRan = false;
         cancelled = false;
+        resetBoundingBox();
         activityStream.reopen();
         progressTotal = activityStream.total();
         progressLastReportedPercent = 0;
@@ -559,8 +609,8 @@ public abstract class AbstractWorldModificationQueue implements ModificationQueu
 
         BiConsumer<World, BoundingBox> preProcessor = shouldPreProcess
             ? (world, boundingBox) -> {
-                preProcess(world, boundingBox);
                 preProcessRan = true;
+                preProcess(world, boundingBox);
             }
             : null;
 
