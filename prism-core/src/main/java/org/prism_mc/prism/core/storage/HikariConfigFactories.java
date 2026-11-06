@@ -253,12 +253,10 @@ public class HikariConfigFactories {
      */
     public static HikariConfig sqlite(StorageConfiguration storageConfiguration, File sqliteFile, boolean enableSpy) {
         HikariConfig hikariConfig = createSharedConfig(storageConfiguration, enableSpy);
-        hikariConfig.setConnectionInitSql(
-            String.format(
-                "PRAGMA journal_mode=WAL; PRAGMA busy_timeout=%d;",
-                storageConfiguration.sqlite().busyTimeout()
-            )
-        );
+        // Pragmas are passed as driver properties so sqlite-jdbc applies them to every connection.
+        // A multi-statement connectionInitSql only executes its first statement.
+        hikariConfig.addDataSourceProperty("journal_mode", "WAL");
+        hikariConfig.addDataSourceProperty("busy_timeout", String.valueOf(storageConfiguration.sqlite().busyTimeout()));
 
         hikariConfig.setJdbcUrl("jdbc:" + (enableSpy ? "p6spy:" : "") + "sqlite:file:" + sqliteFile.getAbsolutePath());
 
