@@ -82,8 +82,17 @@ public class PrismItems extends TableImpl<PrismItemsRecord> {
 
     /**
      * The column <code>prism_items.data</code>.
+     *
+     * <p>Length hint forces jOOQ to pick the largest TEXT variant per dialect — LONGTEXT on
+     * MySQL/MariaDB (where bare CLOB would otherwise become TEXT, 64KB) and the unlimited
+     * TEXT/CLOB on Postgres/H2/SQLite. Required to hold densely nested container NBT.
      */
-    public final TableField<PrismItemsRecord, String> DATA = createField(DSL.name("data"), SQLDataType.CLOB, this, "");
+    public final TableField<PrismItemsRecord, String> DATA = createField(
+        DSL.name("data"),
+        SQLDataType.CLOB.length(Integer.MAX_VALUE),
+        this,
+        ""
+    );
 
     /**
      * The column <code>prism_items.airtag_id</code>.

@@ -85,8 +85,8 @@ public class SqlActivityBatch implements ActivityBatch {
         String actionKey,
         LoggingService loggingService
     ) {
-        if (serializedData == null) {
-            return null;
+        if (serializedData == null || fitsWithoutEncoding(serializedData)) {
+            return serializedData;
         }
 
         int byteLength = serializedData.getBytes(StandardCharsets.UTF_8).length;
@@ -103,6 +103,53 @@ public class SqlActivityBatch implements ActivityBatch {
         }
 
         return serializedData;
+    }
+
+    /**
+     * Whether the string fits the byte limit regardless of its content. A UTF-16 char encodes
+     * to at most 3 UTF-8 bytes, so short strings can skip the encoding pass entirely.
+     *
+     * @param value The string
+     * @return True if the string cannot exceed the limit
+     */
+    private static boolean fitsWithoutEncoding(String value) {
+        return (long) value.length() * 3 <= MAX_SERIALIZED_DATA_BYTES;
+    }
+
+    /**
+     * Returns the item data if it will fit, otherwise null and logs a warning.
+     *
+     * @param itemData The serialized item NBT
+     * @param material The item material (for logging)
+     * @param actionKey The action key (for logging)
+     * @param loggingService The logging service
+     * @return The item data, or null if it was dropped
+     */
+    public static String guardItemDataSize(
+        String itemData,
+        String material,
+        String actionKey,
+        LoggingService loggingService
+    ) {
+        if (itemData == null || fitsWithoutEncoding(itemData)) {
+            return itemData;
+        }
+
+        int byteLength = itemData.getBytes(StandardCharsets.UTF_8).length;
+        if (byteLength > MAX_SERIALIZED_DATA_BYTES) {
+            loggingService.warn(
+                "Dropping item NBT for ''{0}'' on action ''{1}'' ({2} bytes exceeds {3} byte safety limit). " +
+                "Activity will be recorded with the material only; item contents will not rollback.",
+                material,
+                actionKey,
+                byteLength,
+                MAX_SERIALIZED_DATA_BYTES
+            );
+
+            return null;
+        }
+
+        return itemData;
     }
 
     /**
@@ -204,7 +251,12 @@ public class SqlActivityBatch implements ActivityBatch {
         if (activity.action() instanceof ItemAction itemAction) {
             int itemId = getOrCreateItemId(
                 itemAction.serializeMaterial(),
-                itemAction.serializeItemData(),
+                guardItemDataSize(
+                    itemAction.serializeItemData(),
+                    itemAction.serializeMaterial(),
+                    activity.action().type().key(),
+                    loggingService
+                ),
                 itemAction.itemAirtag()
             );
             record.setItemId(UInteger.valueOf(itemId));
@@ -333,7 +385,12 @@ public class SqlActivityBatch implements ActivityBatch {
         if (walRecord.getItemMaterial() != null) {
             int itemId = getOrCreateItemId(
                 walRecord.getItemMaterial(),
-                walRecord.getItemData(),
+                guardItemDataSize(
+                    walRecord.getItemData(),
+                    walRecord.getItemMaterial(),
+                    walRecord.getActionKey(),
+                    loggingService
+                ),
                 walRecord.getItemAirtag()
             );
             record.setItemId(UInteger.valueOf(itemId));
@@ -693,11 +750,15 @@ public class SqlActivityBatch implements ActivityBatch {
      * @throws SQLException The database exception
      */
     private int getOrCreateItemId(String material, String data, String airtag) throws SQLException {
-        return cachedGetOrCreate(cacheService.itemDataPkMap(), data, () -> {
+        // Item data is null when it was dropped by the size guard. Real NBT always starts with
+        // '{', so a NUL-prefixed material key can't collide with it in the cache.
+        String cacheKey = data != null ? data : "\u0000" + material;
+
+        return cachedGetOrCreate(cacheService.itemDataPkMap(), cacheKey, () -> {
             UInteger intPk = dslContext
                 .select(PRISM_ITEMS.ITEM_ID)
                 .from(PRISM_ITEMS)
-                .where(PRISM_ITEMS.MATERIAL.equal(material), PRISM_ITEMS.DATA.equal(data))
+                .where(PRISM_ITEMS.MATERIAL.equal(material), PRISM_ITEMS.DATA.isNotDistinctFrom(data))
                 .limit(1)
                 .fetchOne(PRISM_ITEMS.ITEM_ID);
 
@@ -717,7 +778,7 @@ public class SqlActivityBatch implements ActivityBatch {
                 intPk = dslContext
                     .select(PRISM_ITEMS.ITEM_ID)
                     .from(PRISM_ITEMS)
-                    .where(PRISM_ITEMS.MATERIAL.equal(material), PRISM_ITEMS.DATA.equal(data))
+                    .where(PRISM_ITEMS.MATERIAL.equal(material), PRISM_ITEMS.DATA.isNotDistinctFrom(data))
                     .limit(1)
                     .fetchOne(PRISM_ITEMS.ITEM_ID);
             }

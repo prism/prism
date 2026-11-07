@@ -197,7 +197,16 @@ public class SqlActivityProcedureBatch implements ActivityBatch {
         if (activity.action() instanceof ItemAction itemAction) {
             statement.setString(affectedItemMaterialIndex, itemAction.serializeMaterial());
             statement.setShort(affectedItemQuantityIndex, (short) itemAction.quantity());
-            statement.setString(affectedItemDataIndex, itemAction.serializeItemData());
+            setStringOrNull(
+                statement,
+                affectedItemDataIndex,
+                SqlActivityBatch.guardItemDataSize(
+                    itemAction.serializeItemData(),
+                    itemAction.serializeMaterial(),
+                    activity.action().type().key(),
+                    loggingService
+                )
+            );
             setStringOrNull(statement, affectedItemAirtagIndex, itemAction.itemAirtag());
         } else {
             statement.setNull(affectedItemMaterialIndex, Types.VARCHAR);
@@ -295,7 +304,16 @@ public class SqlActivityProcedureBatch implements ActivityBatch {
         } else {
             statement.setNull(9, Types.SMALLINT);
         }
-        setStringOrNull(statement, 10, walRecord.getItemData());
+        setStringOrNull(
+            statement,
+            10,
+            SqlActivityBatch.guardItemDataSize(
+                walRecord.getItemData(),
+                walRecord.getItemMaterial(),
+                walRecord.getActionKey(),
+                loggingService
+            )
+        );
 
         setStringOrNull(statement, 11, walRecord.getBlockNamespace());
         setStringOrNull(statement, 12, walRecord.getBlockName());

@@ -5,7 +5,7 @@ DECLARE
     v_airtagId INTEGER;
 BEGIN
     SELECT item_id INTO itemId FROM
-    %prefix%items WHERE material = materialKey AND data = itemData;
+    %prefix%items WHERE material = materialKey AND data IS NOT DISTINCT FROM itemData;
 
     IF itemId IS NULL THEN
         IF p_airtag IS NOT NULL THEN
