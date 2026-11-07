@@ -32,6 +32,8 @@ import org.bukkit.block.data.type.TrapDoor;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Hanging;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.entity.TNTPrimed;
 import org.bukkit.inventory.DoubleChestInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -51,6 +53,11 @@ import org.prism_mc.prism.paper.utils.ItemUtils;
 import org.prism_mc.prism.paper.utils.TagLib;
 
 public class AbstractListener {
+
+    /**
+     * The maximum number of TNT sources or projectile shooters followed when resolving a cause.
+     */
+    private static final int MAX_CAUSE_CHAIN_DEPTH = 64;
 
     /**
      * The configuration service.
@@ -82,6 +89,31 @@ public class AbstractListener {
         this.configurationService = configurationService;
         this.expectationService = expectationService;
         this.recordingService = recordingService;
+    }
+
+    /**
+     * Resolve the most direct known cause of an entity's action.
+     *
+     * @param entity The entity
+     * @return The resolved cause: an entity, block projectile source, or the original entity
+     */
+    protected Object resolveEntityCause(Entity entity) {
+        Entity current = entity;
+        for (int i = 0; i < MAX_CAUSE_CHAIN_DEPTH && current != null; i++) {
+            if (current instanceof TNTPrimed tntPrimed && tntPrimed.getSource() != null) {
+                current = tntPrimed.getSource();
+            } else if (current instanceof Projectile projectile && projectile.getShooter() != null) {
+                if (!(projectile.getShooter() instanceof Entity shooter)) {
+                    return projectile.getShooter();
+                }
+
+                current = shooter;
+            } else {
+                break;
+            }
+        }
+
+        return current;
     }
 
     /**

@@ -68,7 +68,7 @@ public class TntPrimeListener extends AbstractListener implements Listener {
         var builder = PaperActivity.builder().action(action).location(event.getBlock().getLocation());
 
         if (event.getPrimingEntity() != null) {
-            builder.cause(event.getPrimingEntity());
+            builder.cause(resolveEntityCause(event.getPrimingEntity()));
         } else if (event.getPrimingBlock() != null) {
             builder.cause(event.getPrimingBlock());
         } else {
