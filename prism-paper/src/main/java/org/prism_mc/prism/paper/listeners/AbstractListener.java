@@ -163,6 +163,11 @@ public class AbstractListener {
      * @param cause The cause
      */
     protected void recordBlockBreakAction(Block block, Object cause) {
+        // Ignore air breaks, typically caused by plugins modifying event data
+        if (block.getType().isAir()) {
+            return;
+        }
+
         var action = new PaperBlockAction(PaperActionTypeRegistry.BLOCK_BREAK, block.getState());
 
         var builder = PaperActivity.builder().action(action).location(block.getLocation()).cause(cause);
