@@ -47,7 +47,7 @@ public class SqlSchemaUpdater {
     /**
      * The current/latest schema version for fresh installations.
      */
-    public static final String CURRENT_SCHEMA_VERSION = "403";
+    public static final String CURRENT_SCHEMA_VERSION = "404";
 
     /**
      * The logger.
@@ -85,6 +85,11 @@ public class SqlSchemaUpdater {
         if ("402".equals(schemaVersion)) {
             update402To403(dslContext);
             schemaVersion = "403";
+        }
+
+        if ("403".equals(schemaVersion)) {
+            update403To404(dslContext);
+            schemaVersion = "404";
         }
     }
 
@@ -243,6 +248,27 @@ public class SqlSchemaUpdater {
         dslContext.update(PRISM_META).set(PRISM_META.V, "403").where(PRISM_META.K.eq("schema_ver")).execute();
 
         loggingService.info("Schema updated to 403.");
+    }
+
+    /**
+     * Update schema from 403 to 404.
+     *
+     * @param dslContext The DSL context
+     */
+    protected void update403To404(DSLContext dslContext) {
+        loggingService.info("Updating schema from 403 to 404...");
+        update403To404Shared(dslContext);
+    }
+
+    /**
+     * Shared logic for the 403 to 404 update — just bumps the recorded schema version.
+     *
+     * @param dslContext The DSL context
+     */
+    protected void update403To404Shared(DSLContext dslContext) {
+        dslContext.update(PRISM_META).set(PRISM_META.V, "404").where(PRISM_META.K.eq("schema_ver")).execute();
+
+        loggingService.info("Schema updated to 404.");
     }
 
     /**

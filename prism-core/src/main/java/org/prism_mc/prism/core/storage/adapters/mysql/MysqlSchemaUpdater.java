@@ -157,4 +157,13 @@ public class MysqlSchemaUpdater extends SqlSchemaUpdater {
 
         update401To402Shared(dslContext);
     }
+
+    @Override
+    protected void update403To404(DSLContext dslContext) {
+        loggingService.info("Updating schema from 403 to 404...");
+
+        dslContext.execute(String.format("ALTER TABLE `%s` MODIFY COLUMN `data` LONGTEXT", PRISM_ITEMS.getName()));
+
+        update403To404Shared(dslContext);
+    }
 }

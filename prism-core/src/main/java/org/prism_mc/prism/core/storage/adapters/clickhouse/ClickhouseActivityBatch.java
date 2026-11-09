@@ -146,15 +146,22 @@ public class ClickhouseActivityBatch implements ActivityBatch {
 
         // Affected item
         if (activity.action() instanceof ItemAction itemAction) {
+            String itemData = SqlActivityBatch.guardItemDataSize(
+                itemAction.serializeItemData(),
+                itemAction.serializeMaterial(),
+                activity.action().type().key(),
+                loggingService
+            );
+
             setStringOrEmpty(9, itemAction.serializeMaterial());
-            setStringOrEmpty(10, itemAction.serializeItemData());
+            setStringOrEmpty(10, itemData);
             setStringOrEmpty(11, itemAction.itemAirtag());
             statement.setShort(12, (short) itemAction.quantity());
 
             trackAirtagPointer(
                 itemAction.itemAirtag(),
                 itemAction.serializeMaterial(),
-                itemAction.serializeItemData(),
+                itemData,
                 activity.timestamp() / 1000
             );
         } else {
@@ -280,8 +287,15 @@ public class ClickhouseActivityBatch implements ActivityBatch {
         setStringOrEmpty(8, walRecord.getActionKey());
 
         // Affected item
+        String itemData = SqlActivityBatch.guardItemDataSize(
+            walRecord.getItemData(),
+            walRecord.getItemMaterial(),
+            walRecord.getActionKey(),
+            loggingService
+        );
+
         setStringOrEmpty(9, walRecord.getItemMaterial());
-        setStringOrEmpty(10, walRecord.getItemData());
+        setStringOrEmpty(10, itemData);
         setStringOrEmpty(11, walRecord.getItemAirtag());
         if (walRecord.getItemMaterial() != null) {
             statement.setShort(12, (short) walRecord.getItemQuantity());
@@ -292,7 +306,7 @@ public class ClickhouseActivityBatch implements ActivityBatch {
         trackAirtagPointer(
             walRecord.getItemAirtag(),
             walRecord.getItemMaterial(),
-            walRecord.getItemData(),
+            itemData,
             walRecord.getTimestamp() / 1000
         );
 

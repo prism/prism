@@ -1,10 +1,10 @@
 CREATE PROCEDURE %prefix%get_or_create_item
-(IN `materialKey` VARCHAR(45), IN `itemData` TEXT, IN `p_airtag` CHAR(6), OUT `itemId` INT)
+(IN `materialKey` VARCHAR(45), IN `itemData` LONGTEXT, IN `p_airtag` CHAR(6), OUT `itemId` INT)
 BEGIN
     DECLARE v_airtagId INT DEFAULT NULL;
 
     SELECT item_id INTO `itemId` FROM
-        %prefix%items WHERE material = `materialKey` AND data = `itemData`;
+        %prefix%items WHERE material = `materialKey` AND data <=> `itemData`;
 
     IF `itemId` IS NULL THEN
         IF `p_airtag` IS NOT NULL THEN

@@ -8,7 +8,7 @@ CREATE PROCEDURE %prefix%create_activity (
     IN `p_action` VARCHAR(25),
     IN `p_affectedItemMaterial` VARCHAR(45),
     IN `p_affectedItemQuantity` SMALLINT,
-    IN `p_affectedItemData` TEXT,
+    IN `p_affectedItemData` LONGTEXT,
     IN `p_affectedBlockNamespace` VARCHAR(55),
     IN `p_affectedBlockName` VARCHAR(55),
     IN `p_affectedBlockData` VARCHAR(255),
