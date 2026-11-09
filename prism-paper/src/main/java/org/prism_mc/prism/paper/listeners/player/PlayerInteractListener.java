@@ -100,9 +100,10 @@ public class PlayerInteractListener extends AbstractListener implements Listener
         final Block block = event.getClickedBlock();
 
         // Ignore if block is null (can't get location)
-        // or if the event is fired for an off-hand click.
-        // (Block will be null when clicking air)
-        if (block == null || (event.getHand() != null && !event.getHand().equals(EquipmentSlot.HAND))) {
+        // or if the event isn't a main-hand interaction.
+        // (Block will be null when clicking air, hand will be
+        // null for physical events like pressure plates)
+        if (block == null || !EquipmentSlot.HAND.equals(event.getHand())) {
             return;
         }
 
