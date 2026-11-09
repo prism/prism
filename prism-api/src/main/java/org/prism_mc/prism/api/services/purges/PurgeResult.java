@@ -31,4 +31,9 @@ public class PurgeResult {
      * Number of records deleted.
      */
     int deleted;
+
+    /**
+     * Whether the purge ended early because of an error.
+     */
+    boolean failed;
 }

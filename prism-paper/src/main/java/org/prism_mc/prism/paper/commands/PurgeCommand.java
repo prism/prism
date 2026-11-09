@@ -95,6 +95,8 @@ public class PurgeCommand {
         public void onPurgeStart(final CommandSender sender, final Arguments arguments) {
             if (!purgeService.queueFree()) {
                 messageService.errorPurgeQueryNotFree(sender);
+
+                return;
             }
 
             var builder = queryService.queryFromArguments(sender, PrismPermissions.PATH_PURGE_START, arguments);
@@ -115,7 +117,13 @@ public class PurgeCommand {
                             messageService.purgeCycle(sender, result);
                         }
                     },
-                    result -> messageService.purgeComplete(sender, result.deleted())
+                    result -> {
+                        if (result.failed()) {
+                            messageService.errorPurgeFailed(sender, result.deleted());
+                        } else {
+                            messageService.purgeComplete(sender, result.deleted());
+                        }
+                    }
                 );
 
                 purgeQueue.add(query);
@@ -130,6 +138,8 @@ public class PurgeCommand {
         public void onPurgeStop(final CommandSender sender) {
             if (purgeService.queueFree()) {
                 messageService.errorPurgeNotRunning(sender);
+
+                return;
             }
 
             purgeService.stop();

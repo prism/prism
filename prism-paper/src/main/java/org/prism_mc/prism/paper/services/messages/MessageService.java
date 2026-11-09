@@ -188,6 +188,9 @@ public interface MessageService {
     @Message("prism.error.proximity-world-missing")
     void errorProximityWorldMissing(CommandSender receiver);
 
+    @Message("prism.error.purge-failed")
+    void errorPurgeFailed(CommandSender receiver, @Placeholder Integer count);
+
     @Message("prism.error.purge-not-running")
     void errorPurgeNotRunning(CommandSender receiver);
 

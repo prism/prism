@@ -41,6 +41,11 @@ import org.prism_mc.prism.paper.services.scheduling.PrismScheduler;
 public class PaperPurgeQueue implements PurgeQueue {
 
     /**
+     * The maximum number of attempts for a single purge cycle.
+     */
+    private static final int MAX_CYCLE_ATTEMPTS = 3;
+
+    /**
      * The configuration service.
      */
     private final ConfigurationService configurationService;
@@ -122,12 +127,33 @@ public class PaperPurgeQueue implements PurgeQueue {
         running = true;
 
         prismScheduler.runAsync(() -> {
-            Pair<Integer, Integer> keys = storageAdapter.getActivitiesPkBounds(purgeQueue.getFirst());
+            Pair<Integer, Integer> keys;
+            try {
+                keys = storageAdapter.getActivitiesPkBounds(purgeQueue.getFirst());
+            } catch (Exception e) {
+                fail(e);
+
+                return;
+            }
 
             loggingService.debug("Absolute purge lower/bound primary keys: {0}, {1}", keys.key(), keys.value());
 
             executeNext(keys.key(), keys.value());
         });
+    }
+
+    /**
+     * End the purge early because of an error.
+     *
+     * @param e The exception
+     */
+    private void fail(Exception e) {
+        running = false;
+
+        loggingService.error("Purge failed and has been stopped. Records deleted before failure: {0}", deleted);
+        loggingService.handleException(e);
+
+        onEnd.accept(PurgeResult.builder().deleted(deleted).failed(true).build());
     }
 
     @Override
@@ -142,6 +168,17 @@ public class PaperPurgeQueue implements PurgeQueue {
      * @param maxPrimaryKey The absolute upper bound primary key
      */
     protected void executeNext(int cycleMinPrimaryKey, int maxPrimaryKey) {
+        executeNext(cycleMinPrimaryKey, maxPrimaryKey, 1);
+    }
+
+    /**
+     * Execute the next purge query or cycle.
+     *
+     * @param cycleMinPrimaryKey The minimum primary key for this cycle
+     * @param maxPrimaryKey The absolute upper bound primary key
+     * @param attempt The attempt number for this cycle
+     */
+    private void executeNext(int cycleMinPrimaryKey, int maxPrimaryKey, int attempt) {
         if (!running) {
             return;
         }
@@ -194,7 +231,34 @@ public class PaperPurgeQueue implements PurgeQueue {
             loggingService.debug("Limiting cycle to primary keys {0} - {1}", cycleMinPrimaryKey, cycleMaxPrimaryKey);
 
             // Delete this batch and store the count
-            int count = storageAdapter.deleteActivities(query, cycleMinPrimaryKey, cycleMaxPrimaryKey);
+            int count;
+            try {
+                count = storageAdapter.deleteActivities(query, cycleMinPrimaryKey, cycleMaxPrimaryKey);
+            } catch (Exception e) {
+                if (attempt >= MAX_CYCLE_ATTEMPTS) {
+                    fail(e);
+
+                    return;
+                }
+
+                loggingService.warn(
+                    "Purge cycle for primary keys {0} - {1} failed (attempt {2} of {3}), retrying: {4}",
+                    cycleMinPrimaryKey,
+                    cycleMaxPrimaryKey,
+                    attempt,
+                    MAX_CYCLE_ATTEMPTS,
+                    e.getMessage()
+                );
+
+                prismScheduler.runAsyncDelayed(
+                    () -> this.executeNext(cycleMinPrimaryKey, maxPrimaryKey, attempt + 1),
+                    delayDuration,
+                    delayUnit
+                );
+
+                return;
+            }
+
             deleted += count;
 
             // Emit information to the cycle callback
