@@ -22,6 +22,7 @@ package org.prism_mc.prism.paper.listeners.entity;
 
 import com.google.inject.Inject;
 import org.bukkit.ExplosionResult;
+import org.bukkit.entity.TNTPrimed;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -65,7 +66,12 @@ public class EntityExplodeListener extends AbstractListener implements Listener 
             event.getExplosionResult().equals(ExplosionResult.DESTROY) ||
             event.getExplosionResult().equals(ExplosionResult.DESTROY_WITH_DECAY)
         ) {
-            processExplosion(event.blockList(), event.getEntity().getType());
+            // Trace primed TNT back to its source, other explosions keep the entity type
+            Object cause = event.getEntity() instanceof TNTPrimed
+                ? resolveEntityCause(event.getEntity())
+                : event.getEntity().getType();
+
+            processExplosion(event.blockList(), cause);
         }
     }
 }
