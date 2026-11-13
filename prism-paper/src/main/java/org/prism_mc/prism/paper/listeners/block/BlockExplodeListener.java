@@ -21,6 +21,7 @@
 package org.prism_mc.prism.paper.listeners.block;
 
 import com.google.inject.Inject;
+import org.bukkit.ExplosionResult;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -57,6 +58,14 @@ public class BlockExplodeListener extends AbstractListener implements Listener {
     public void onBlockExplode(final BlockExplodeEvent event) {
         // Ignore if this event is disabled
         if (!configurationService.prismConfig().actions().blockBreak()) {
+            return;
+        }
+
+        // Ignore explosions that don't destroy blocks
+        if (
+            !event.getExplosionResult().equals(ExplosionResult.DESTROY) &&
+            !event.getExplosionResult().equals(ExplosionResult.DESTROY_WITH_DECAY)
+        ) {
             return;
         }
 
